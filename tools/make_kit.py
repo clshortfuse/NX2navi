@@ -10,12 +10,12 @@ here, so a player's PC needs no shader compiler; their sources go along), recomp
 translator built from tools/xlate,
 NVIDIA's DLSS library with its notice (tools/dlss_pin.py: downloaded from NVIDIA's DLSS SDK repository and checked,
 or --dlss; not with --no-dlss), DLSS Frame Generation in bin/dlssg/ with --dlssg (nx2navi_dlssg.dll from
-tools/build_dlssg.py beside NVIDIA Streamline's runtime, tools/streamline_pin.py: downloaded from NVIDIA's Streamline
+tools/build_streamline.py beside NVIDIA Streamline's runtime, tools/streamline_pin.py: downloaded from NVIDIA's Streamline
 SDK release and checked, or --streamline), AMD's FSR 3.1 library with --ffx, its two FSR 4 libraries with --ffx4, the
 button art with --prompt-art, and README-BuildKit.md; no game code, data or anything generated from the game.
 check_content runs over the folder before it is zipped. The --xlate folder must hold a translator built from this
 checkout's sources (tools/build_xlate.py check_built), and the --dlssg DLL must export every function
-runtime/dlssg/nx2_sl.h declares (tools/build_dlssg.py check); the script stops first if not.
+runtime/dlssg/nx2_sl.h declares (tools/build_streamline.py check); the script stops first if not.
 
 --prompt-art names folders that hold XGamepad, P5Gamepad and Keyboard_Mouse, or those three folders themselves: the
 pictures tools/pad_prompts.py reads go into the kit's prompt-art folder (tools/prompt_art.py art_files), and
@@ -38,7 +38,7 @@ TOOLS = ('make_game.py', 'nup.py', 'romfs_index.py', 'check_content.py', 'hostme
 # newer than the system's (which build_game takes from vulkan_pin), and build_game.py imports check_isa and
 # build_shaders, which reads the two make_ scripts' shaders; the lift runs cheats.py and exefs_patches.py for the mods'
 # code, and both import mod_files.py
-TOP = ('LICENSE', 'LICENSE-ADDITIONS', 'THIRD_PARTY_NOTICES.md', 'VERSION', 'nx2navi.ini.example')
+TOP = ('LICENSE', 'LICENSE-ADDITIONS', 'LICENSE-SHORTFUSE.md', 'THIRD_PARTY_NOTICES.md', 'VERSION', 'nx2navi.ini.example')
 SKIP_DIRS = {'__pycache__', '.pytest_cache'}
 SKIP_SUFFIXES = {'.o', '.obj', '.pyc', '.exe', '.dll', '.a', '.lib'}
 
@@ -63,7 +63,7 @@ def main():
                                                "NVIDIA's DLSS SDK repository")
     ap.add_argument('--no-dlss', action='store_true', help='leave NVIDIA DLSS out of the kit')
     ap.add_argument('--dlssg', type=Path, metavar='DLL',
-                    help='nx2navi_dlssg.dll (tools/build_dlssg.py) for DLSS Frame Generation')
+                    help='nx2navi_dlssg.dll (tools/build_streamline.py) for DLSS Frame Generation')
     ap.add_argument('--streamline', type=Path, metavar='SDK',
                     help='the Streamline SDK folder instead of downloading the SDK release with --dlssg')
     ap.add_argument('--prompt-art', type=Path, nargs='+', metavar='FOLDER',
@@ -74,7 +74,7 @@ def main():
     ap.add_argument('--zip', action='store_true')
     a = ap.parse_args()
     sys.path.insert(0, str(ROOT / 'tools'))
-    import build_dlssg
+    import build_streamline
     import build_shaders
     import build_xlate
     import dlss_pin
@@ -86,7 +86,7 @@ def main():
     if reason:
         sys.exit(reason)
     if a.dlssg:   # a DLL older than runtime/dlssg/nx2_sl.h would leave features out at run time without an error
-        build_dlssg.check(a.dlssg)
+        build_streamline.check(a.dlssg)
     if a.prompt_art:
         prompt_art.art_files(a.prompt_art)   # the art is all there before anything is downloaded
     dlss = None if a.no_dlss else dlss_pin.resolve(a.dlss, ROOT / 'build' / 'dl')

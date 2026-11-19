@@ -27,7 +27,7 @@ The release folder (--out) holds:
                                   runtime DLLs and nvngx_dlssg.dll at the version tools/streamline_pin.py pins,
                                   downloaded from NVIDIA's Streamline SDK release and checked, or --streamline; their
                                   licences and a notice; the release stops first on a DLL that lacks an export
-                                  runtime/dlssg/nx2_sl.h declares, tools/build_dlssg.py check),
+                                  runtime/dlssg/nx2_sl.h declares, tools/build_streamline.py check),
                                   lib/libnx2navirt.a (the runtime, prebuilt with the release's compiler),
                                   data/pgo-v111.profdata and .json with --pgo (the execution profile make_game.py
                                   compiles the lifted code and the runtime with, the prebuilt runtime included, and
@@ -91,7 +91,7 @@ PINS = {
 TOOLS = ('make_game.py', 'nup.py', 'romfs_index.py', 'check_content.py', 'hostmem.py', 'prepare_shaders.py',
          'shader_census.py', 'shader_list.py', 'pipeline_list.py', 'zstd_compat.py', 'pad_prompts.py', 'prompt_art.py', 'button_icons.py', 'romfs_check.py',
          'pack_shader_cache.py', 'mod_files.py', 'cheats.py', 'exefs_patches.py')
-TOP = ('LICENSE', 'LICENSE-ADDITIONS', 'THIRD_PARTY_NOTICES.md', 'nx2navi.ini.example')
+TOP = ('LICENSE', 'LICENSE-ADDITIONS', 'LICENSE-SHORTFUSE.md', 'THIRD_PARTY_NOTICES.md', 'nx2navi.ini.example')
 SKIP_DIRS = {'__pycache__', '.pytest_cache', 'native'}
 SKIP_SUFFIXES = {'.o', '.obj', '.pyc', '.exe', '.dll', '.a', '.lib'}
 TCLTK_FILES = ('_tkinter.pyd', 'tcl90.dll', 'tcl9tk90.dll', 'zlib1.dll', 'libtommath.dll')
@@ -215,10 +215,10 @@ def check_dlssg(dll):
     takes a missing optional export (nx2sl_reflex2, nx2sl_frames_max) for an older DLL and leaves that feature out
     with one log line, so a DLL built from older sources would ship without an error: with the DLL of 0.8.0, which
     lacks nx2sl_reflex2, Reflex would never hold the frame limit. Such a DLL, or a missing one, stops the build
-    (build_dlssg.check); main runs this before anything is resolved, downloaded or deleted."""
-    import build_dlssg
-    build_dlssg.check(dll)
-    print(f'{dll}: exports the {len(build_dlssg.declared_exports())} functions runtime/dlssg/nx2_sl.h declares')
+    (build_streamline.check); main runs this before anything is resolved, downloaded or deleted."""
+    import build_streamline
+    build_streamline.check(dll)
+    print(f'{dll}: exports the {len(build_streamline.declared_exports())} functions runtime/dlssg/nx2_sl.h declares')
 
 
 def build_app(app, ver, xlate, feed_repo, lock, ffx=None, dlss=None, art=None, dlssg=None, pipelines=None, ffx4=None,
@@ -384,7 +384,7 @@ def main():
                                                "downloading it from NVIDIA's DLSS SDK repository")
     ap.add_argument('--no-dlss', action='store_true', help='leave NVIDIA DLSS out of the release')
     ap.add_argument('--dlssg', type=Path, metavar='DLL',
-                    help='nx2navi_dlssg.dll (tools/build_dlssg.py) for DLSS Frame Generation')
+                    help='nx2navi_dlssg.dll (tools/build_streamline.py) for DLSS Frame Generation')
     ap.add_argument('--streamline', type=Path, metavar='SDK',
                     help=f'the Streamline {streamline_pin.VERSION} SDK folder whose bin/x64 gives the Streamline and '
                          'nvngx_dlssg.dll files, instead of downloading the SDK release with --dlssg')

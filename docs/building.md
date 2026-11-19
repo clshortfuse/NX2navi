@@ -198,6 +198,20 @@ of them.
 Settings live in `nx2navi.ini` next to `nx2navi.exe` ([nx2navi.ini.example](../nx2navi.ini.example) lists them). Saves go to
 `build\profile` for `v121` and `build\profile-<ver>` for other versions (`build_game.py --profile` changes it).
 
+### NVIDIA DLSS on Windows
+
+Windows builds use Streamline for DLSS upscaling, DLAA, and DLSS Frame
+Generation. To include it in a kit, build the bridge with `tools/build_streamline.py`
+and pass it to `tools/make_kit.py --dlssg <bridge.dll>`. The kit bundles the
+required Streamline plugins and NVIDIA model libraries. See
+[launcher packaging](launcher.md) for bundle details.
+
+Streamline is initialized at startup when the bundle is available. Starting
+with FSR Frame Generation selected instead uses native Vulkan and makes
+Windows DLSS reconstruction unavailable. To use DLSS, select Off or NVIDIA
+DLSS for Frame Generation and restart. Linux
+continues to use direct NGX.
+
 ### Portable folder
 
 `.venv\Scripts\python tools\package_build.py --version <ver>` writes `build\<ver>-portable`, which runs on another of
@@ -864,12 +878,12 @@ first host present, after 200 ms without one and with the setting off, that fram
 give it to the pacer for the rest of the run, and that frames the multiplier periods apart switch Reflex to the frames
 on screen once and to the pacer the second time. No GPU, no game files.
 
-A change to `runtime/dlssg/nx2_sl.h` or to the export check in `tools/build_dlssg.py` (`declared_exports`,
+A change to `runtime/dlssg/nx2_sl.h` or to the export check in `tools/build_streamline.py` (`declared_exports`,
 `pe_exports`) passes `python tests\dlssg_exports_check.py`, which builds a small DLL with MSYS2's clang and checks that
-the export it lacks is the one named; that `build_dlssg.check` stops on that DLL, a missing file and a file that is no
+the export it lacks is the one named; that `build_streamline.check` stops on that DLL, a missing file and a file that is no
 DLL, and passes a DLL with every export `nx2_sl.h` declares; that every function `nx2_sl.h` declares is read; and that
 `tools/make_launcher.py` and `tools/make_kit.py` make that check of their `--dlssg` DLL before they download anything.
-The DLL itself is checked when `tools/build_dlssg.py` builds it, or with `--check <dll>`. No MSVC, no Streamline SDK,
+The DLL itself is checked when `tools/build_streamline.py` builds it, or with `--check <dll>`. No MSVC, no Streamline SDK,
 no game files.
 A change to the list of what the upscalers let go of while the GPU may still use it (`runtime/vk_up_defer.h`) passes
 `python tests\up_defer_check.py`, which builds the header alone, as C and as C++, and checks that an entry goes only

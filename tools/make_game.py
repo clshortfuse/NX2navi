@@ -751,12 +751,12 @@ DLSS_DLL, DLSS_NOTICE = 'nvngx_dlss.dll', 'nvngx_dlss-NOTICE.txt'   # tools/dlss
 # finds it beside the game (runtime/resolution.c dlss_dll).
 DLSS_SO_PREFIX, DLSS_SO_NOTICE = 'libnvidia-ngx-dlss.so.', 'libnvidia-ngx-dlss-NOTICE.txt'
 # DLSS Frame Generation (runtime/vk_dlssg.c) loads these from beside the game: nx2navi_dlssg.dll (runtime/dlssg/,
-# tools/build_dlssg.py), NVIDIA Streamline's interposer and the plugins it uses, and NGX's frame generation library.
+# tools/build_streamline.py), NVIDIA Streamline's interposer and the plugins it uses, and NGX's frame generation library.
 # A release carries them with their licence texts in bin/dlssg/ (tools/make_launcher.py --dlssg); without the whole set
 # the game leaves DLSS Frame Generation off.
 DLSSG_DIR = 'dlssg'
-DLSSG_FILES = ('nx2navi_dlssg.dll', 'sl.interposer.dll', 'sl.common.dll', 'sl.dlss_g.dll', 'sl.pcl.dll', 'sl.reflex.dll',
-               'nvngx_dlssg.dll')
+DLSSG_FILES = ('nx2navi_dlssg.dll', 'sl.interposer.dll', 'sl.common.dll', 'sl.dlss.dll', 'sl.dlss_g.dll', 'sl.pcl.dll', 'sl.reflex.dll',
+               'nvngx_dlssg.dll', 'nvngx_dlss.dll')
 
 
 def notice_sha256(path):
@@ -2109,11 +2109,12 @@ def step_compile(out, cache_dir, msys, jobs, romfs_job=None, update=False):
             copy_if_changed(KIT / 'bin' / name, out / name)
         if (KIT / 'bin' / FFX4_FG_DLL).is_file():   # its frame generation (runtime/vk_fg4.cpp)
             copy_if_changed(KIT / 'bin' / FFX4_FG_DLL, out / FFX4_FG_DLL)
-    kept = place_dlss(out, linux=not WIN)   # NVIDIA DLSS (runtime/vk_dlaa.c): this platform's library from the kit
-    if kept:
-        say(f'  {kept}')
-    if WIN and place_dlssg(out):   # DLSS Frame Generation (runtime/vk_dlssg.c): Windows DLLs too
-        say('  DLSS Frame Generation: nx2navi_dlssg.dll, Streamline and nvngx_dlssg.dll beside the game')
+    if WIN and place_dlssg(out):
+        say('  Streamline DLSS reconstruction and frame generation libraries beside the game')
+    elif not WIN:
+        kept = place_dlss(out, linux=True)
+        if kept:
+            say(f'  {kept}')
     beside = copy_dlls(exe, msys / 'bin', out) if WIN else []
     say(f'  {EXE_NAME} {exe.stat().st_size / 1e6:.0f} MB' + (f'; beside it: {", ".join(beside)}' if beside else ''))
     (out / 'profile').mkdir(exist_ok=True)

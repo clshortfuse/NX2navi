@@ -510,7 +510,7 @@ stays playable and Rebuild the Game, or Begin Installation, goes on from the ste
    ship the library; it also asks that a commercial release be announced to NVIDIA first
    (https://developer.nvidia.com/sw-notification) and that the use of DLSS be credited.
 
-   `--dlssg nx2navi_dlssg.dll` (built by `tools/build_dlssg.py`, which needs Visual Studio's C++ compiler) adds DLSS
+   `--dlssg nx2navi_dlssg.dll` (built by `tools/build_streamline.py`, which needs Visual Studio's C++ compiler) adds DLSS
    Frame Generation in `bin/dlssg/`: beside it NVIDIA Streamline's runtime (`sl.interposer.dll`, `sl.common.dll`,
    `sl.dlss_g.dll`, `sl.pcl.dll`, `sl.reflex.dll`) and `nvngx_dlssg.dll`, taken from the Streamline SDK release that
    `tools/streamline_pin.py` pins. The script downloads that release once (cached in `toolchain/launcher-dl/`), checks
@@ -518,8 +518,8 @@ stays playable and Rebuild the Game, or Begin Installation, goes on from the ste
    `make_game.py` copies the whole set beside the game. `--streamline SDK` takes an SDK folder on disk instead (its
    files must be the pinned ones). The runtime takes a missing optional export for an older DLL and leaves that
    feature out, Reflex's frame limit among them, so a DLL that lacks an export `runtime/dlssg/nx2_sl.h` declares fails
-   `tools/build_dlssg.py`, and the release stops on such a `--dlssg` DLL before anything is downloaded
-   (`make_launcher.py` `check_dlssg`; `make_kit.py` the same). `python tools/build_dlssg.py --check <dll>` makes that
+   `tools/build_streamline.py`, and the release stops on such a `--dlssg` DLL before anything is downloaded
+   (`make_launcher.py` `check_dlssg`; `make_kit.py` the same). `python tools/build_streamline.py --check <dll>` makes that
    check of a DLL built earlier.
 
    `--pgo FILE` puts an execution profile and its record in the release (`app/<version>/data`), and the prebuilt

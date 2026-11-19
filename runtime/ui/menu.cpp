@@ -885,12 +885,12 @@ static const char *vsync_note(void) {
 // In a run that started with it off the driver's mode is not on the device: the row can be set and says "after restart".
 static void row_low_latency(void) {
     static const char *const values[] = {"0", "1", "2"};
-    const char *names[] = {menu_text(UI_MENU_OFF), menu_text(UI_MENU_ON), menu_text(UI_MENU_LOW_LATENCY_BOOST)};
+    const char *names[] = {"Auto/Off", menu_text(UI_MENU_ON), menu_text(UI_MENU_LOW_LATENCY_BOOST)};
     const int st = vk_lowlat_status(), n = st == VK_LOWLAT_AMD ? 2 : 3;
     int cur = cfg_int("NX2NAVI_LOW_LATENCY");
     cur = cur < 0 ? 0 : cur >= n ? n - 1 : cur;
-    if (st == VK_LOWLAT_NO_DRIVER) opt_disable_next(UI_MENU_LOW_LATENCY_NO_DRIVER);
-    else if (st == VK_LOWLAT_DLSSG) opt_disable_next(UI_MENU_LOW_LATENCY_DLSSG);
+    if (!vk_dlssg_interposed() && st == VK_LOWLAT_NO_DRIVER) opt_disable_next(UI_MENU_LOW_LATENCY_NO_DRIVER);
+    else if (!vk_dlssg_interposed() && st == VK_LOWLAT_DLSSG) opt_disable_next(UI_MENU_LOW_LATENCY_DLSSG);
     else if (st == VK_LOWLAT_FG) opt_disable_next(UI_MENU_LOW_LATENCY_FG);
     const char *note = st == VK_LOWLAT_FAILED && cur ? menu_text(UI_MENU_LOW_LATENCY_FAILED)
                      : st == VK_LOWLAT_RESTART && cur ? menu_text(UI_MENU_AFTER_RESTART) : nullptr;
@@ -1028,6 +1028,12 @@ static void row_upscaling(void) {
     const char *note = nullptr;
     static char in_use[64];
     const double share = wide_scene_settable() ? wide_scene_share() : 0;
+#ifdef _WIN32
+    if (now.kind == DLSS && !vk_dlssg_interposed() && !vk_dlssg_wanted())
+        note = !strcmp(cfg_value("NX2NAVI_FRAMEGEN"), "fsr3")
+                   ? menu_text(UI_MENU_DLSS_FSR_RESTART) : menu_text(UI_MENU_AFTER_RESTART);
+    else
+#endif
     if (!fsr && now.kind == FSR3) note = menu_text(UI_MENU_FSR3_OFF);
     else if (upscaling_restart() || (share > 0 && wide_scene_restart())) note = menu_text(UI_MENU_AFTER_RESTART);
     else if (share > 0 && wide_scene_wanted() > share + 0.001) {
@@ -1212,7 +1218,7 @@ static void row_framegen_mult_ngx(void) {
 static bool framegen_restart(void) {
     const bool set = !strcmp(cfg_value("NX2NAVI_FRAMEGEN"), "dlss");
     if (!dlss_offered()) return false;
-    return framegen_ngx() ? set && !vk_ngxfg_wanted() : set != (vk_dlssg_wanted() != 0);
+    return framegen_ngx() ? set && !vk_ngxfg_wanted() : (set && !vk_dlssg_wanted()) || (!strcmp(cfg_value("NX2NAVI_FRAMEGEN"), "fsr3") && vk_dlssg_interposed());
 }
 
 // The frame generation of the library FSR 4 comes with (vk_fg4.cpp), as the row names it: with the version the library
@@ -1246,8 +1252,7 @@ static void row_framegen(void) {
                                                                             : UI_MENU_FRAMEGEN_DESC_ANY;
     // UI_TEXT_COUNT: no note
     UiTextId note = !dlss && !fsr ? UI_MENU_FRAMEGEN_NOTE : via_ngx ? UI_MENU_FRAMEGEN_NOTE_NGX : UI_TEXT_COUNT;
-    if (!dlss && !fsr && cur == 0) opt_disable_next(UI_MENU_FRAMEGEN_NEEDS_NONE);
-    else if (via_ngx && !fsr && !vk_ngxfg_wanted() && !dlss_set) opt_disable_next(UI_MENU_FRAMEGEN_NEEDS_DLSS);
+    if (via_ngx && !fsr && !vk_ngxfg_wanted() && !dlss_set) note = UI_MENU_FRAMEGEN_NEEDS_DLSS;
     // Off, AMD's where FSR 3.1 loads and NVIDIA DLSS (vk_dlssg.c, through Streamline and nx2navi_dlssg.dll) on NVIDIA GPUs,
     // now that Reflex paces it from the frame's start and generated frames are presented; elsewhere one stays listed
     // while it is set
@@ -1264,7 +1269,7 @@ static void row_framegen(void) {
     const char *names[4];
     int n = 0, at = 0;
     for (int i = 0; i < 4; i++) {
-        if ((i == FSR3 && !fsr && cur != 1) || (i == FSR4LIB && !four_offered && !four) || (i == DLSS && !dlss && cur != 2)) continue;
+        if (i == FSR4LIB && !four_offered && !four) continue;
         if (i == now) at = n;
         kinds[n] = i, names[n++] = all_names[i];
     }

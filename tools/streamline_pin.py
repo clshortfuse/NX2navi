@@ -1,5 +1,5 @@
-"""NVIDIA Streamline's runtime for DLSS Frame Generation (runtime/vk_dlssg.c): tools/make_launcher.py and
-tools/make_kit.py put it in the release's or the kit's bin/dlssg/ beside nx2navi_dlssg.dll (tools/build_dlssg.py), and
+"""NVIDIA Streamline's runtime for DLSS reconstruction and frame generation (runtime/vk_dlssg.c): tools/make_launcher.py and
+tools/make_kit.py put it in the release's or the kit's bin/dlssg/ beside nx2navi_dlssg.dll (tools/build_streamline.py), and
 tools/make_game.py place_dlssg copies the whole set beside the game.
 
 The files are NVIDIA's own builds from the Streamline SDK release at a pinned version, unmodified: the SDK archive is
@@ -18,14 +18,16 @@ URL = f'https://github.com/NVIDIA-RTX/Streamline/releases/download/v{VERSION}/st
 SIZE = 276016170
 SHA256 = '32041e51db0cab709a271b72a352281b690c2abbd669a827809401a5dd23956b'
 
-DLL = 'nx2navi_dlssg.dll'   # this repository's runtime/dlssg/, built by tools/build_dlssg.py
+DLL = 'nx2navi_dlssg.dll'   # this repository's runtime/dlssg/, built by tools/build_streamline.py
 # The set tools/make_game.py DLSSG_FILES names: without all of it the game leaves DLSS Frame Generation off.
-FILES = (DLL, 'sl.interposer.dll', 'sl.common.dll', 'sl.dlss_g.dll', 'sl.pcl.dll', 'sl.reflex.dll', 'nvngx_dlssg.dll')
+FILES = (DLL, 'sl.interposer.dll', 'sl.common.dll', 'sl.dlss.dll', 'sl.dlss_g.dll', 'sl.pcl.dll', 'sl.reflex.dll', 'nvngx_dlssg.dll', 'nvngx_dlss.dll')
 NOTICE = 'dlssg-NOTICE.txt'
 # The SDK's files the set takes, by their path in the SDK, with their sha256.
 SDK_FILES = {
     'bin/x64/sl.interposer.dll': 'b1d7395aebd7b9722841d64dcf7433680020b6a8e421f851c16d5ba0c2182edf',
     'bin/x64/sl.common.dll': '38eea3b4209afc455636ea372b5933d65fcc13becec6c84d101dcfc4d8648f75',
+    'bin/x64/nvngx_dlss.dll': 'd00b5b0ab29c3ca101b70c3a5ecb3a01b7ef33766a3383a28a18623083e6123e',
+    'bin/x64/sl.dlss.dll': '18871eea87c90345da97d8109faa81ea7d5840e8d99b51b55b0e46cfa177f84e',
     'bin/x64/sl.dlss_g.dll': '3ed9538df724993bea8a050195a6a78b9c8c8a566d5b05ade477aab3c390e90f',
     'bin/x64/sl.pcl.dll': '5698c38e722318681f215c9fe68e45b9bedd51378acc699d8eee26e961e57770',
     'bin/x64/sl.reflex.dll': '443577e869352436ff7ec8f4d9c90418d3e95368436ce219261e0f4f07a38122',
@@ -107,7 +109,7 @@ def place(dll, sdk, dest):
     lines = ['DLSS Frame Generation for NX2navi. nx2navi_dlssg.dll is NX2navi\'s own code (runtime/dlssg/), built',
              'with the Streamline SDK\'s headers. The other files are NVIDIA\'s own builds, unmodified, from the',
              f'Streamline {VERSION} SDK (https://github.com/NVIDIA-RTX/Streamline): the sl.*.dll files under its',
-             'MIT licence (streamline-LICENSE.txt), nvngx_dlssg.dll under the NVIDIA RTX SDKs License',
+             'MIT licence (streamline-LICENSE.txt), nvngx_dlss.dll and nvngx_dlssg.dll under the NVIDIA RTX SDKs License',
              '(nvidia-rtx-sdks-LICENSE.txt), which licenses it only for use on systems with NVIDIA GPUs. They are not',
              'part of NX2navi and NX2navi\'s licence does not cover them.', '']
     for n, p in srcs.items():

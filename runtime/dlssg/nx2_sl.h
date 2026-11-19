@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <vulkan/vulkan.h>
 
-#define NX2SL_VERSION 3
+#define NX2SL_VERSION 4
 
 typedef struct {
     VkImage image;
@@ -37,7 +37,17 @@ extern "C" {
 #endif
 typedef int (*PFN_nx2sl_version)(void);
 // slInit with DLSS-G, Reflex and PCL for Vulkan; dir: the folder of sl.interposer.dll and the plugins (the game's)
-typedef int (*PFN_nx2sl_init)(const wchar_t *dir, Nx2SlLog log);
+typedef enum {
+    NX2SL_SR_DLAA, NX2SL_SR_QUALITY, NX2SL_SR_BALANCED,
+    NX2SL_SR_PERFORMANCE, NX2SL_SR_ULTRA_PERFORMANCE
+} Nx2SlSrMode;
+typedef int (*PFN_nx2sl_sr_available)(void);
+typedef int (*PFN_nx2sl_sr_evaluate_mode)(VkCommandBuffer, const Nx2SlImage *, const Nx2SlImage *,
+    const Nx2SlImage *, const Nx2SlImage *, const Nx2SlCamera *, uint32_t, int, int, Nx2SlSrMode);
+NX2SL_API int nx2sl_sr_available(void);
+NX2SL_API int nx2sl_sr_evaluate_mode(VkCommandBuffer, const Nx2SlImage *, const Nx2SlImage *,
+    const Nx2SlImage *, const Nx2SlImage *, const Nx2SlCamera *, uint32_t, int, int, Nx2SlSrMode);
+typedef int (*PFN_nx2sl_init)(const wchar_t *dir, Nx2SlLog log, int sr, int fg);
 // The interposer's proc address functions: vkCreateInstance and vkCreateDevice through them add what DLSS-G needs
 // (extensions, features, queues) and tell Streamline the device; the swapchain functions through them are its hooks.
 typedef PFN_vkGetInstanceProcAddr (*PFN_nx2sl_instance_proc)(void);

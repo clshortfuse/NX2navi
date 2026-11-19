@@ -53,6 +53,9 @@ static struct {
     int shown_mult;      // vk_dlssg_multiplier: the frames per game frame as last handed to the DLL (1 while off)
     PFN_nx2sl_frames_max frames_max;   // NULL with an older DLL, which generates one frame
     PFN_nx2sl_init init;
+    PFN_nx2sl_sr_available sr_available;
+    PFN_nx2sl_sr_evaluate_mode sr_evaluate;
+    int sr_ready, sr_requested;
     PFN_nx2sl_instance_proc gipa;
     PFN_nx2sl_device_proc gdpa;
     PFN_nx2sl_available available;
@@ -72,6 +75,7 @@ static struct {
     // writes it); set: what Streamline last took (written under the present lock, reflex_apply); refused: Streamline
     // refused a limit, so the pacer keeps it for the run. Atomics.
     uint32_t limit_want, limit_set;
+    int reflex_applied;   // present thread: last mode sent to Streamline
     int limit_refused;
     DlssgPace pace;              // the presenting guest thread's (vk_dlssg_pace)
     int pace_said;               // who held the limit as last logged: 1 Reflex, 0 the pacer, -1 not yet
@@ -88,30 +92,28 @@ static struct {
 static void sl_line(const char *line) { rt_log("%s", line); }
 
 static int reflex_mode(void) {
-    static int m = -1;
-    if (m < 0) {
-        const char *s = cfg_get("NX2NAVI_REFLEX");
-        m = s && *s ? atoi(s) : 1;
-        if (m < 0 || m > 2) m = 1;
-    }
-    return m;
+    int mode = cfg_int("NX2NAVI_LOW_LATENCY");
+    return mode == 0 && vk_dlssg_active() ? 1 : mode;
 }
 
 // Reflex's mode and frame limit to Streamline: under the present lock (vk_dlssg_frame, vk_dlssg_create_swapchain), or
 // once at the device's creation before any present. Streamline's slReflexSetOptions is not thread safe, and every
 // caller is one of these. A limit Streamline refuses leaves the limit to the pacer for the run.
 static void reflex_apply(uint32_t us) {
+    int mode = reflex_mode();
+    S.reflex_applied = mode;
+    if (!mode) us = 0;
     if (!S.reflex2) {
-        S.reflex(reflex_mode());
+        S.reflex(mode);
         return;
     }
     if (__atomic_load_n(&S.limit_refused, __ATOMIC_ACQUIRE)) us = 0;
-    int ok = S.reflex2(reflex_mode(), us);
+    int ok = S.reflex2(mode, us);
     if (!ok && us) {
         __atomic_store_n(&S.limit_refused, 1, __ATOMIC_RELEASE);
         rt_log("dlssg: Streamline did not take Reflex's frame limit of %.3f ms: the game's own limiter keeps the limit "
                "for the rest of the run", us / 1000.0);
-        ok = S.reflex2(reflex_mode(), 0), us = 0;
+        ok = S.reflex2(mode, 0), us = 0;
     }
     __atomic_store_n(&S.limit_set, ok ? us : 0, __ATOMIC_RELEASE);
 }
@@ -130,12 +132,18 @@ static int limit_allowed(void) {
 // With any upscaler or none: vk_dlaa.c makes the inputs either way (vk_dlaa_frame says which, at the start and at each
 // change).
 int vk_dlssg_wanted(void) {
-    if (S.wanted < 0) S.wanted = !strcmp(cfg_value("NX2NAVI_FRAMEGEN"), "dlss");
+    #ifdef _WIN32
+    if (S.wanted < 0) S.wanted = strcmp(cfg_value("NX2NAVI_FRAMEGEN"), "fsr3") != 0;
+#else
+    return 0;
+#endif
     return S.wanted;
 }
 
 int vk_dlssg_early(void) {
-    if (!vk_dlssg_wanted()) return 0;
+    int fg = vk_dlssg_wanted();
+    int sr = cfg_bool("NX2NAVI_DLAA") && !strcmp(cfg_value("NX2NAVI_TAA"), "dlss");
+    if (!strcmp(cfg_value("NX2NAVI_FRAMEGEN"), "fsr3")) return 0;
     if (S.loaded) return S.loaded > 0;
     S.loaded = -1;
 #ifdef _WIN32
@@ -171,7 +179,10 @@ int vk_dlssg_early(void) {
         rt_log("dlssg: nx2navi_dlssg.dll is from another build: DLSS Frame Generation off");
         return 0;
     }
-    if (!S.init(dir, sl_line)) return 0;
+    S.sr_available = (PFN_nx2sl_sr_available)(void *)GetProcAddress(m, "nx2sl_sr_available");
+    S.sr_evaluate = (PFN_nx2sl_sr_evaluate_mode)(void *)GetProcAddress(m, "nx2sl_sr_evaluate_mode");
+    S.sr_requested = sr;
+    if (!S.init(dir, sl_line, sr, fg)) return 0;
     S.loaded = 1;
     return 1;
 #else
@@ -243,23 +254,30 @@ VkResult vk_dlssg_create_device(VkInstance inst, VkPhysicalDevice pd, const VkDe
 
 void vk_dlssg_device_ready(VkPhysicalDevice physical, VkDevice dev) {
     if (S.loaded <= 0) return;
-    if (!S.available()) {
+    S.sr_ready = S.sr_available && S.sr_evaluate && S.sr_available();
+    PFN_vkGetDeviceProcAddr g = S.gdpa();
+    S.present = (PFN_vkQueuePresentKHR)g(dev, "vkQueuePresentKHR");
+    int fg_available = S.available();
+    if (!vk_dlssg_wanted() || !fg_available) {
+        if (S.present) reflex_apply(0);
+    }
+    if (!vk_dlssg_wanted()) return;
+    if (!fg_available) {
         S.fail = DLSSG_UNAVAILABLE;
         if (S.log_unavailable) S.log_unavailable(physical);
         return;
     }
-    PFN_vkGetDeviceProcAddr g = S.gdpa();
     S.create_sc = (PFN_vkCreateSwapchainKHR)g(dev, "vkCreateSwapchainKHR");
     S.destroy_sc = (PFN_vkDestroySwapchainKHR)g(dev, "vkDestroySwapchainKHR");
     S.images = (PFN_vkGetSwapchainImagesKHR)g(dev, "vkGetSwapchainImagesKHR");
     S.acquire = (PFN_vkAcquireNextImageKHR)g(dev, "vkAcquireNextImageKHR");
-    S.present = (PFN_vkQueuePresentKHR)g(dev, "vkQueuePresentKHR");
     S.active = S.create_sc && S.destroy_sc && S.images && S.acquire && S.present;
-    rt_log("dlssg: %s", S.active ? "DLSS Frame Generation on the swapchain" : "the swapchain hooks are missing: off");
-    if (S.active) reflex_apply(0);   // no swapchain and no present yet: the mode alone
+    rt_log("dlssg: %s", S.active ? "DLSS Frame Generation ready for live selection" : "the swapchain hooks are missing: off");
+    if (S.present) reflex_apply(0);
 }
 
-int vk_dlssg_active(void) { return S.active; }
+int vk_dlssg_swapchain_ready(void) { return S.active; }
+int vk_dlssg_active(void) { return S.active && !strcmp(cfg_value("NX2NAVI_FRAMEGEN"), "dlss"); }
 
 int vk_dlssg_status(void) {
     if (S.active) return DLSSG_RUNS;
@@ -361,6 +379,10 @@ static void stats(void) {
 }
 
 VkResult vk_dlssg_present(VkQueue q, const VkPresentInfoKHR *pi) {
+    if (S.loaded <= 0 || !S.present) return vkQueuePresentKHR(q, pi);
+    uint32_t limit = vk_dlssg_active() ? __atomic_load_n(&S.limit_want, __ATOMIC_ACQUIRE) : 0;
+    if (reflex_mode() != S.reflex_applied ||
+        (!limit && __atomic_load_n(&S.limit_set, __ATOMIC_ACQUIRE))) reflex_apply(limit);
     S.marker(0, S.cur);
     VkResult r = S.present(q, pi);
     S.marker(1, S.cur);
@@ -386,7 +408,7 @@ VkResult vk_dlssg_present(VkQueue q, const VkPresentInfoKHR *pi) {
 // wait for the GPU while the pacer waits as well, so it stays out of PERF_PACE, as before Reflex held a frame limit:
 // counted there, GPU-bound frames read as paced in the perf windows.
 void vk_dlssg_frame_start(void) {
-    if (!S.active) return;
+    if (S.loaded <= 0 || !S.present) return;
     uint32_t f = __atomic_load_n(&S.game, __ATOMIC_RELAXED) + 1;
     if (f == S.started) return;
     S.started = f;
@@ -394,7 +416,7 @@ void vk_dlssg_frame_start(void) {
     int hold = hosted && t0 - hosted < DLSSG_HOLD_IDLE_NS;
     int paced = hold && __atomic_load_n(&S.limit_set, __ATOMIC_ACQUIRE) != 0;
     uint64_t p0 = paced ? perf_begin() : 0;
-    S.sleep(f, hold);
+    S.sleep(f, hold && reflex_mode());
     if (!hold) {
         __atomic_add_fetch(&S.n_unheld, 1, __ATOMIC_RELAXED);
         return;
@@ -416,9 +438,9 @@ static void pace_say(int reflex, uint32_t us, const char *why) {
 }
 
 int vk_dlssg_pace(uint64_t period_ns) {
-    if (!S.active) return 0;
+    if (!vk_dlssg_active()) return 0;
     uint64_t hosted = __atomic_load_n(&S.hosted_ns, __ATOMIC_ACQUIRE), now = kern_now_ns();
-    int allowed = limit_allowed(), mult = vk_dlssg_multiplier(), found;
+    int allowed = reflex_mode() && limit_allowed(), mult = vk_dlssg_multiplier(), found;
     uint32_t applied = __atomic_load_n(&S.limit_set, __ATOMIC_ACQUIRE), want;
     int held = dlssg_pace_step(&S.pace, now, period_ns, mult, hosted, allowed, applied, &want, &found);
     __atomic_store_n(&S.limit_want, want, __ATOMIC_RELEASE);   // the present thread hands it over (vk_dlssg_frame)
@@ -448,7 +470,7 @@ int vk_dlssg_pace(uint64_t period_ns) {
 void vk_dlssg_game_present(void) { __atomic_add_fetch(&S.game, 1, __ATOMIC_RELAXED); }
 
 void vk_dlssg_submitted(uint64_t frame) {
-    if (S.active) S.submit_end((uint32_t)frame);
+    if (S.loaded > 0 && S.present) S.submit_end((uint32_t)frame);
 }
 
 void vk_dlssg_present_frame(uint64_t frame) { S.cur = (uint32_t)frame; }
@@ -457,21 +479,22 @@ uint64_t vk_dlssg_shown(void) { return S.active ? S.shown() : 0; }
 
 void vk_dlssg_frame(VkCommandBuffer cb, VkExtent2D ext) {
     if (!S.active) return;
-    VkFfxImage d, m;
-    VkImageView dv, mvv;
+    VkFfxImage d = {0}, m = {0};
+    VkImageView dv = VK_NULL_HANDLE, mvv = VK_NULL_HANDLE;
     VkDlaaCamera c;
     float jx = 0, jy = 0;
     int reset = 0;
-    int have = vk_dlaa_fg_inputs(&d, &m, &jx, &jy, &reset) && vk_dlaa_fg_views(&dv, &mvv) && vk_dlaa_fg_camera(&c);
+    int selected = vk_dlssg_active();
+    int have = selected && vk_dlaa_fg_inputs(&d, &m, &jx, &jy, &reset) && vk_dlaa_fg_views(&dv, &mvv) && vk_dlaa_fg_camera(&c);
     int want = have && !menu_is_open();
-    if (want == S.mode) S.pending = 0;
+    if (!selected) S.mode = S.pending = 0;
+    else if (want == S.mode) S.pending = 0;
     else if (++S.pending >= FG_SETTLE_FRAMES) { S.mode = want; S.pending = 0; }
     else want = S.mode;   // hold the state it has until the new one stays
     int on = want, mult = multiplier_wanted();
-    __atomic_store_n(&S.shown_mult, on ? mult : 1, __ATOMIC_RELAXED);   // the pacer's divisor (frame_rate.c)
     // Reflex's frame limit as the presenting guest thread last asked for it (vk_dlssg_pace), before this present
-    uint32_t limit = __atomic_load_n(&S.limit_want, __ATOMIC_ACQUIRE);
-    if (S.reflex2 && limit != __atomic_load_n(&S.limit_set, __ATOMIC_ACQUIRE)) reflex_apply(limit);
+    uint32_t limit = selected ? __atomic_load_n(&S.limit_want, __ATOMIC_ACQUIRE) : 0;
+    if (S.reflex2 && reflex_mode() && limit != __atomic_load_n(&S.limit_set, __ATOMIC_ACQUIRE)) reflex_apply(limit);
     stats();
     Nx2SlImage zd = {d.image, dv, d.format, d.width, d.height, VK_IMAGE_LAYOUT_GENERAL,
                      VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT};
@@ -495,11 +518,42 @@ void vk_dlssg_frame(VkCommandBuffer cb, VkExtent2D ext) {
         k.reset = reset;
     }
     // the frames to generate between two rendered ones: the multiplier less the rendered one, 0 off
-    S.frame(cb, have ? &zd : NULL, have ? &zm : NULL, NULL, have ? &k : NULL, ext.width, ext.height, on ? mult - 1 : 0, S.cur);
+    if (S.frame(cb, have ? &zd : NULL, have ? &zm : NULL, NULL, have ? &k : NULL,
+                ext.width, ext.height, on ? mult - 1 : 0, S.cur))
+        __atomic_store_n(&S.shown_mult, on ? mult : 1, __ATOMIC_RELAXED);
 }
 
 void vk_dlssg_release(void) {
     if (S.loaded > 0 && S.shutdown) S.shutdown();
     S.active = 0;
     __atomic_store_n(&S.limit_set, 0, __ATOMIC_RELEASE);   // a device made again starts without a limit
+}
+
+int vk_sl_sr_available(void) { return S.loaded > 0 && S.sr_ready; }
+int vk_sl_sr_needs_restart(void) {
+#ifdef _WIN32
+    if (S.loaded == 0 && !vk_dlssg_wanted())
+        return strcmp(cfg_value("NX2NAVI_FRAMEGEN"), "fsr3") != 0;
+#endif
+    return S.loaded > 0 && !S.sr_requested;
+}
+
+int vk_sl_sr_evaluate(VkCommandBuffer cb, const Nx2SlImage *color, const Nx2SlImage *depth,
+                      const Nx2SlImage *motion, const Nx2SlImage *output, const VkDlaaCamera *camera,
+                      uint32_t frame, int preset, int reset, float jx, float jy, Nx2SlSrMode mode) {
+    if (!vk_sl_sr_available()) return 0;
+    Nx2SlCamera k = {0};
+    memcpy(k.view_to_clip, camera->view_to_clip, sizeof k.view_to_clip);
+    memcpy(k.clip_to_view, camera->clip_to_view, sizeof k.clip_to_view);
+    memcpy(k.clip_to_prev_clip, camera->clip_to_prev_clip, sizeof k.clip_to_prev_clip);
+    memcpy(k.prev_clip_to_clip, camera->prev_clip_to_clip, sizeof k.prev_clip_to_clip);
+    memcpy(k.pos, camera->pos, sizeof k.pos);
+    memcpy(k.up, camera->up, sizeof k.up);
+    memcpy(k.right, camera->right, sizeof k.right);
+    memcpy(k.fwd, camera->fwd, sizeof k.fwd);
+    k.znear = camera->znear, k.zfar = camera->zfar, k.fov_y = camera->fov_y, k.aspect = camera->aspect;
+    k.jitter[0] = jx, k.jitter[1] = jy;
+    k.mv_scale[0] = 1.0f / motion->width, k.mv_scale[1] = 1.0f / motion->height;
+    k.reset = reset;
+    return S.sr_evaluate(cb, color, depth, motion, output, &k, frame, preset, camera->inverted, mode);
 }

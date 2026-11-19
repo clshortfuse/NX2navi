@@ -85,8 +85,8 @@ and `VK_EXT_mesh_shader`. The setup is not signed, so SmartScreen warns on its f
 
 ## License
 
-The source is public to read. Its additions and changes are all rights reserved ([LICENSE-ADDITIONS](LICENSE-ADDITIONS)):
-no part of them may be copied or published without written permission. The base import stays under its
+The source is public to read. Additions and changes are all rights reserved ([LICENSE-ADDITIONS](LICENSE-ADDITIONS))
+except for the MIT-licensed contributions listed in [LICENSE-SHORTFUSE.md](LICENSE-SHORTFUSE.md). The base import stays under its
 [MIT License](LICENSE), and third-party code keeps its own license ([THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)).
 No license grants anything for Nintendo's game.
 

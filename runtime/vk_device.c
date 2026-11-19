@@ -273,7 +273,8 @@ retry:
         // (vk_dlssg_create_device), and the settings ask for what only an NVIDIA card runs. Not usable, so the best
         // usable one is taken below, as for a card that is gone; where no NVIDIA card is usable either, the pass
         // without a choice takes what there is and the device is made without frame generation.
-        if (dlssg_card_skipped(vk_dlssg_interposed(), want >= 0 || (name && *name), p.vendorID)) {
+        if (dlssg_card_skipped(vk_dlssg_interposed() && !strcmp(cfg_value("NX2NAVI_FRAMEGEN"), "dlss"),
+                               want >= 0 || (name && *name), p.vendorID)) {
             rt_log("vk: gpu %u skipped: DLSS Frame Generation is on (framegen = dlss), which only an NVIDIA card runs", i);
             continue;
         }

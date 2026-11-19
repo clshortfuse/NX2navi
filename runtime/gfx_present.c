@@ -461,8 +461,7 @@ static void flip_locked(void) {
     vk_queue_lock();
     pi.pNext = vk_lowlat_present_begin(g_flip_frame, &ll);
     g_flip_frame = 0;
-    VkResult r = vk_dlssg_active() ? vk_dlssg_present(vk_ctx()->gfx_queue, &pi)
-               : vk_fg_active()    ? vk_fg_present(&pi) : vkQueuePresentKHR(vk_ctx()->gfx_queue, &pi);
+    VkResult r = vk_fg_active() ? vk_fg_present(&pi) : vk_dlssg_present(vk_ctx()->gfx_queue, &pi);
     vk_queue_unlock();
     vk_lowlat_present_end(&ll);
     if (r == VK_SUCCESS || r == VK_SUBOPTIMAL_KHR) __atomic_store_n(&g_hosted_ns, kern_now_ns(), __ATOMIC_RELEASE);
@@ -487,7 +486,7 @@ static void drop_swapchain_locked(VkCtx *c) {
         if (g_sc_view[i]) vkDestroyImageView(c->device, g_sc_view[i], NULL);
         g_sc_view[i] = VK_NULL_HANDLE;
     }
-    if (g_sc && vk_dlssg_active()) vk_dlssg_destroy_swapchain(c->device, g_sc);
+    if (g_sc && vk_dlssg_swapchain_ready()) vk_dlssg_destroy_swapchain(c->device, g_sc);
     else if (g_sc) vkDestroySwapchainKHR(c->device, g_sc, NULL);
     for (uint32_t i = 0; i < g_sc_n; i++) {
         if (g_render_done[i]) vkDestroySemaphore(c->device, g_render_done[i], NULL);
@@ -587,7 +586,7 @@ static int create_swapchain(void) {
                                                 .latencyModeEnable = VK_TRUE};
     int ll_sc = 0;
     g_sc_ll_wanted = vk_lowlat_swapchain_wanted();
-    if (r != VK_SUCCESS && vk_dlssg_active()) r = vk_dlssg_create_swapchain(c->device, &ci, &g_sc);   // Streamline's hook
+    if (r != VK_SUCCESS && vk_dlssg_swapchain_ready()) r = vk_dlssg_create_swapchain(c->device, &ci, &g_sc);   // Streamline's hook
     else if (r != VK_SUCCESS) {
         if (g_sc_ll_wanted) ci.pNext = &lat, ll_sc = 1;
         r = vkCreateSwapchainKHR(c->device, &ci, NULL, &g_sc);
@@ -630,7 +629,7 @@ static int create_swapchain(void) {
         g_sc_n = n < MAX_IMAGES ? n : MAX_IMAGES;
         memset(g_sc_img, 0, sizeof g_sc_img);
         vk_fg_get_images(g_sc, &g_sc_n, g_sc_img);
-    } else if (vk_dlssg_active()) {   // Streamline's swapchain too: the count first, then only that many images
+    } else if (vk_dlssg_swapchain_ready()) {   // Streamline's swapchain too: the count first, then only that many images
         uint32_t n = 0;
         vk_dlssg_get_images(c->device, g_sc, &n, NULL);
         g_sc_n = n < MAX_IMAGES ? n : MAX_IMAGES;
@@ -1657,13 +1656,13 @@ static void present_image(VkImage src, VkImageLayout layout, VkFormat fmt, int w
     const int ngp = ng_ready();
     vk_lowlat_fg_presents(ngp);   // the presenter presents several times a frame: a driver's low latency steps aside
     VkResult r = ngp               ? VK_SUCCESS
-               : vk_dlssg_active() ? vk_dlssg_acquire(c->device, g_sc, 1000000000ull, g_acquire[slot], &idx)
+               : vk_dlssg_swapchain_ready() ? vk_dlssg_acquire(c->device, g_sc, 1000000000ull, g_acquire[slot], &idx)
                : vk_fg_active()    ? vk_fg_acquire(g_sc, 1000000000ull, g_acquire[slot], &idx)
                                    : vkAcquireNextImageKHR(c->device, g_sc, 1000000000ull, g_acquire[slot], VK_NULL_HANDLE, &idx);
     if (r == VK_ERROR_OUT_OF_DATE_KHR) {
         plat_xchg32(&g_dirty, 1);
         if (!create_swapchain()) goto out;
-        r = vk_dlssg_active() ? vk_dlssg_acquire(c->device, g_sc, 1000000000ull, g_acquire[slot], &idx)
+        r = vk_dlssg_swapchain_ready() ? vk_dlssg_acquire(c->device, g_sc, 1000000000ull, g_acquire[slot], &idx)
           : vk_fg_active()    ? vk_fg_acquire(g_sc, 1000000000ull, g_acquire[slot], &idx)
                               : vkAcquireNextImageKHR(c->device, g_sc, 1000000000ull, g_acquire[slot], VK_NULL_HANDLE, &idx);
     }
@@ -1984,7 +1983,7 @@ void gfx_window_release_vk(void) {
         }
         if (g_pool) vkDestroyCommandPool(c->device, g_pool, NULL);
         if (g_sc && vk_fg_active()) vk_fg_destroy_swapchain(g_sc), vk_fg_release();
-        else if (g_sc && vk_dlssg_active()) vk_dlssg_destroy_swapchain(c->device, g_sc);
+        else if (g_sc && vk_dlssg_swapchain_ready()) vk_dlssg_destroy_swapchain(c->device, g_sc);
         else if (g_sc) vkDestroySwapchainKHR(c->device, g_sc, NULL);
         if (g_surface) vkDestroySurfaceKHR(c->instance, g_surface, NULL);
         g_sc = VK_NULL_HANDLE; g_surface = VK_NULL_HANDLE; g_pool = VK_NULL_HANDLE; g_sc_n = 0;

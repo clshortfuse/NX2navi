@@ -2,8 +2,16 @@
 #pragma once
 #include <stdint.h>
 #include <vulkan/vulkan.h>
+#include "vk_dlaa.h"
+#include "dlssg/nx2_sl.h"
 
-int vk_dlssg_wanted(void);   // NX2NAVI_FRAMEGEN = dlss, with any upscaler or none (read once)
+int vk_sl_sr_available(void);
+int vk_sl_sr_needs_restart(void);
+int vk_sl_sr_evaluate(VkCommandBuffer cb, const Nx2SlImage *color, const Nx2SlImage *depth,
+                      const Nx2SlImage *motion, const Nx2SlImage *output, const VkDlaaCamera *camera,
+                      uint32_t frame, int preset, int reset, float jx, float jy, Nx2SlSrMode mode);
+
+int vk_dlssg_wanted(void);   // Whether startup prepares Streamline frame generation
 int vk_dlssg_early(void);    // before the instance exists: loads the DLL and Streamline; 1 when its proxies are there
 // vk_device.c: the instance and device through Streamline's proxies when vk_dlssg_early succeeded, else the loader's
 VkResult vk_dlssg_create_instance(const VkInstanceCreateInfo *ci, VkInstance *out);
@@ -15,6 +23,7 @@ int vk_dlssg_interposed(void);   // Streamline's proxies are in use (until a dev
 VkResult vk_dlssg_create_device(VkInstance inst, VkPhysicalDevice pd, const VkDeviceCreateInfo *ci, VkDevice *out);
 void vk_dlssg_device_ready(VkPhysicalDevice physical, VkDevice dev);   // after the device: checks DLSS-G and takes the swapchain hooks
 PFN_vkGetDeviceProcAddr vk_dlssg_dpa(void);   // Streamline's device entry points, or NULL when it is not in use
+int vk_dlssg_swapchain_ready(void);
 int vk_dlssg_active(void);
 // gfx_present.c's swapchain calls while active
 VkResult vk_dlssg_create_swapchain(VkDevice d, const VkSwapchainCreateInfoKHR *ci, VkSwapchainKHR *sc);

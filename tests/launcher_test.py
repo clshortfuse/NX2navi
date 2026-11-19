@@ -2990,9 +2990,9 @@ class MakeGameTest(Tmp):
         with mock.patch.object(self.mg, 'KIT', kit):
             for n in self.mg.DLSSG_FILES[:-1]:
                 (src / n).write_bytes(n.encode())
-            self.assertEqual(self.mg.place_dlssg(out), 0)   # nvngx_dlssg.dll missing: nothing is placed
+            self.assertEqual(self.mg.place_dlssg(out), 0)   # the reconstruction model is missing
             self.assertFalse((out / 'nx2navi_dlssg.dll').exists())
-            (src / 'nvngx_dlssg.dll').write_bytes(b'ngx')
+            (src / 'nvngx_dlss.dll').write_bytes(b'ngx')
             (src / 'streamline-LICENSE.txt').write_text('MIT')
             self.assertEqual(self.mg.place_dlssg(out), len(self.mg.DLSSG_FILES) + 1)
             for n in self.mg.DLSSG_FILES:

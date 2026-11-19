@@ -647,6 +647,7 @@ static const char *const text_en[UI_TEXT_COUNT] = {
                                       "at the picture's full size with no upscaler: the sharpest, and the most GPU "
                                       "work. AMD FSR 3.1 is not offered here: it needs amd_fidelityfx_vk.dll, which "
                                       "cannot be loaded.",
+    [UI_MENU_DLSS_FSR_RESTART] = "To use DLSS, switch off FSR Frame Generation and restart",
     [UI_MENU_FSR3_OFF] = "in use: off, FSR 3.1 is not available",
     [UI_MENU_FRAMEGEN_DESC_DLSS] = "Adds generated frames for smoother motion. Needs DLSS.",
     [UI_MENU_FRAMEGEN_NOTE_DLSS] = "needs DLSS",

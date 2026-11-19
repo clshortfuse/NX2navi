@@ -176,7 +176,11 @@ int vk_dlaa_fsr3(void) { return vk_dlaa_wanted() && fsr3() && vk_ffx_available()
 // extensions), FSR 3.1 while NGX is up and serves the run. A DLSS this PC could not bring up is not waiting for a restart.
 int vk_dlaa_needs_restart(void) {
     if (!cfg_bool("NX2NAVI_DLAA")) return 0;
+#ifdef _WIN32
+    return !fsr3() && vk_sl_sr_needs_restart();
+#else
     return strcmp(cfg_value("NX2NAVI_TAA"), "fsr3") ? !N.ngx_up && !N.tried : N.ngx_up;
+#endif
 }
 
 #ifdef _WIN32
@@ -298,6 +302,9 @@ static const char *fg_keep(const char *name) {
 void vk_dlaa_instance_exts(const char **ext, uint32_t *n, uint32_t max) {
     unsigned ni = 0, nd = 0;
     const char **ie = NULL, **de = NULL;
+#ifdef _WIN32
+    return;
+#endif
     if (!vk_dlaa_wanted() || fsr3() || !core_load() || !NGX_OK(N.req_ext(&ni, &ie, &nd, &de))) return;
     for (unsigned i = 0; i < ni; i++)
         if (!listed(ext, *n, ie[i]) && *n < max) ext[(*n)++] = ie[i];
@@ -325,6 +332,9 @@ void vk_dlaa_device_exts(const VkExtensionProperties *have, uint32_t nhave, cons
                          uint32_t max) {
     unsigned ni = 0, nd = 0;
     const char **ie = NULL, **de = NULL;
+#ifdef _WIN32
+    return;
+#endif
     if (!vk_dlaa_wanted() || fsr3() || !core_load() || !NGX_OK(N.req_ext(&ni, &ie, &nd, &de))) return;
     for (unsigned i = 0; i < nd; i++) {
         int ok = 0;
@@ -381,6 +391,11 @@ void vk_dlaa_init(void) {
         rt_log("dlaa: the temporal upscaler is AMD FSR 3.1%s", N.available ? "" : ", which is not available: the game's own scaling");
         return;
     }
+#ifdef _WIN32
+    N.available = vk_sl_sr_available();
+    rt_log("dlaa: Streamline DLSS %s", N.available ? "available" : "unavailable");
+    return;
+#endif
     if (!vk_dlaa_wanted() || !core_load()) return;
 #ifdef _WIN32
     wchar_t wdir[MAX_PATH];
@@ -2433,6 +2448,7 @@ static void evaluate(VkExec *ex, const VkExecTarget *dst) {
     // The light target, the motion vectors and the masks are exactly that size (size_for, mask_pass) and range_host
     // has checked it against the size the feature was created for; the depth is the light target's size by the arming
     // (vk_dlaa_pass), and a depth that did not cover the sub-rectangle keeps the frame on its own feature.
+    const int sl = !fsr && vk_sl_sr_available();
     const int use_range = !fsr && N.ngx_up && range_on();
     struct Size *host = use_range && z->width >= w && z->height >= h ? range_host(e) : e;
     const int step = D.ev_w && (w != D.ev_w || h != D.ev_h || ow != D.ev_ow || oh != D.ev_oh);
@@ -2445,8 +2461,8 @@ static void evaluate(VkExec *ex, const VkExecTarget *dst) {
         } else D.reset = 1, D.why[0]++, e->chars_ok = 0;   // another size's history is from another moment
         __atomic_store_n(&size_changed, 1, __ATOMIC_RELEASE);
     } else if (use_range && host != D.host) D.reset = 1, D.why[0]++;   // the same size on another feature: the DLSS mode changed
-    if (!fsr && !N.ngx_up) return;   // neither runs this frame: vk_dlaa_frame turns DLAA off at the next present
-    if (!fsr && !D.params && !NGX_OK(N.alloc_params(&D.params))) return dl_fail("parameter allocation", 0);
+    if (!fsr && !sl && !N.ngx_up) return;   // neither runs this frame: vk_dlaa_frame turns DLAA off at the next present
+    if (!fsr && !sl && !D.params && !NGX_OK(N.alloc_params(&D.params))) return dl_fail("parameter allocation", 0);
     NgxParam *p = D.params;
     VkImageView zv = vk_exec_target_view(z->img, z->format, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_DEPTH_BIT, z->level,
                                          z->base_layer, 1, 0);
@@ -2469,6 +2485,7 @@ static void evaluate(VkExec *ex, const VkExecTarget *dst) {
     edge_fill(cb, t, z, D.jit_used);   // before the motion vectors read the depth
     static int no_mv = -1;
     if (no_mv < 0) no_mv = !rt_knob("DLAA_MV", "1");   // NX2NAVI_DLAA_MV=0: zero motion (test)
+    if (sl) D.fg_cam_ok = 0;
     int masked = 0, mv = no_mv ? 0 : mv_pass(ex, e, zv, jx, jy, char_bias(), &masked);
     if (mv != 1) {
         VkClearColorValue zero = {{0, 0, 0, 0}};
@@ -2502,6 +2519,27 @@ static void evaluate(VkExec *ex, const VkExecTarget *dst) {
         static int told;
         if (!told++) rt_log("dlaa: FSR 3.1 at %ux%u -> %ux%u (scene format %d, depth format %d)", w, h, ow, oh,
                             (int)t->format, (int)z->format);
+        goto evaluated;
+    }
+    if (sl) {
+        VkDlaaCamera camera;
+        if (!vk_dlaa_fg_camera(&camera) || t->level || t->base_layer || z->level || z->base_layer) {
+            D.reset = 1;
+            return;
+        }
+        Nx2SlImage color = {t->image, cv, t->format, w, h, VK_IMAGE_LAYOUT_GENERAL, t->img->usage};
+        Nx2SlImage depth = {z->image, zv, z->format, w, h, VK_IMAGE_LAYOUT_GENERAL,
+                            z->img->usage};
+        Nx2SlImage motion = {e->mv, e->mv_view, VK_FORMAT_R16G16_SFLOAT, w, h, VK_IMAGE_LAYOUT_GENERAL,
+                             VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT};
+        Nx2SlImage output = {e->out, e->out_view, VK_FORMAT_R16G16B16A16_SFLOAT, ow, oh, VK_IMAGE_LAYOUT_GENERAL,
+                             VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT};
+        int quality = perf_quality(w, ow);
+        Nx2SlSrMode mode = quality == 5 ? NX2SL_SR_DLAA : quality == 2 ? NX2SL_SR_QUALITY :
+            quality == 1 ? NX2SL_SR_BALANCED : quality == 3 ? NX2SL_SR_ULTRA_PERFORMANCE : NX2SL_SR_PERFORMANCE;
+        if (D.last_color != t->image) target_changed(t, mv == 1);
+        if (!vk_sl_sr_evaluate(cb, &color, &depth, &motion, &output, &camera, (uint32_t)D.presents,
+                               preset_value(), D.reset, tjx, tjy, mode)) return dl_fail("Streamline DLSS evaluation", 0);
         goto evaluated;
     }
     float frame_ms = 0;   // FrameTimeDeltaInMsec, taken once: the evaluation can run a second time (own_feature)
@@ -3473,7 +3511,7 @@ void vk_dlaa_frame(void) {
     preset_check();
     if (!N.ngx_up) {   // FSR 3.1 follows the setting
         fsr_frame = fsr3();
-        N.available = fsr_frame && cfg_bool("NX2NAVI_DLAA") && vk_ffx_load();
+        N.available = fsr_frame ? cfg_bool("NX2NAVI_DLAA") && vk_ffx_load() : vk_sl_sr_available();
     }
     int on = N.available && cfg_bool("NX2NAVI_DLAA");
     // Frame generation without an upscaler takes this frame's inputs alone (fg_only_frame); switching in either
