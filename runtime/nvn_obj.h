@@ -8,6 +8,7 @@
 #pragma once
 #include <stddef.h>
 #include <stdint.h>
+#include "scene_projection.h"
 #include <string.h>
 #include "nvn.h"
 
@@ -128,7 +129,7 @@ enum {
     OP_BIND_PROGRAM, OP_BIND_STATE, OP_BIND_VATTR, OP_BIND_VSTREAM, OP_BIND_VBUF,
     OP_BIND_UBO, OP_BIND_SSBO, OP_BIND_TEX, OP_BIND_SAMP,
     OP_STENCIL, OP_POLY_OFFSET, OP_DRAW, OP_DRAW_IDX, OP_DISPATCH, OP_BARRIER,
-    OP_SET_TEX_POOL, OP_SET_SAMP_POOL, OP_COPY_B2T, OP_COPY_STRIDE, OP_BLEND_COLOR, OP_COPY_T2B, OP_BIND_IMG, OP_COPY_T2T, OP_RESET_COUNTER, OP_CLEAR_TEX, OP_DEPTH_CLAMP, OP_RENDER_ENABLE, OP_RASTER_DISCARD, OP_RENDER_COND, OP_PRIM_RESTART, OP_DRAW_IDX_IND, OP_DISPATCH_IND, OP_CLEAR_BUF, OP_PUSH_CC, OP_DRAW_MESH, OP_DRAW_MESH_IND, OP_WAIT_EVENT, OP_COUNT_
+    OP_SET_TEX_POOL, OP_SET_SAMP_POOL, OP_COPY_B2T, OP_COPY_STRIDE, OP_BLEND_COLOR, OP_COPY_T2B, OP_BIND_IMG, OP_COPY_T2T, OP_RESET_COUNTER, OP_CLEAR_TEX, OP_DEPTH_CLAMP, OP_RENDER_ENABLE, OP_RASTER_DISCARD, OP_RENDER_COND, OP_PRIM_RESTART, OP_DRAW_IDX_IND, OP_DISPATCH_IND, OP_CLEAR_BUF, OP_PUSH_CC, OP_DRAW_MESH, OP_DRAW_MESH_IND, OP_WAIT_EVENT, OP_SCENE_PROJECTION, OP_COUNT_
 };
 // Payload (immediately follows op_hdr)
 typedef struct { uint32_t offset, size; uint8_t data[]; } p_push_cc;   // OP_PUSH_CC: NVN2 compute push constants
@@ -147,6 +148,8 @@ typedef struct { int32_t first, n; uint32_t st[16]; } p_bind_vattr;
 typedef struct { int32_t first, n; vs_st st[16]; } p_bind_vstream;
 typedef struct { int32_t first, n; NVNbufferRange r[16]; } p_bind_vbuf;
 typedef struct { int32_t stage, index; uint64_t addr, size; } p_bind_buf;  // UBO / SSBO
+struct p_scene_projection { SceneProjection sample; uint64_t color_serial, depth_serial; view_t cv, dv; };
+typedef struct { p_bind_buf bind; p_scene_projection scene; } p_projection_bind;  // optional tail on OP_BIND_UBO
 // src: NVN 55 *Deferred binds keep the game's handle array pointer (read at submit into h, see hle_nvn.c resolve_deferred); 0 = immediate
 typedef struct { int32_t stage, first, n, pad_; uint64_t src; uint64_t h[32]; } p_bind_handles; // Separate texture / sampler handles
 typedef struct { int32_t face, value_mask, mask, ref, which; } p_stencil;  // which: 0 value mask 1 write mask 2 reference value

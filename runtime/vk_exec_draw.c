@@ -1711,6 +1711,7 @@ static SubRange sampled_sub(uint64_t h) {   // texture lock held
     return img ? sub_of(img, &v, hv) : (SubRange){0};
 }
 
+// Match a reflected fragment binding to the exact produced subresource, not its extent or format.
 // Attachments of the open pass the fragment shader fs samples; kept while the shader, the texture bindings and the
 // pass stay the same.
 static uint32_t feedback_scan(VkExec *ex, const GfxShader *fs) {
@@ -4896,6 +4897,7 @@ void vk_exec_ahead_op(VkExec *sx, uint32_t op, const void *payload) {
 // off (vk_mvprev.c).
 #include "mvobj_fs_spv.h"
 #include "link_motion_spv.h"
+#include "scene_motion_projection.h"
 static const char MO_FS_RES[] = "{\"key\":\"mvobj\",\"stage\":\"ps\",\"notes\":[],\"cbufs\":[{\"binding\":1,\"slot\":3}],"
                                 "\"sbufs\":[],\"textures\":[],\"images\":[]}";
 static const char LINK_FS_RES[] = "{\"key\":\"link-motion\",\"stage\":\"ps\",\"cbufs\":[{\"binding\":1,\"slot\":3}],"
@@ -4931,6 +4933,7 @@ typedef struct {
     VkIndexType it;
     uint32_t count, instances, base_instance;
     int32_t base_vertex;
+    uint64_t projection_token;
     uint64_t cam;                // the draw's camera block, this frame's
     int pose_index, pose_view;
     int skin;                    // vk_skin_motion.inc: 0 not a skinned character's draw; 1 one, 2 one checked against
@@ -5567,6 +5570,13 @@ static void mvobj_draw_(VkExec *ex, const p_draw_idx *d, VkBuffer ib, VkDeviceSi
         }
         if (!mo_legacy_previous(ex, frame, banks, t0, tp, prevb, &have, &changed)) return;
     }
+    const uint64_t token = ex->scene_projection.sample.token;
+    const SceneProjection *previous = pose ? vk_dlaa_previous_projection(frame) : NULL;
+    if ((pose || skin) && token) memcpy(jit, ex->scene_projection.sample.jitter, sizeof jit);
+    unsigned char previous_camera[SCENE_CAMERA_BYTES];
+    if (pose && (token || previous_pose->projection_token) &&
+        (!token || !scene_motion_previous_bank(previous_camera, previous_pose->bytes, previous_pose->size[0],
+                                               previous_pose->projection_token, previous_pose->cam, previous))) return;
     if (t0) MO.ns_part[1] += kern_now_ns() - tp, MO.n_part[1]++, tp = kern_now_ns();
     GfxShaderIo io[32];
     uint32_t extra = gfx_shader_outputs(vs, io) & ~gfx_shader_outputs(cx->B.st.vs, io);
@@ -5655,7 +5665,7 @@ static void mvobj_draw_(VkExec *ex, const p_draw_idx *d, VkBuffer ib, VkDeviceSi
             if (!previous_pose->size[i]) continue;
             VkDescriptorBufferInfo *b = &cx->mo_ovr[NVN_STAGE_VS][18 + i];
             b->range = previous_pose->size[i];
-            memcpy(scratch(ex, b->range, &b->buffer, &b->offset), data, b->range);
+            memcpy(scratch(ex, b->range, &b->buffer, &b->offset), i == 0 && token ? previous_camera : data, b->range);
             data += b->range;
         }
     } else if (skin) {
@@ -5689,6 +5699,7 @@ static void mvobj_draw_(VkExec *ex, const p_draw_idx *d, VkBuffer ib, VkDeviceSi
     q->count = (uint32_t)d->count, q->instances = d->instances > 0 ? (uint32_t)d->instances : 1;
     q->base_vertex = d->base_vertex, q->base_instance = (uint32_t)d->base_instance;
     q->cam = ex->ubo[NVN_STAGE_VS][pose || skin ? 0 : 1].addr;
+    q->projection_token = token;
     q->pose_index = pose ? (int)(pose - pose_ranges) + 1 : 0;
     q->pose_view = pose ? (int)(pose_view - pose->history[frame & 1].view) : 0;
     q->skin = skin ? 1 + pose_visibility_guard : 0;
@@ -5703,17 +5714,17 @@ static void mvobj_draw_(VkExec *ex, const p_draw_idx *d, VkBuffer ib, VkDeviceSi
     if (t0) MO.ns_rec += kern_now_ns() - t1, MO.n_rec++;
 }
 
-int vk_fg_pose_prepare(VkExec *ex, uint64_t cam, VkImage depth, uint32_t w, uint32_t h) {
+int vk_fg_pose_prepare(VkExec *ex, uint64_t cam, VkImage depth, uint32_t w, uint32_t h, uint64_t token) {
     if (!RT_V111 || (!pose_enabled() && !skin_enabled())) return 0;
     uint64_t frame = __atomic_load_n(&gfx_counters.frames, __ATOMIC_RELAXED);
-    pose_select(frame, cam, depth);
-    skin_resolve(ex, frame, cam, depth, w, h);
+    pose_select(frame, cam, depth, token);
+    skin_resolve(ex, frame, cam, depth, w, h, token);
     pose_status(frame);
     return MQ.n != 0;
 }
 
 int vk_mvobj_execute(VkExec *ex, uint64_t cam, VkImageView mv, VkImageView depth, VkFormat depth_fmt, uint32_t w,
-                     uint32_t h) {
+                     uint32_t h, uint64_t token) {
     static uint64_t frames;
     if (++frames % 60 == 0)
         rt_log("vk_exec: per-object motion: %.2f ms a frame checking, %.2f ms listing (%.1f us a draw), %.2f ms recording",
@@ -5782,7 +5793,7 @@ int vk_mvobj_execute(VkExec *ex, uint64_t cam, VkImageView mv, VkImageView depth
     // a draw of another view would move by the difference between the two views
     int kept = 0;
     for (int i = 0; i < MQ.n; i++)
-        if (MQ.d[i].cam == cam && (!MQ.d[i].pose_index ||
+        if (MQ.d[i].cam == cam && MQ.d[i].projection_token == token && (!MQ.d[i].pose_index ||
             pose_ranges[MQ.d[i].pose_index - 1].history[frame & 1].view[MQ.d[i].pose_view].selected) &&
             (!MQ.d[i].skin || (MQ.d[i].skin > 0 && SK.resolved))) {   // a skinned draw: one skin_resolve paired
             if (MQ.d[i].pose_index) ++pose_written[pose_ranges[MQ.d[i].pose_index - 1].actor];

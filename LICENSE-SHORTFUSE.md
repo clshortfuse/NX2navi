@@ -6,7 +6,10 @@ Covered contributions:
 
 - Windows Streamline integration: DLSS and DLAA reconstruction, live DLSS
   Frame Generation selection, and related runtime, packaging, and documentation
-  changes contributed by Carlos Lopez Jr.
+  changes.
+- Contributions to the 1.1.1 port that replaces viewport jitter with scene
+  projection jitter, including temporal resolve and character motion-vector
+  integration.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

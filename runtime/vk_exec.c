@@ -1871,13 +1871,27 @@ static void op_one(VkExec *ex, const op_hdr *h) {
     case OP_COPY_STRIDE: ex->copy_stride = ((const p_copy_stride *)a)->stride; break;
     case OP_SET_TEX_POOL: ex->tex_pool = ((const p_set_pool *)a)->pool, ex->tex_serial++; break;
     case OP_SET_SAMP_POOL: ex->samp_pool = ((const p_set_pool *)a)->pool; break;
+    case OP_BIND_UBO: {
+        const p_bind_buf *b = a;
+        if (!b->stage && !b->index) {
+            const p_projection_bind *p = h->size >= sizeof *h + sizeof(p_projection_bind) ? a : NULL;
+            ex->scene_projection = p ? p->scene : (p_scene_projection){0};
+            if (p) vk_dlaa_projection_bind(&p->scene);
+        }
+        vk_exec_op_draw(ex, h->op, a);
+        break;
+    }
+    case OP_SCENE_PROJECTION:
+        vk_exec_turn();
+        vk_dlaa_scene_projection(a);
+        break;
     case OP_BARRIER: barrier_to_why(ex, NULL, NULL, 0, BR_GAME); break;
     case OP_DRAW: case OP_DRAW_IDX: case OP_DISPATCH: case OP_UPDATE_UB: case OP_DRAW_IDX_IND: case OP_DISPATCH_IND:
         if (h->op == OP_DRAW || h->op == OP_DRAW_IDX || h->op == OP_DRAW_IDX_IND) vk_exec_frame.draws_seen++, split_draws++;
         if (h->op == OP_DISPATCH || h->op == OP_DISPATCH_IND) vk_exec_frame.dispatches++, split_draws++;
         // fall through
     case OP_BIND_PROGRAM: case OP_BIND_STATE: case OP_BIND_VATTR: case OP_BIND_VSTREAM: case OP_BIND_VBUF:
-    case OP_BIND_UBO: case OP_BIND_SSBO: case OP_BIND_TEX: case OP_BIND_SAMP: case OP_BIND_IMG: case OP_PUSH_CC:
+    case OP_BIND_SSBO: case OP_BIND_TEX: case OP_BIND_SAMP: case OP_BIND_IMG: case OP_PUSH_CC:
     case OP_DRAW_MESH: case OP_DRAW_MESH_IND:
         vk_exec_op_draw(ex, h->op, a);
         break;

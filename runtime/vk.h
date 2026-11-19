@@ -1212,4 +1212,4 @@ void vk_pipeline_foreign_counts(VkForeignPipes *o);
 // which are made for the camera block cam and tested against the depth image depth of w x h. 1: the frame has motion
 // draws to record.
 struct VkExec;
-int vk_fg_pose_prepare(struct VkExec *ex, uint64_t cam, VkImage depth, uint32_t w, uint32_t h);
+int vk_fg_pose_prepare(struct VkExec *ex, uint64_t cam, VkImage depth, uint32_t w, uint32_t h, uint64_t token);

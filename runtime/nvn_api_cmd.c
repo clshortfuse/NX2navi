@@ -1152,19 +1152,60 @@ NVN_API(nvnCommandBufferBindVertexBuffer) {
     NVNbufferRange r = {arg_x(c, 2), arg_x(c, 3)};
     bind_vertex_buffers(cmd_of(c), (int)arg_x(c, 1), 1, &r);
 }
+int scene_projection_extent(const void *texture, const uint8_t raw_view[16], uint32_t *w, uint32_t *h) {
+    const tex_t *t = texture;
+    view_t view;
+    memcpy(&view, raw_view, sizeof view);
+    unsigned level = view.set_levels ? view.base_level : 0;
+    if (!t || level >= t->d.levels || level >= 32 || !t->d.width || !t->d.height) return 0;
+    unsigned tw = t->d.width >> level, th = t->d.height >> level;
+    *w = tw ? tw : 1;
+    *h = th ? th : 1;
+    return 1;
+}
+
+int scene_projection_describe(p_scene_projection *out, const SceneProjection *sample, const void *color,
+                              const void *depth, const uint8_t cv[16], const uint8_t dv[16]) {
+    const tex_t *ct = color, *dt = depth;
+    *out = (p_scene_projection){.sample = *sample};
+    if (!ct || !dt || !ct->serial || !dt->serial) return 0;
+    out->color_serial = ct->serial;
+    out->depth_serial = dt->serial;
+    memcpy(&out->cv, cv, sizeof out->cv);
+    memcpy(&out->dv, dv, sizeof out->dv);
+    return 1;
+}
+
+int scene_projection_record(void *command, const SceneProjection *sample, const void *color,
+                             const void *depth, const uint8_t cv[16], const uint8_t dv[16]) {
+    cmd_t *o = command;
+    p_scene_projection p;
+    if (!o || o->magic != CMD_MAGIC || !o->recording || !scene_projection_describe(&p, sample, color, depth, cv, dv)) return 0;
+    *REC(o, OP_SCENE_PROJECTION, p_scene_projection) = p;
+    return 1;
+}
+
+static void record_buffer(cmd_t *o, uint32_t op, int stage, int index, uint64_t address, uint64_t size) {
+    const p_bind_buf b = {stage, index, address, size};
+    p_projection_bind projection = {.bind = b};
+    if (op == OP_BIND_UBO && !stage && !index && address && size == SCENE_CAMERA_BYTES &&
+        scene_projection_enabled() && scene_projection_binding(address, &projection.scene)) *REC(o, op, p_projection_bind) = projection;
+    else *REC(o, op, p_bind_buf) = b;
+}
+
 // Uniform and storage buffers: one record per binding (CB_SIZE/ADDRESS 4 words + CB_BIND 1 on hardware).
 static void bind_buffers(const Cpu *c, uint32_t op) {   // (cmd, stage, first, n, const NVNbufferRange *ranges)
     cmd_t *o = cmd_of(c);
     int st = (int)arg_x(c, 1), first = (int)arg_x(c, 2), n = (int)arg_x(c, 3);
     const NVNbufferRange *rg = arg_p(c, 4);
     for (int i = 0; i < n; i++) {
-        *REC(o, op, p_bind_buf) = (p_bind_buf){st, first + i, rg[i].address, rg[i].size};
+        record_buffer(o, op, st, first + i, rg[i].address, rg[i].size);
         hw_fix(o, 20);
     }
 }
 static void bind_buffer(const Cpu *c, uint32_t op) {    // (cmd, stage, index, NVNbufferAddress address, size_t size)
     cmd_t *o = cmd_of(c);
-    *REC(o, op, p_bind_buf) = (p_bind_buf){(int)arg_x(c, 1), (int)arg_x(c, 2), arg_x(c, 3), arg_x(c, 4)};
+    record_buffer(o, op, (int)arg_x(c, 1), (int)arg_x(c, 2), arg_x(c, 3), arg_x(c, 4));
     hw_fix(o, 20);
 }
 NVN_API(nvnCommandBufferBindUniformBuffer) { bind_buffer(c, OP_BIND_UBO); }
@@ -1553,7 +1594,7 @@ const char *nvn_op_name(uint32_t op) {
         "DRAW_IDX", "DISPATCH", "BARRIER", "SET_TEX_POOL", "SET_SAMP_POOL", "COPY_B2T", "COPY_STRIDE", "BLEND_COLOR",
         "COPY_T2B", "BIND_IMG", "COPY_T2T", "RESET_COUNTER", "CLEAR_TEX", "DEPTH_CLAMP", "RENDER_ENABLE",
         "RASTER_DISCARD", "RENDER_COND", "PRIM_RESTART", "DRAW_IDX_IND", "DISPATCH_IND", "CLEAR_BUF", "PUSH_CC", "DRAW_MESH", "DRAW_MESH_IND",
-        "WAIT_EVENT",
+        "WAIT_EVENT", "SCENE_PROJECTION",
     };
     _Static_assert(sizeof names / sizeof *names == OP_COUNT_, "one name per op");
     return op < OP_COUNT_ ? names[op] : "?";

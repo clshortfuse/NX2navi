@@ -7,7 +7,7 @@
 #define POSE_BANKS 5  // c3 through c7
 #define POSE_VIEWS 8
 typedef struct {
-    uint64_t frame, cam, indices;
+    uint64_t frame, cam, indices, projection_token;
     VkImage depth;
     const GfxShader *shader;
     NVNbufferRange vertex[16];
@@ -111,7 +111,7 @@ static ActorPose *pose_previous(PoseRange *r, VkExec *ex, const p_draw_idx *d, u
     ActorPose *cur = NULL;
     for (int i = 0; i < POSE_VIEWS; ++i) {
         ActorPose *p = &now->view[i];
-        if (!p->seen || p->frame != frame || (p->cam == cam && p->depth == ex->depth.image)) {
+        if (!p->seen || p->frame != frame || (p->cam == cam && p->depth == ex->depth.image && p->projection_token == ex->scene_projection.sample.token)) {
             cur = p;
             break;
         }
@@ -126,6 +126,7 @@ static ActorPose *pose_previous(PoseRange *r, VkExec *ex, const p_draw_idx *d, u
         cur->selected = cur->ambiguous = 0;
         cur->visibility_guard = cur->guard_missing_depth = 0;
         cur->cam = cam;
+        cur->projection_token = ex->scene_projection.sample.token;
         cur->depth = ex->depth.image;
         cur->width = ex->depth.width;
         cur->height = ex->depth.height;
@@ -241,14 +242,14 @@ static int pose_guard_needed(const PoseRange *range, const ActorPose *now, const
 }
 
 static unsigned pose_guarded_parts, pose_raw_parts, pose_rigid_parts;
-static void pose_select(uint64_t frame, uint64_t camera, VkImage depth) {
+static void pose_select(uint64_t frame, uint64_t camera, VkImage depth, uint64_t token) {
     unsigned guarded = 0, raw = 0, rigid = 0, missing_depth = 0;
     for (int i = 0; i < pose_count; ++i) {
         PoseFrame *h = &pose_ranges[i].history[frame & 1];
         h->scene = NULL;
         for (int j = 0; j < POSE_VIEWS; ++j) {
             ActorPose *p = &h->view[j];
-            p->selected = p->seen && p->frame == frame && !p->ambiguous && p->cam == camera && p->depth == depth;
+            p->selected = p->seen && p->frame == frame && !p->ambiguous && p->cam == camera && p->depth == depth && p->projection_token == token;
             if (p->selected) {
                 h->scene = p;
                 guarded += p->visibility_guard;

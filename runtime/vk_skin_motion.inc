@@ -67,7 +67,7 @@ typedef struct { uint8_t stride, bank; } SkinPick;   // skin_pick: the bytes of 
                                                      // and the palette's bank, counted from c3
 
 typedef struct {
-    uint64_t addr;
+    uint64_t addr, projection_token;
     uint32_t size, at;              // at: this frame's bytes in the frame's arena
     VkDescriptorBufferInfo was;     // where last frame's bytes of the same object go; the motion draws bind it
     uint8_t *was_map;
@@ -80,7 +80,7 @@ typedef struct {
     uint8_t palette, stride;        // the palette's bank, the bytes of a matrix
     uint32_t zw, zh;                // the depth target it was drawn into
     VkImage depth;
-    uint64_t cam;                   // its scene context block
+    uint64_t cam, projection_token;                   // its scene context block
     uint64_t mesh, twin;            // hashes: the mesh; the mesh and its palette's address
     int32_t draw;                   // its MoDraw
 } SkinDraw;
@@ -185,17 +185,20 @@ static void skin_begin(uint64_t frame) {
 
 // The frame's block for a uniform binding, made at its first draw: -1 when it is not in the snapshot, -2 when the
 // table is full.
-static int skin_block(VkExec *ex, SkinFrame *f, const p_bind_buf *u) {
+static int skin_block(VkExec *ex, SkinFrame *f, const p_bind_buf *u, uint64_t token) {
     // asked of the snapshot for every draw: a block the submission itself writes between two draws is dropped from
     // it there, and the bytes kept for the first draw are not the second one's
     VkDescriptorBufferInfo snap;
     if (!u->addr || !u->size || u->size > LIM.ubo_max || u->size > POSE_BYTES ||
         !vk_usnap_find(u->addr, u->size, LIM.ubo_align, &snap))
         return -1;
-    uint32_t h = (uint32_t)(skin_mix(u->addr, u->size) >> 40) & (SKIN_SLOTS - 1);
+    uint32_t h = (uint32_t)(skin_mix(u->addr, u->size ^ token) >> 40) & (SKIN_SLOTS - 1);
     for (; f->block_at[h]; h = (h + 1) & (SKIN_SLOTS - 1)) {
         const SkinBlock *b = &f->b[f->block_at[h] - 1];
-        if (b->addr == u->addr && b->size == u->size) return f->block_at[h] - 1;
+        if (b->addr == u->addr && b->size == u->size && b->projection_token == token) {
+            if (token && memcmp(f->bytes + b->at, vk_usnap_map() + snap.offset, 0xb0)) return -1;
+            return f->block_at[h] - 1;
+        }
     }
     if (f->nb == SKIN_FILL) return -2;
     uint32_t size = (uint32_t)u->size;
@@ -208,7 +211,7 @@ static int skin_block(VkExec *ex, SkinFrame *f, const p_bind_buf *u) {
     }
     f->b = mo_grow(f->b, &f->cap_b, f->nb + 1, sizeof *f->b);
     SkinBlock *b = &f->b[f->nb];
-    *b = (SkinBlock){.addr = u->addr, .size = size, .at = f->used, .last = -1, .sharp_with = -1};
+    *b = (SkinBlock){.addr = u->addr, .projection_token = token, .size = size, .at = f->used, .last = -1, .sharp_with = -1};
     memcpy(f->bytes + b->at, vk_usnap_map() + snap.offset, size);
     f->used += size;
     b->was.range = size;
@@ -262,7 +265,7 @@ static int skin_try(VkExec *ex, const p_draw_idx *d, uint64_t frame, const GfxSh
     const p_bind_buf *pal = &ex->ubo[NVN_STAGE_VS][pick->bank];
     const VkExecTarget *z = &ex->depth;
     uint64_t twin = skin_mix(mesh, pal->addr), cam = ex->ubo[NVN_STAGE_VS][0].addr;
-    uint64_t here = skin_mix(skin_mix(twin, cam), (uint64_t)(uintptr_t)z->image);
+    uint64_t here = skin_mix(skin_mix(twin, cam ^ ex->scene_projection.sample.token), (uint64_t)(uintptr_t)z->image);
     // the same mesh with the same palette in the same view: a second pass over it, or the draw submitted twice
     if (skin_has(f->seen, here)) return skin_pick_left(pick, SKIN_TWIN);
     // the pre-pass draw (it writes depth, into another image than the vectors are tested against) of a mesh whose
@@ -273,12 +276,12 @@ static int skin_try(VkExec *ex, const p_draw_idx *d, uint64_t frame, const GfxSh
     for (int i = 0; i < SKIN_BANKS; i++) {
         sd->block[i] = -1;
         if (!(banks >> (i + 3) & 1)) continue;
-        sd->block[i] = skin_block(ex, f, &ex->ubo[NVN_STAGE_VS][i]);
+        sd->block[i] = skin_block(ex, f, &ex->ubo[NVN_STAGE_VS][i], !i ? ex->scene_projection.sample.token : 0);
         if (sd->block[i] < 0) return skin_pick_left(pick, sd->block[i] == -1 ? SKIN_SNAPSHOT : SKIN_FULL);
     }
     sd->palette = pick->bank, sd->stride = pick->stride;
     sd->zw = z->width, sd->zh = z->height, sd->depth = z->image;
-    sd->cam = cam, sd->mesh = mesh, sd->twin = twin;
+    sd->cam = cam, sd->projection_token = ex->scene_projection.sample.token, sd->mesh = mesh, sd->twin = twin;
     *se = (SkinEntry){.key = skin_mix(skin_mix(mesh, (uint64_t)(uintptr_t)cx->B.st.vs), (uint64_t)(uintptr_t)cx->B.st.fs),
                       .order = vk_exec_stream_pos() << 24 | (uint64_t)f->n, .palette = pal->addr,
                       .bytes = (uint32_t)pal->size};
@@ -325,7 +328,7 @@ static int skin_twin_cmp(const void *a, const void *b) {
 // Decides for each listed skinned draw whether it continues a draw of last frame (the steps at the top), fills the
 // blocks of those that do with last frame's bytes, takes the others out of the list, and makes this frame's list the
 // one the next frame is paired with.
-static void skin_resolve(VkExec *ex, uint64_t frame, uint64_t cam, VkImage depth, uint32_t w, uint32_t h) {
+static void skin_resolve(VkExec *ex, uint64_t frame, uint64_t cam, VkImage depth, uint32_t w, uint32_t h, uint64_t token) {
     SkinFrame *f = &SK.f[SK.cur];
     const SkinFrame *last = &SK.f[SK.cur ^ 1];
     // only the list of this submission: its blocks' scratch memory lives as long as the submission
@@ -335,7 +338,7 @@ static void skin_resolve(VkExec *ex, uint64_t frame, uint64_t cam, VkImage depth
     int ne = 0;
     for (int i = 0; i < f->n; i++) {
         const SkinDraw *sd = &f->d[i];
-        if (sd->cam != cam || sd->zw != w || sd->zh != h) skin_refuse(sd, SKIN_VIEW);
+        if (sd->cam != cam || sd->projection_token != token || sd->zw != w || sd->zh != h) skin_refuse(sd, SKIN_VIEW);
         else f->e[ne++] = f->e[i];
     }
     skin_sort_frame = f;
@@ -348,11 +351,20 @@ static void skin_resolve(VkExec *ex, uint64_t frame, uint64_t cam, VkImage depth
     f->ne = ne = kept;
     skin_number(f->e, ne);
     skin_pair(f->e, ne, last->e, last->ne, last->frame + 1 == frame);
+    const SceneProjection *previous = vk_dlaa_previous_projection(frame);
     for (int i = 0; i < ne; i++) {
         SkinEntry *e = &f->e[i];
         const SkinDraw *sd = &f->d[e->tag];
         if (e->why != SKIN_PAIRED) continue;
         const SkinDraw *ld = &last->d[last->e[e->prev].tag];
+        if (token || ld->projection_token) {
+            if (!token || !previous || ld->projection_token != previous->token || ld->cam != previous->camera ||
+                ld->block[0] < 0 || last->b[ld->block[0]].size != SCENE_CAMERA_BYTES ||
+                memcmp(last->bytes + last->b[ld->block[0]].at + 0x70, previous->projection, sizeof previous->projection)) {
+                e->why = SKIN_VIEW;
+                continue;
+            }
+        }
         if (ld->palette != sd->palette || ld->stride != sd->stride) e->why = SKIN_SIZE;
         for (int k = 0; k < SKIN_BANKS && e->why == SKIN_PAIRED; k++)
             if ((sd->block[k] < 0) != (ld->block[k] < 0) ||
@@ -378,8 +390,18 @@ static void skin_resolve(VkExec *ex, uint64_t frame, uint64_t cam, VkImage depth
         if (e->why != SKIN_PAIRED) skin_refuse(sd, e->why);
     }
     for (int i = 0; i < f->nb; i++) {
-        const SkinBlock *b = &f->b[i];
-        if (b->last >= 0) memcpy(b->was_map, last->bytes + last->b[b->last].at, b->size);
+        SkinBlock *b = &f->b[i];
+        if (b->last < 0) continue;
+        const SkinBlock *old = &last->b[b->last];
+        const uint8_t *data = last->bytes + old->at;
+        if (!b->projection_token) memcpy(b->was_map, data, b->size);
+        else if (!scene_motion_previous_bank(b->was_map, data, b->size, old->projection_token, old->addr, previous))
+            b->last = -2;
+    }
+    for (int i = 0; token && i < ne; i++) {
+        const SkinEntry *e = &f->e[i];
+        const SkinDraw *sd = &f->d[e->tag];
+        if (e->why == SKIN_PAIRED && (sd->block[0] < 0 || f->b[sd->block[0]].last < 0)) skin_refuse(sd, SKIN_VIEW);
     }
     SK.cur ^= 1;
 }

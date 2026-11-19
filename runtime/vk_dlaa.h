@@ -89,6 +89,9 @@ int vk_dlaa_resized_take(void);
 // vk_exec_draw.c, each draw before its fixed state is recorded: notes the scene camera block (vk_dlaa_draw), and moves
 // the viewport of the scene's draws by the frame's jitter (vk_dlaa_viewport, when the viewport is recorded).
 void vk_dlaa_draw(VkExec *ex);
+const SceneProjection *vk_dlaa_previous_projection(uint64_t frame);
+void vk_dlaa_projection_bind(const p_scene_projection *p);
+void vk_dlaa_scene_projection(const p_scene_projection *p);
 void vk_dlaa_viewport(VkExec *ex, VkViewport *v);
 void vk_dlaa_pass_end(VkExec *ex);       // vk_exec.c, a pass just ended: the edges of a jittered pass's targets are filled
 void vk_dlaa_jitter_check(VkExec *ex);   // before each draw's fixed state: records the viewport again where its jitter changes
@@ -102,7 +105,7 @@ void vk_mvprev_draw(VkExec *ex);   // vk_mvprev.c: notes the scene draw's object
 // leaves every binding of the replay to be set again; draws whose camera block is not cam are left out).
 // vk_dlaa_prev_camera: last frame's camera block and this frame's jitter, 0 when there is no history.
 int vk_mvobj_execute(VkExec *ex, uint64_t cam, VkImageView mv, VkImageView depth, VkFormat depth_fmt, uint32_t w,
-                     uint32_t h);
+                     uint32_t h, uint64_t token);
 int vk_dlaa_prev_camera(VkDescriptorBufferInfo *out, float jitter[2]);
 // vk_mvcheck.c (NX2NAVI_MV_CHECK, test): mv_pass hands it the motion image after the camera pass and, after the object
 // pass, the motion image again and the scene light target it ran on; it measures how well the vectors fit the picture.

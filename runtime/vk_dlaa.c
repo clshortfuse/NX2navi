@@ -534,6 +534,12 @@ static struct {
     uint64_t jdraws, jfixed;    // draws into a scene-size depth that took the jitter / that did not (full-screen)
     // camera (vk_dlaa_draw) and motion vectors (mv_pass)
     uint64_t cam_addr;           // this frame's scene camera block (vk_dlaa_draw), 0: none seen
+    p_scene_projection projection, projection_early;
+    SceneProjection projection_history;
+    uint64_t projection_history_frame;
+    uint64_t projection_early_published;
+    int projection_early_attempted;
+    int projection_conflict, projection_resolved;
     uint32_t cam_size, cam_vp;   // its size and the offset of its view-projection rows
     struct {                     // Ocarina: this frame's scene contexts of light-target draws
         uint64_t addr, seq;      // seq: vk_exec_submit_seq at the last draw that used it
@@ -580,7 +586,7 @@ static struct {
     VkImageView fg_depth_view, fg_mv_view;
     VkDlaaCamera fg_cam;         // this frame's camera (mv_pass), fg_cam_ok when known
     int fg_cam_ok;
-    float fg_jx, fg_jy;
+    float fg_viewport_jitter[2];   // legacy paths without a committed CPU projection
     int fg_fresh, fg_reset;      // fresh: not handed out yet (vk_dlaa_fg_inputs)
     uint64_t presents;           // vk_dlaa_frame calls so far
     uint64_t fg_at, hl_at;       // presents when the inputs and the HUD-less picture were made (fg_current)
@@ -676,7 +682,8 @@ int vk_dlaa_fg_inputs(VkFfxImage *depth, VkFfxImage *mv, float *jx, float *jy, i
     // jx, jy: 0 without an upscaler, whose frames are not jittered. Handed out as 0 before, so frame generation was never
     // told of a camera cut, another scene size or another target, and interpolated across them: an area load
     // generated frames between two unrelated pictures.
-    *depth = D.fg_depth, *mv = D.fg_mv, *jx = D.fg_jx, *jy = D.fg_jy, *reset = D.fg_reset;
+    const float *jitter = D.projection_history.token ? D.projection_history.jitter : D.fg_viewport_jitter;
+    *depth = D.fg_depth, *mv = D.fg_mv, *jx = jitter[0], *jy = jitter[1], *reset = D.fg_reset;
     return 1;
 }
 
@@ -699,6 +706,7 @@ static int use_fsr(void) { return !N.ngx_up && fsr_frame; }
 static void dl_fail(const char *what, NgxResult r) {
     rt_log("dlaa: %s failed (%08x): DLAA off for this run", what, (unsigned)r);
     D.failed = 1;
+    scene_projection_feedback(NULL, 0, 0, 0);
 }
 
 static int image2d(uint32_t w, uint32_t h, VkFormat f, VkImageUsageFlags usage, VkImage *img, VmaAllocation *mem,
@@ -1340,7 +1348,10 @@ static void cam_cut(const float *v) {
 // zero and DLSS starts a new history); 2: no camera, but the history is kept (the vectors stay zero, dlaa_cam_keep).
 // bias > 0 with this frame's G-buffer classes (D.ids) also writes e->mask, the bias mask (dlaa_mv.comp); *masked says
 // whether it did.
-static int mv_pass(VkExec *ex, struct Size *e, VkImageView zv, float jx, float jy, float bias, int *masked) {
+typedef struct { double vp[16]; int valid; } ProjectionHistory;
+
+static int mv_pass(VkExec *ex, struct Size *e, VkImageView zv, float jx, float jy, float bias, int *masked,
+                   const float *projection_camera, ProjectionHistory *next) {
     *masked = 0;
     VkCommandBuffer cb = ex->cb;
     uint32_t w = e->w, h = e->h;
@@ -1351,7 +1362,9 @@ static int mv_pass(VkExec *ex, struct Size *e, VkImageView zv, float jx, float j
     for (int i = 0; D.cam_size == OCAM_BLOCK && D.cam_addr && i < D.nviews; i++)
         if (D.views[i].addr == D.cam_addr) view = i;
     const float *held = keep && view >= 0 && D.views[view].got ? D.views[view].cam : NULL;
-    int found = mv_init() && D.cam_addr && vk_usnap_find(D.cam_addr, D.cam_size == OCAM_BLOCK ? OCAM_BYTES : D.cam_size, 4, &cam);
+    int initialized = mv_init();
+    int found = initialized && (projection_camera || (D.cam_addr &&
+        vk_usnap_find(D.cam_addr, D.cam_size == OCAM_BLOCK ? OCAM_BYTES : D.cam_size, 4, &cam)));
     if (!found && held && D.mv_ok == 1) {
         D.cam_at_draw++;
         if (D.gap_logged < 40) {
@@ -1382,7 +1395,7 @@ static int mv_pass(VkExec *ex, struct Size *e, VkImageView zv, float jx, float j
     D.keep_run = 0;
     // this frame's view-projection as the scene draws read it (Ocarina, dlaa_cam_keep) or as the snapshot holds it, for
     // the reprojection; kept as last frame's for the next
-    const float *cr = held ? held
+    const float *cr = projection_camera ? projection_camera : held ? held
                       : D.cam_size == OCAM_BLOCK ? (const float *)vk_usnap_bytes(D.cam_addr, OCAM_BYTES)
                                                  : (const float *)vk_usnap_bytes(D.cam_addr + D.cam_vp, 64);
     double cur_vp[16], m[16], ci[16];
@@ -1402,16 +1415,28 @@ static int mv_pass(VkExec *ex, struct Size *e, VkImageView zv, float jx, float j
         }
     }
     D.fg_cam_ok = 0;
-    if (cr && have_m && D.cam_size == OCAM_BLOCK) fg_camera(cr, m);
+    if (projection_camera && !have_m)
+        for (int i = 0; i < 16; i++) m[i] = i % 5 == 0;
+    if (cr && (have_m || projection_camera) && D.cam_size == OCAM_BLOCK) fg_camera(cr, m);
     if (cr && D.cam_size == OCAM_BLOCK) cam_cut(cr);
+    if (projection_camera && D.reset) {
+        for (int i = 0; i < 16; i++) m[i] = i % 5 == 0;
+        fg_camera(cr, m);
+        have_m = 0;
+    }
     int s = D.cam_slot, had_prev = D.cam_prev_ok;
     if (D.cam_size == CAM_BLOCK) {   // the whole block, for the per-object motion pass (the deferred engine's only)
         VkBufferCopy bc = {cam.offset, (VkDeviceSize)s * CAM_SLOT, CAM_BLOCK};
         vkCmdCopyBuffer(cb, cam.buffer, D.camb, 1, &bc);
         full_barrier(cb);
     }
-    D.cam_slot ^= 1, D.cam_prev_ok = cr != NULL;
-    if (cr) memcpy(D.cam_prev, cur_vp, sizeof cur_vp);
+    if (next) {
+        next->valid = cr != NULL;
+        if (cr) memcpy(next->vp, cur_vp, sizeof cur_vp);
+    } else {
+        D.cam_slot ^= 1, D.cam_prev_ok = cr != NULL;
+        if (cr) memcpy(D.cam_prev, cur_vp, sizeof cur_vp);
+    }
     if (!had_prev || !have_m) {   // nothing to reproject into: zero motion, new history
         e->chars_ok = e->dist_ok = 0;
         return 0;
@@ -1483,12 +1508,13 @@ static int mv_pass(VkExec *ex, struct Size *e, VkImageView zv, float jx, float j
     vk_mvcheck_camera(cb, e->mv, w, h, jx, jy);   // NX2NAVI_MV_CHECK (test)
     // the characters' own motion over the camera's (vk_exec_draw.c, per-object motion)
     uint64_t c0 = T.on > 0 ? kern_now_ns() : 0;
+    uint64_t token = projection_camera ? D.projection.sample.token : 0;
     int object_motion = D.cam_size == CAM_BLOCK;
     // Not on a frame that starts a new history, nor on the first frame of another render size (D.stepped, evaluate):
     // that frame was left out before the history could stay across a size, and it still is.
     if (D.cam_size == OCAM_BLOCK)
-        object_motion = vk_fg_pose_prepare(ex, D.cam_addr, D.depth.image, w, h) && !D.reset && !D.stepped;
-    if (object_motion && vk_mvobj_execute(ex, D.cam_addr, e->mv_view, zv, D.depth.format, w, h)) full_barrier(cb);
+        object_motion = vk_fg_pose_prepare(ex, D.cam_addr, D.depth.image, w, h, token) && !D.reset && !D.stepped;
+    if (object_motion && vk_mvobj_execute(ex, D.cam_addr, e->mv_view, zv, D.depth.format, w, h, token)) full_barrier(cb);
     if (T.on > 0) T.cpu_mv += kern_now_ns() - c0;
     times_mark(cb, T_OBJ);
     if (T.on > 0) T.used[T.slot] = 1;   // the DLSS marks follow in evaluate
@@ -1826,8 +1852,10 @@ static float halton(uint32_t i, uint32_t b) {
 // attached (the bloom composite DLSS reads) do not take the jitter either: they read the jittered scene through their
 // own texture coordinates, and moving them too would shift the picture DLSS gets by a second offset.
 static int jitter_draw(const VkExec *ex) {
+    if (scene_projection_enabled()) return 0;
     const VkExecTarget *z = &ex->depth;
     if (!D.jit_ok || D.ended || !z->image) return 0;
+    if (ex->scene_projection.sample.token) return 0;
     if (D.cam_size != OCAM_BLOCK) return z->image == D.jdepth;
     return z->format == VK_FORMAT_D32_SFLOAT && z->width == D.jw && z->height == D.jh &&
            ex->ubo[0][0].size == OCAM_BLOCK && ex->ubo[0][0].addr;
@@ -1859,12 +1887,33 @@ static int scene_color(VkFormat f);
 
 static void dlaa_draw_locked(VkExec *ex);
 void vk_dlaa_draw(VkExec *ex) {
-    if (!inputs_on() || D.ended) return;
+    if (scene_projection_enabled() || !inputs_on() || D.ended) return;
     static PlatMutex lock = PLAT_MUTEX_INIT;   // the replay workers' scene draws count at once (vk_exec.c chunks)
     int lk = vk_exec_shared();
     if (lk) plat_mutex_lock(&lock);
     dlaa_draw_locked(ex);
     if (lk) plat_mutex_unlock(&lock);
+}
+
+const SceneProjection *vk_dlaa_previous_projection(uint64_t frame) {
+    return frame && D.projection_history.token && D.projection_history_frame == frame - 1 ? &D.projection_history : NULL;
+}
+
+void vk_dlaa_scene_projection(const p_scene_projection *p) {
+    if (D.projection.sample.token && D.projection.sample.token != p->sample.token)
+        D.projection_conflict = 1;
+    if (!D.projection.sample.token) D.projection = *p;
+}
+
+void vk_dlaa_projection_bind(const p_scene_projection *p) {
+    if (!D.pre_on || !dl_active() || !p->color_serial || !p->depth_serial) return;
+    // A duplicate bind does not need to wait for the replay workers' turn.
+    if (__atomic_load_n(&D.projection_early_published, __ATOMIC_RELAXED) == p->sample.token) return;
+    vk_exec_turn();
+    if (!D.projection_early.sample.token) {
+        D.projection_early = *p;
+        __atomic_store_n(&D.projection_early_published, p->sample.token, __ATOMIC_RELAXED);
+    }
 }
 
 static void dlaa_draw_locked(VkExec *ex) {
@@ -1916,7 +1965,9 @@ static void dlaa_draw_locked(VkExec *ex) {
         F.ocam++;
         if (!ex->color[0].image || !scene_color(ex->color[0].format)) F.ocam_off++, F.ocam_off_fmt = ex->color[0].format;
     } else F.c3_other++, F.c3_size = ex->ubo[0][0].addr ? ex->ubo[0][0].size : 0;
-    if (b->size == CAM_BLOCK && b->addr) D.cam_addr = b->addr, D.cam_size = CAM_BLOCK, D.cam_vp = 0x30;
+    if (b->size == CAM_BLOCK && b->addr) {
+        D.cam_addr = b->addr, D.cam_size = CAM_BLOCK, D.cam_vp = 0x30;
+    }
     else if (ex->ubo[0][0].size == OCAM_BLOCK && ex->ubo[0][0].addr && ex->color[0].image &&
              scene_color(ex->color[0].format)) {   // Ocarina: the scene context most light-target draws use this frame
         uint64_t a = ex->ubo[0][0].addr;
@@ -1925,8 +1976,7 @@ static void dlaa_draw_locked(VkExec *ex) {
         if (i == D.nviews && D.nviews < 8) D.views[D.nviews].addr = a, D.views[D.nviews].n = 0, D.views[D.nviews++].got = 0;
         if (i < D.nviews) {
             D.views[i].n++, D.views[i].seq = vk_exec_submit_seq;
-            // The camera rows as this draw reads them, from its own submission's copy: DLSS runs in a later submission
-            // on some frames, whose copy may not hold the block (mv_pass, dlaa_cam_keep).
+            // DLSS can run in a later submission, without the draw's camera snapshot.
             if (!D.views[i].got) D.views[i].got = vk_usnap_read(a, OCAM_BYTES, D.views[i].cam);
         }
         for (int k = 1; k < D.nviews; k++)
@@ -1948,6 +1998,7 @@ static int jitter_on(void) {
 // The sequence is as long as NVIDIA's DLSS guide asks for the upscaling ratio, 8 x (output / scene)^2 phases (18 in
 // Quality, 24 in Balanced, 32 in Performance, 72 in Ultra Performance), and 16 at least, the length DLAA has used from the start.
 static void next_jitter(uint32_t w, uint32_t ow) {
+    if (scene_projection_enabled()) { D.jit_ok = 0; return; }
     int nj = !jitter_on();
     double r = w ? (double)ow / w : 1.0;
     uint32_t phases = (uint32_t)ceil(8.0 * r * r - 1e-6);
@@ -2405,7 +2456,49 @@ static volatile int32_t size_changed;
 
 static void fg_only_frame(VkExec *ex, const VkExecTarget *dst);
 
+static void projection_prepare(const SceneProjection *projection, uint32_t w, uint32_t h) {
+    D.cam_addr = projection->camera, D.cam_size = OCAM_BLOCK, D.cam_vp = 0;
+    const SceneProjection *last = &D.projection_history;
+    if (!last->token || last->owner != projection->owner || last->generation != projection->generation ||
+        last->settings != projection->settings ||
+        (last->token & ~SCENE_PROJECTION_SHIFTED) + 1 != (projection->token & ~SCENE_PROJECTION_SHIFTED) ||
+        w != D.jw || h != D.jh) D.cam_prev_ok = D.cut_ok = 0, D.reset = 1;
+}
+
+static void projection_commit(const SceneProjection *projection, const ProjectionHistory *next) {
+    D.cam_prev_ok = next->valid;
+    if (next->valid) memcpy(D.cam_prev, next->vp, sizeof next->vp);
+    D.projection_history = *projection;
+    D.projection_history_frame = __atomic_load_n(&gfx_counters.frames, __ATOMIC_RELAXED);
+    D.projection_resolved = 1;
+}
+
+static int projection_target(const VkExecTarget *t, uint64_t serial, const view_t *view) {
+    return t->tex && serial && t->tex->serial == serial && t->layers == 1 &&
+           t->level == (view->set_levels ? view->base_level : 0) &&
+           t->base_layer == (view->set_layers ? view->min_layer : 0);
+}
+
+static const float *projection_rows(const p_scene_projection *p, const VkExecTarget *color,
+                                    const VkExecTarget *depth, int early, float *rows) {
+    const SceneProjection *s = &p->sample;
+    if (!s->token || D.projection_conflict || s->settings != cfg_version() ||
+        !projection_target(depth, p->depth_serial, &p->dv) ||
+        depth->width != color->width || depth->height != color->height) return NULL;
+    // The scene-complete marker describes the scene attachments, not the later composite's color.
+    if (color->layers != 1 || (early && !projection_target(color, p->color_serial, &p->cv))) return NULL;
+    if (!scene_projection_extent_matches(s, color->width, color->height)) return NULL;
+    memset(rows, 0, OCAM_BYTES);
+    memcpy(rows, s->view, sizeof s->view);
+    memcpy(rows + SCENE_PROJECTION_WORD, s->unjittered, sizeof s->unjittered);
+    return rows;
+}
+
 static void evaluate(VkExec *ex, const VkExecTarget *dst) {
+    const p_scene_projection *record = D.pre ? &D.projection_early : &D.projection;
+    const int projection_attempt = scene_projection_enabled();
+    const int stock_up = D.up;
+    if (projection_attempt) D.up = 0;   // only a successful resolve may replace the game's scaling draw
     upscalers_drain();   // once a frame while the upscaler or frame generation's inputs run: what the GPU is past goes
     if (D.fgo) {   // no upscaler: frame generation's inputs alone, at the same point of the frame
         fg_only_frame(ex, dst);
@@ -2449,6 +2542,24 @@ static void evaluate(VkExec *ex, const VkExecTarget *dst) {
     // has checked it against the size the feature was created for; the depth is the light target's size by the arming
     // (vk_dlaa_pass), and a depth that did not cover the sub-rectangle keeps the frame on its own feature.
     const int sl = !fsr && vk_sl_sr_available();
+    float rows[OCAM_BYTES / sizeof(float)];
+    const float *projection_camera = scene_projection_enabled() ? projection_rows(record, t, z, D.pre, rows) : NULL;
+    const SceneProjection *projection = &record->sample;
+    ProjectionHistory next = {0};
+    if (projection_attempt && (!projection_camera || D.jit_used)) {
+        static unsigned rejected;
+        if (rejected++ < 12)
+            rt_log("dlaa: %s projection unavailable or stale: token=%#llx input=%ux%u depth match=%d",
+                   D.pre ? "prebloom" : "stock", (unsigned long long)projection->token, w, h,
+                   projection_target(z, record->depth_serial, &record->dv));
+        scene_projection_feedback(NULL, 0, 0, 0);
+        D.cam_prev_ok = 0, D.reset = 1;
+        return;
+    }
+    if (projection_camera) {
+        projection_prepare(projection, w, h);
+        if (ow != D.ev_ow || oh != D.ev_oh) D.cam_prev_ok = 0, D.reset = 1;
+    }
     const int use_range = !fsr && N.ngx_up && range_on();
     struct Size *host = use_range && z->width >= w && z->height >= h ? range_host(e) : e;
     const int step = D.ev_w && (w != D.ev_w || h != D.ev_h || ow != D.ev_ow || oh != D.ev_oh);
@@ -2467,6 +2578,10 @@ static void evaluate(VkExec *ex, const VkExecTarget *dst) {
     VkImageView zv = vk_exec_target_view(z->img, z->format, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_DEPTH_BIT, z->level,
                                          z->base_layer, 1, 0);
     float jx = D.jit_used ? D.ux : 0.0f, jy = D.jit_used ? D.uy : 0.0f;
+    if (scene_projection_enabled()) {
+        jx = projection_camera ? projection->jitter[0] : 0;
+        jy = projection_camera ? projection->jitter[1] : 0;
+    }
     // NX2NAVI_DLAA_JITTER_TEST=<x>,<y> (test, read once): the upscaler is told the jitter the scene was drawn with
     // times these two factors. NVIDIA's DLSS guide gives no sign for the offsets against the projection's shift and
     // says to find it by trying (8.4.1: its development library negates, halves or doubles an axis by a key): the
@@ -2481,12 +2596,15 @@ static void evaluate(VkExec *ex, const VkExecTarget *dst) {
             rt_log("dlaa: the upscaler is told the jitter times %g, %g (NX2NAVI_DLAA_JITTER_TEST, a test)", jt[0], jt[1]);
         else jt[0] = jt[1] = 1.0f;
     }
-    const float tjx = jx * jt[0], tjy = jy * jt[1];
-    edge_fill(cb, t, z, D.jit_used);   // before the motion vectors read the depth
+    // SDK offsets are subpixels at the render extent. A validated CPU record uses its actual
+    // right/down raster shift; the old viewport sign/scale experiment stays on the legacy path.
+    const float tjx = projection_camera ? jx : jx * jt[0], tjy = projection_camera ? jy : jy * jt[1];
+    edge_fill(cb, t, z, !projection_camera && D.jit_used);   // viewport-only edge fix
     static int no_mv = -1;
     if (no_mv < 0) no_mv = !rt_knob("DLAA_MV", "1");   // NX2NAVI_DLAA_MV=0: zero motion (test)
     if (sl) D.fg_cam_ok = 0;
-    int masked = 0, mv = no_mv ? 0 : mv_pass(ex, e, zv, jx, jy, char_bias(), &masked);
+    int masked = 0, mv = no_mv ? 0 : mv_pass(ex, e, zv, jx, jy, char_bias(), &masked, projection_camera,
+                                                     projection_camera ? &next : NULL);
     if (mv != 1) {
         VkClearColorValue zero = {{0, 0, 0, 0}};
         VkImageSubresourceRange all = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
@@ -2661,6 +2779,18 @@ own_feature:
     }
     if (!NGX_OK(r)) return dl_fail("DLSS evaluation", r);
 evaluated:
+    if (projection_attempt) D.up = stock_up;
+    if (projection_camera) {
+        projection_commit(projection, &next);
+        double ratio = w ? (double)ow / w : 1;
+        uint32_t phases = (uint32_t)ceil(8.0 * ratio * ratio - 1e-6);
+        scene_projection_feedback(projection, w, h, phases < 16 ? 16 : phases > 72 ? 72 : phases);
+        static unsigned accepted, shifted;
+        int applied = !!(projection->token & SCENE_PROJECTION_SHIFTED);
+        if ((!applied && accepted++ < 3) || (applied && shifted++ < 6))
+            rt_log("dlaa: %s projection token=%#llx view=%u input=%ux%u raster jitter=(%.5f,%.5f) SDK=(%.5f,%.5f)",
+                   D.pre ? "prebloom" : "stock", (unsigned long long)projection->token, projection->index, w, h, jx, jy, tjx, tjy);
+    }
     if (timed) times_mark(cb, T_DL1);   // through the recorder, after NGX's own commands
     // Frame generation gets the same new start with this frame's inputs (vk_dlaa_fg_inputs): a frame DLSS starts a
     // new history on (a camera cut, another scene size or target) has no motion from the frame before that holds.
@@ -2703,8 +2833,11 @@ evaluated:
     D.fg_depth = (VkFfxImage){z->image, z->format, w, h, 0};
     D.fg_mv = (VkFfxImage){e->mv, VK_FORMAT_R16G16_SFLOAT, w, h, 1};
     D.fg_depth_view = zv, D.fg_mv_view = e->mv_view;
-    D.fg_jx = jx, D.fg_jy = jy, D.fg_at = D.presents, D.fg_fresh = 1;
-    if (D.jit_used) D.jittered++;
+    if (!projection_camera) D.projection_history.token = 0;
+    D.fg_viewport_jitter[0] = projection_camera ? 0 : jx;
+    D.fg_viewport_jitter[1] = projection_camera ? 0 : jy;
+    D.fg_at = D.presents, D.fg_fresh = 1;
+    if (D.jit_used || (projection_camera && (projection->token & SCENE_PROJECTION_SHIFTED))) D.jittered++;
     next_jitter(w, ow);
     if (++D.evals == 1 || D.evals == 300 || D.evals % 3600 == 0)   // 300: one early line with the frames counted
         rt_log("dlaa: %llu frames anti-aliased (scene %ux%u, output %ux%u; %llu frames without the DLAA point, %llu with camera "
@@ -2927,6 +3060,13 @@ static int prebloom_start(const VkExec *ex) {
 // Runs the upscaler at the bloom chain's first pass (prebloom_start), before that pass begins. 0: not here this frame
 // (the picture's size not known yet, or not of the scene's shape): the game's upscaler runs it as before.
 static int prebloom_run(VkExec *ex) {
+    const int cpu_projection = scene_projection_enabled();
+    if (cpu_projection) {
+        float rows[OCAM_BYTES / sizeof(float)];
+        if (D.projection_early_attempted) return 0;
+        vk_exec_turn();
+        if (!projection_rows(&D.projection_early, &D.color, &D.depth, 1, rows)) return 0;
+    }
     const uint32_t w = D.color.width, h = D.color.height;
     const double share = wide_dlss_share();
     const int native = share <= 0 || share >= 1;
@@ -2942,6 +3082,7 @@ static int prebloom_run(VkExec *ex) {
     }
     vk_exec_hook_turn();   // as in vk_dlaa_pass: the replay workers' draws read the jitter and its end
     D.ended = D.done = 1;
+    D.projection_early_attempted = 1;
     D.pre = native ? 1 : 2;
     const uint64_t evals = D.evals;
     if (native) {
@@ -2953,8 +3094,10 @@ static int prebloom_run(VkExec *ex) {
         evaluate(ex, &dst);
     }
     if (D.evals == evals) {   // the evaluation failed (dl_fail) or did not run: nothing moves to the picture's size
-        D.pre = 0, D.up = 0;
-        return 1;
+        D.pre = D.up = 0;
+        if (!cpu_projection) return 1;
+        D.ended = D.done = 0;
+        return 0;
     }
     if (D.pre == 2) {
         // the composite samples the light target: PB.scene, which the lens flares are then drawn into, in its place
@@ -3189,6 +3332,7 @@ void vk_dlaa_pass(VkExec *ex) {
     if (!deferred) {   // Ocarina's shape: the output pass ends the scene and runs DLSS
         // NX2NAVI_DLSS_PREBLOOM: before the bloom chain's first pass instead, where there is one (prebloom_run)
         if (D.pre_on && dl_active() && prebloom_start(ex) && prebloom_run(ex)) return;   // not for frame generation alone
+        if (scene_projection_enabled()) return;   // the stock upscaler command consumes the scene-complete marker
         int one = ex->pass_ncolor == 1 && c->image && !z->image && c->image != D.color.image && c->samples <= 1 &&
                   !c->is3d;
         if (one) F.one_n++, F.one_w = c->width, F.one_h = c->height, F.one_fmt = c->format;
@@ -3441,6 +3585,26 @@ static void fg_only_frame(VkExec *ex, const VkExecTarget *dst) {
     const uint32_t w = t->width, h = t->height;
     D.up = 0;   // the game's scaling draw makes the picture (vk_dlaa_skip_draw)
     D.stepped = 0;
+    float rows[OCAM_BYTES / sizeof(float)];
+    const SceneProjection *sample = &D.projection.sample;
+    const float *projection_camera = NULL;
+    ProjectionHistory next = {0};
+    if (scene_projection_enabled()) {
+        // Never tag an already shifted raster as zero jitter on a temporal -> FG-only switch.
+        if (sample->token & SCENE_PROJECTION_SHIFTED) {
+            D.fg_fresh = D.fg_cam_ok = D.cam_prev_ok = 0;
+            D.reset = 1;
+            scene_projection_feedback(NULL, 0, 0, 0);
+            return;
+        }
+        projection_camera = projection_rows(&D.projection, t, z, 0, rows);
+        if (!projection_camera) {
+            D.fg_fresh = D.fg_cam_ok = D.cam_prev_ok = 0;
+            D.reset = 1;
+            return;
+        }
+        projection_prepare(sample, w, h);
+    }
     vk_exec_barrier(ex);   // what drew the scene, and the game's scaling into dst, is done (no pass is open here)
     VkCommandBuffer cb = ex->cb;
     struct Size *e = size_for(cb, w, h, w, h);
@@ -3456,7 +3620,8 @@ static void fg_only_frame(VkExec *ex, const VkExecTarget *dst) {
     static int no_mv = -1;
     if (no_mv < 0) no_mv = !rt_knob("DLAA_MV", "1");   // NX2NAVI_DLAA_MV=0: zero motion (test), as in evaluate
     // no jitter, and bias 0: the bias mask is DLSS's alone
-    int masked = 0, mv = no_mv ? 0 : mv_pass(ex, e, zv, 0.0f, 0.0f, 0.0f, &masked);
+    int masked = 0, mv = no_mv ? 0 : mv_pass(ex, e, zv, 0.0f, 0.0f, 0.0f, &masked, projection_camera,
+                                                     projection_camera ? &next : NULL);
     if (mv != 1) {
         VkClearColorValue zero = {{0, 0, 0, 0}};
         VkImageSubresourceRange all = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
@@ -3469,6 +3634,7 @@ static void fg_only_frame(VkExec *ex, const VkExecTarget *dst) {
     const VkExecTarget *pic = dst ? dst : t;
     int hl = vk_dlaa_hudless_wanted && (!dst || !D.gbuf) && blit_from(pic->format);
     if (hl) hudless_from(cb, pic->image, pic->level, pic->base_layer, pic->width, pic->height);
+    if (projection_camera) projection_commit(sample, &next);   // FG-only never grants a jitter lease
     D.fg_reset = D.reset;
     D.reset = 0;
     D.last = e, e->used = D.evals + 1, D.evals++;
@@ -3478,7 +3644,8 @@ static void fg_only_frame(VkExec *ex, const VkExecTarget *dst) {
     D.fg_depth = (VkFfxImage){z->image, z->format, w, h, 0};
     D.fg_mv = (VkFfxImage){e->mv, VK_FORMAT_R16G16_SFLOAT, w, h, 1};
     D.fg_depth_view = zv, D.fg_mv_view = e->mv_view;
-    D.fg_jx = D.fg_jy = 0.0f, D.fg_at = D.presents, D.fg_fresh = 1;
+    D.fg_viewport_jitter[0] = D.fg_viewport_jitter[1] = 0;
+    D.fg_at = D.presents, D.fg_fresh = 1;
     D.jit_ok = 0;
     static uint64_t frames, still;
     frames++, still += mv != 1;
@@ -3518,6 +3685,15 @@ void vk_dlaa_frame(void) {
     // direction starts anew as switching the upscaler does below, and the frame before gets nothing to frame generation.
     int fgo = !on && !D.failed && fg_runs();
     fg_state_line(on, fgo);
+    if (fgo != D.fgo || on != D.on) {
+        scene_projection_feedback(NULL, 0, 0, 0);
+        D.projection_history.token = 0;
+        D.projection = D.projection_early = (p_scene_projection){0};
+        __atomic_store_n(&D.projection_early_published, 0, __ATOMIC_RELAXED);
+        D.projection_early_attempted = 0;
+        D.projection_resolved = D.projection_conflict = 0;
+        D.cam_addr = 0, D.nviews = 0;
+    }
     if (fgo != D.fgo) {
         D.fgo = fgo;
         off_at = D.presents;   // idle_release: the upscaler's sizes count as unused from here
@@ -3571,6 +3747,17 @@ void vk_dlaa_frame(void) {
     else if (D.hold) D.hold--;
     if (!D.done) D.jit_ok = 0;
     D.armed = D.done = D.jit_used = D.gbuf = D.ended = D.up = D.ids_ok = 0;
+    if ((D.projection.sample.token || D.projection_early.sample.token || D.projection_history.token) &&
+        !D.projection_resolved) {
+        scene_projection_feedback(NULL, 0, 0, 0);
+        D.projection_history.token = 0;
+        D.cam_prev_ok = D.cut_ok = 0, D.reset = 1;
+        D.fg_fresh = D.fg_cam_ok = 0;
+    }
+    D.projection = D.projection_early = (p_scene_projection){0};
+    __atomic_store_n(&D.projection_early_published, 0, __ATOMIC_RELAXED);
+    D.projection_early_attempted = 0;
+    D.projection_resolved = D.projection_conflict = 0;
     D.cam_addr = 0, D.nviews = 0;
     memset(&F, 0, sizeof F);
 }

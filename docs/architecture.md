@@ -243,6 +243,20 @@ keeps per-core data without locks and relies on that, so the host models it (`ru
   `taa` is DLSS or FSR at the scene's size with the game's SMAA. While DLSS or FSR runs (`dlaa`, any mode), the other
   values still choose the pass: in the native modes it smooths the upscaler's picture after the bloom, in the scaling
   modes it runs on the scene before the upscaler scales it.
+  In 1.1.1, stock Streamline DLSS uses CPU projection jitter instead of moving the viewport. The resolve point stays
+  unchanged. `scene_projection_impl.h` (`scene_projection_build`, `scene_projection_complete`) tracks the scene's
+  owner and view and records a scene-complete marker. The stock resolve uses that CPU camera snapshot, checking
+  the settings, depth subresource and render extent at the resolve rather than inspecting individual draws.
+  A short readiness window lets recording run ahead of replay and the uniform backing rotate; it requires the
+  same view generation and guest attachment extents. Reprojection uses the unshifted camera; a rejected input
+  keeps the game's scaling draw.
+  Link and skinned motion use the jitter recorded with the current camera binding. Only the private previous-position
+  bank gets an unshifted projection and recomputed view-projection; the depth guard adds the previous raster jitter
+  when looking up the previous depth. Stock Streamline, native DLSS and FSR receive that same render-pixel jitter;
+  frame generation reads the committed record (zero jitter in FG-only mode). The optional pre-bloom resolve can use
+  the attachment identities recorded at the camera bind, checked against the armed scene targets at the bloom
+  boundary. Without a usable early sample or a successful evaluation it falls back to stock resolve. Other versions
+  and the disabled patch keep their legacy camera selection and viewport behavior.
   DLSS and FSR 3.1 read the bloom composite's output, which the game has already exposed and tonemapped;
   `NX2NAVI_DLSS_PREBLOOM=1` (a test, off by default) runs them at the bloom chain's first pass on the scene's linear
   light instead, and draws the lens flares and the bloom composite after them at the picture's size (`vk_dlaa.c`,

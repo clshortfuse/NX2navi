@@ -386,3 +386,9 @@ site orecord main 32926c8 1e390008 @page:x8 bd410910 1e302810 1e25c211 1e313a11 
 site orecord main 3293410 1e390008 @page:x8 bd410910 1e302810 1e25c211 1e313a11 2f00e412 1e326a31 bd010911 1e390208   # the same at the other three sites
 site orecord main 3296b08 1e390008 @page:x8 bd410910 1e302810 1e25c211 1e313a11 2f00e412 1e326a31 bd010911 1e390208
 site orecord main 3296da4 1e390008 @page:x8 bd410910 1e302810 1e25c211 1e313a11 2f00e412 1e326a31 bd010911 1e390208
+
+# Stock reconstruction: projection and scene-complete recording only.
+set scene_projection NX2NAVI_PATCH_SCENE_PROJECTION 1
+site scene_projection main 33a474 94000113 952d9a77
+site scene_projection main 25ed80 aa1703e1 aa1503e1
+site scene_projection main 25ed88 97ffd0e6 95310836
