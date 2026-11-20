@@ -418,15 +418,6 @@ int vk_usnap_read(uint64_t addr, uint64_t n, void *dst);
 enum { VK_USNAP_FOUND, VK_USNAP_NO_SNAPSHOT, VK_USNAP_DROPPED, VK_USNAP_IN_FLIGHT, VK_USNAP_NOT_CPU, VK_USNAP_NOT_BOUND };
 int vk_usnap_why(uint64_t addr, uint64_t n);
 void vk_usnap_shutdown(void);                     // vk_exec_draw_shutdown: frees the arenas
-// vk_mvprev.c: last frame's copy of the scene's object (c7) and bone (c5) blocks, for per-object motion vectors.
-// vk_mvprev_step: the distance of the game's other copy of a vertex-stage block the snapshot also copies, 0: none.
-// vk_mvprev_find: last frame's block of that object (prev, its address; how, MVPREV_*), 0: none.
-enum { MVPREV_NONE, MVPREV_SELF, MVPREV_SIDE, MVPREV_NEARER };
-uint64_t vk_mvprev_step(int stage, int index, uint64_t size);
-int vk_mvprev_on(void);
-void vk_mvprev_want(uint32_t index_mask);   // also keep these binding indices' last-frame copies (bit n: index n)   // DLAA on and NX2NAVI_DLAA_OBJMV not 0, as of the last present
-int vk_mvprev_find(int index, uint64_t addr, uint64_t size, uint64_t *prev, int *how);
-void vk_mvprev_frame(void);   // each present, beside vk_dlaa_frame
 void vk_mem_mirror_begin(void);
 int vk_mem_mirror_end(VkCommandBuffer cb, uint64_t fence);
 int vk_mem_mirror_pending(void);

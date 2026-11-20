@@ -35,7 +35,7 @@
 +
 +namespace Ryujinx.Graphics.Shader.Translation.Transforms
 +{
-+    // NX2NAVI: last frame's position for per-object motion vectors (runtime/vk_exec_draw.c, vk_mvprev.c). A vertex shader's
++    // NX2NAVI: last frame's position for per-object motion vectors (runtime/vk_exec_draw.c). A vertex shader's
 +    // position depends on uniform banks of this frame: the camera (c4), the object's place (c7), its bones (c5), the
 +    // clock that moves wind and water (c14), and so on. Every operation the position depends on that reads one of the
 +    // user banks c3..c16, directly or through other values, is computed a second time beside the original, reading slot

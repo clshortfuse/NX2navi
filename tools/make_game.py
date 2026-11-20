@@ -1651,6 +1651,10 @@ def guest_opt_ini(out):
         os.environ['NX2NAVI_GUEST_OPT'] = found
 
 
+def profile_ownership():
+    return os.environ.get("NX2NAVI_PROFILE_OWNERSHIP") == "1"
+
+
 def runtime_cmd(clang, clangxx, inc, level=0, fast=None, msys=None, first=(), pgo=()):
     """fast: fast_clang's compiler for the lifted code, with msys as its sysroot. first: include flags that go
     ahead of inc for the runtime's sources only (vulkan_headers); the lifted code includes none of those headers,
@@ -1660,7 +1664,10 @@ def runtime_cmd(clang, clangxx, inc, level=0, fast=None, msys=None, first=(), pg
     for every compile (pgo_use_flags, pgo_gen_flags); with them the lifted code is built at -O2 too, the level the
     profile's inlining and its layout of hot and cold code work at. Without them every command is what it was."""
     guest_opt = '-O2' if pgo or os.environ.get('NX2NAVI_GUEST_OPT', '').strip() == '2' else '-O1'   # -O1 unless guest_opt = 2
+    ownership_profile = profile_ownership()
+
     def cmd_for(src, dst):
+        profile_flags = ['-DNX2NAVI_PROFILE_OWNERSHIP'] if ownership_profile and src.name in ('patches.c', 'debug_menu.cpp') else []
         cpp = src.suffix in ('.cpp', '.cxx')
         # the lifted code at -O1 (its size makes -O2 slow to build), the runtime at -O2; neither may assume strict
         # aliasing: the lifted code reaches guest memory through casts of one address to several types
@@ -1672,7 +1679,7 @@ def runtime_cmd(clang, clangxx, inc, level=0, fast=None, msys=None, first=(), pg
         # -fdeclspec: third_party/ffx_api/ffx_api.h declares its entry points __declspec(dllexport) unconditionally
         declspec = ['-fdeclspec'] if cpp and not WIN else []
         return [*cc, '-c', '-std=gnu++17' if cpp else '-std=gnu11', guest_opt if guest else '-O2',
-                *march, '-fno-strict-aliasing', '-w', *declspec, *pgo, *([] if guest else first), *inc, '-o', str(dst),
+                *march, '-fno-strict-aliasing', '-w', *declspec, *pgo, *profile_flags, *([] if guest else first), *inc, '-o', str(dst),
                 str(src)]
     return cmd_for
 
@@ -1682,6 +1689,8 @@ def make_runtime_lib(dest, msys, jobs, obj=None):
     <dest>/libnx2navirt.a, with runtime-lib.json naming the runtime/ tree and the compiler it was built from. The
     objects stay in obj (default <dest>/obj), which a release keeps out of what it ships. A kit with an execution
     profile compiles the library with it, under pgo_profile's conditions; runtime-lib.json then names the profile."""
+    if profile_ownership():
+        fail("NX2NAVI_PROFILE_OWNERSHIP=1 is only supported for local game builds, not prebuilt runtime archives")
     dest = Path(dest).resolve()
     dest.mkdir(parents=True, exist_ok=True)
     obj = Path(obj).resolve() if obj else dest / 'obj'
@@ -1954,7 +1963,7 @@ def step_compile(out, cache_dir, msys, jobs, romfs_job=None, update=False):
     ld = ['-fuse-ld=lld'] if ((msys / 'bin' / 'ld.lld.exe').is_file() if WIN else shutil.which('ld.lld')) else []
     if gen_counts:
         pgo_gen_check(clangxx, env, cache_dir / 'pgo-trial', msys, ld)
-    prebuilt = None if gen_counts else prebuilt_runtime(clang, env)
+    prebuilt = None if gen_counts or profile_ownership() else prebuilt_runtime(clang, env)
     runtime = [(p, obj / name) for p, name in runtime_sources()]
     if prebuilt:
         runtime = [(p, o) for p, o in runtime if o.name not in prebuilt[1]]

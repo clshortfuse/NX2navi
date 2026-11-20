@@ -14,6 +14,8 @@
 
 #include "debug_tools.h"
 extern "C" void rt_log(const char *fmt, ...);
+#include "motion_vectors.h"
+#include "tracked_model.h"
 #include "ui/debug_menu.h"
 #include "ui/menu_skin.h"
 
@@ -427,6 +429,29 @@ void tab_memory(void) {
 
 }  // namespace
 
+static void tab_motion() {
+    static const char *motion_modes[] = {"Off", "Camera", "Models", "Hybrid"};
+    int mode = vk_dlaa_motion_vectors();
+    if (ImGui::Combo("Motion Vectors", &mode, motion_modes, IM_ARRAYSIZE(motion_modes)))
+        vk_dlaa_set_motion_vectors(static_cast<MotionVectorsMode>(mode));
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("Off skips camera reprojection and model replay. Camera reprojects the scene; Models writes vectors only for supported draws. Hybrid uses both. Not saved.");
+    bool reverse_only = vk_dlaa_reverse_only_requested();
+    if (ImGui::Checkbox("Force reverse ownership lookup", &reverse_only))
+        vk_dlaa_set_reverse_only(reverse_only);
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("Compare lookup paths with model motion enabled. Takes effect on the next frame. Not saved.");
+#ifdef NX2NAVI_PROFILE_OWNERSHIP
+    const auto stats = tracked_model_cpu_stats();
+    ImGui::Text("Ownership recording: %s", vk_dlaa_record_model_motion() ? "enabled" : "idle");
+    ImGui::Text("Forward (work entry): %llu / %llu", (unsigned long long)stats.work_hits,
+                (unsigned long long)stats.work_calls);
+    ImGui::Text("Reverse (buffer address): %llu / %llu", (unsigned long long)stats.captured,
+                (unsigned long long)stats.packets);
+    ImGui::TextDisabled("Hits / attempts since launch");
+#endif
+}
+
 extern "C" void debug_menu_tab(int tab) { g_tab = tab; }
 
 // A panel on the left edge in the performance overlay's dress (the game's panel art, gold labels, the smaller text),
@@ -456,14 +481,15 @@ extern "C" void debug_menu_layout(uint32_t w, uint32_t h, float scale) {
         if (!dbg_supported()) {
             ImGui::TextWrapped("The debug menu knows the structures of Ocarina of Time 1.1.1 only.");
         } else if (ImGui::BeginTabBar("##tabs")) {
-            static const char *const names[DEBUG_MENU_TABS] = {"Flags", "Teleport", "Cutscenes", "World", "Memory"};
+            static const char *const names[DEBUG_MENU_TABS] = {"Flags", "Teleport", "Cutscenes", "World", "Memory", "Motion"};
             for (int t = 0; t < DEBUG_MENU_TABS; t++) {
                 if (ImGui::BeginTabItem(names[t], NULL, g_tab == t ? ImGuiTabItemFlags_SetSelected : 0)) {
                     if (t == 0) tab_flags();
                     else if (t == 1) tab_teleport();
                     else if (t == 2) tab_events();
                     else if (t == 3) tab_world();
-                    else tab_memory();
+                    else if (t == 4) tab_memory();
+                    else tab_motion();
                     ImGui::EndTabItem();
                 }
             }

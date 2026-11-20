@@ -597,10 +597,8 @@ static void twins_release(VkCtx *c);
 static void mesh_ring_release(VkCtx *c);
 static void pool_marks_release(VkCtx *c);
 
-static void pose_shutdown(void);
 static void skin_shutdown(void);
 void vk_exec_draw_shutdown(void) {
-    pose_shutdown();
     skin_shutdown();
     vk_meshfb_shutdown();
     if (vk_ctx()) mesh_ring_release(vk_ctx()), pool_marks_release(vk_ctx());   // made without the stand-ins below too
@@ -4762,8 +4760,6 @@ static int prepare_draw_ex(VkExec *ex, int prim, int32_t count, int restart, int
     vk_pipeline_line_width(ex->cb, &s, ex->line_width);   // a draw of lines: the game's width; else nothing
     if (!mesh) {
         vk_dlaa_draw(ex);
-        vk_mvsurvey_draw(ex);
-        vk_mvprev_draw(ex);
     }
     vk_dlaa_jitter_check(ex);   // a draw with another jitter than the viewport recorded last records it again
     record_fixed(ex);
@@ -4890,11 +4886,8 @@ void vk_exec_ahead_op(VkExec *sx, uint32_t op, const void *payload) {
 // variant (translator patch 0015: the position again from last frame's blocks, bound at slot bank + 15, and last
 // frame's camera, written to a spare output) and the fragment shader of mvobj_fs_spv.h, which writes last frame's window
 // position minus this frame's. The draw keeps everything else of the original: vertex and index buffers, the other
-// uniform blocks, the jittered viewport and the scene depth, tested with the game's own test and its equal case
-// (LEQUAL, GEQUAL) without writes, so only the visible surface writes its vector. Last frame's blocks:
-// vk_mvprev_find and mo_prev_block; the camera: vk_dlaa_prev_camera. A draw whose variant or pipeline is still
-// building, or whose last-frame blocks are not in the snapshot, keeps the camera's motion. NX2NAVI_DLAA_OBJMV=0 turns it
-// off (vk_mvprev.c).
+// uniform blocks and jittered viewport. Only fragments matching scene depth write vectors. Draws without
+// a ready pipeline or a usable previous pose leave the camera vectors in place.
 #include "mvobj_fs_spv.h"
 #include "link_motion_spv.h"
 #include "scene_motion_projection.h"
@@ -4905,13 +4898,10 @@ static const char LINK_FS_RES[] = "{\"key\":\"link-motion\",\"stage\":\"ps\",\"c
 static struct {
     const GfxShader *fs[16], *link_fs[16];     // per input Location
     int failed;
-    uint64_t cand, still, draws, nodata, building, ran, dropped;
-    uint64_t ns_check, ns_rec, n_rec, ns_emit, ns_still;
-    uint64_t ns_part[3], n_part[3], misses, cyc[3], ncyc, big;   // checks: filter, data and stillness (memo misses), variant and pipeline   // time spent: checks and lookups of every candidate; recording the draws again   // cand: draws whose vertex shader reads c5 or c7
-    uint64_t why[5];             // nodata by cause: camera, bones, place, bones copy, place copy
+    uint64_t cand, draws, building, ran, dropped;
+    uint64_t ns_check, ns_rec, n_rec, ns_emit;
+    uint64_t ns_part[3], n_part[3];   // checks: filter, data and stillness (memo misses), variant and pipeline   // time spent: checks and lookups of every candidate; recording the draws again   // cand: draws whose vertex shader reads c5 or c7
     uint64_t no_out, storage, no_fs;   // variant without the extra output, with storage resources; no fs
-    uint64_t other_cam;          // listed draws left out: their camera block is not the scene camera
-    uint64_t lk[14][5];          // last-frame lookups per binding index: none, self, side, nearer, refused (another object)
     uint64_t e_draws, e_pipe, e_dyn, e_push, e_pushw, e_sets, e_vb, e_setw, e_setreuse;   // emitted commands (summary)
 } MO;
 
@@ -4935,8 +4925,7 @@ typedef struct {
     int32_t base_vertex;
     uint64_t projection_token;
     uint64_t cam;                // the draw's camera block, this frame's
-    int pose_index, pose_view;
-    int skin;                    // vk_skin_motion.inc: 0 not a skinned character's draw; 1 one, 2 one checked against
+    int skin;                    // vk_skin_motion.inc: 1 paired draw, 2 checked against
                                  // last frame's depth; -1 one skin_resolve left to the camera
 } MoDraw;
 typedef struct { VkBuffer b[17]; VkDeviceSize o[17], sz[17], str[17]; } MoVb;
@@ -4990,17 +4979,12 @@ static void mo_drop(void) {
     MQ.n = MQ.nst = MQ.nvb = 0, MQ.ndesc = 0, MQ.frame = 0;
 }
 
-static uint64_t mo_gen = 1;   // the list's snapshot (mo_prev_cached), bumped by mo_begin
-static struct { uint32_t mask, chg, n; } MF[16];   // this list's draws per position banks and changed banks
-static char fm_last[400];                          // the last executed list's, formatted (vk_mvobj_frame_masks)
 
 static void skin_begin(uint64_t frame);
 // Starts this frame's list (the old one, never executed, is dropped).
 static void mo_begin(VkExec *ex, uint64_t frame) {
     mo_drop();
     skin_begin(frame);
-    mo_gen++;
-    memset(MF, 0, sizeof MF);
     MQ.frame = frame, MQ.fence = ex->fence, MQ.depth_fmt = ex->depth.format;
     memset(MQ.vin, 0, sizeof MQ.vin);
     MQ.vgen = 0, MQ.sup.buffer = MQ.par.buffer = VK_NULL_HANDLE;
@@ -5019,7 +5003,7 @@ static const GfxShader *mo_fs(int loc) {
     return MO.fs[loc];
 }
 
-static const GfxShader *link_motion_fs(int loc) {
+static const GfxShader *mo_guarded_fs(int loc) {
     if (loc < 0 || loc >= 16) return NULL;
     if (MO.link_fs[loc]) return MO.link_fs[loc];
     uint32_t words[sizeof link_motion_spv / sizeof(uint32_t)];
@@ -5214,13 +5198,12 @@ static void mo_emit(VkCommandBuffer cb) {
     }
 }
 
-#include "vk_fg_pose.inc"
 #include "vk_skin_motion.inc"
 
-static int mvobj_pick(VkExec *ex, const p_draw_idx *d, const GfxShader **vs_out, uint32_t *banks_out, MotionOwner *owner_out,
+static int mvobj_pick(VkExec *ex, const p_draw_idx *d, const GfxShader **vs_out, uint32_t *banks_out,
                       SkinPick *skin_out, uint64_t t0);
 static void mvobj_draw_(VkExec *ex, const p_draw_idx *d, VkBuffer ib, VkDeviceSize ib_off, uint64_t t0,
-                        const GfxShader *vs, uint32_t banks, const MotionOwner *owner, const SkinPick *skin);
+                        const GfxShader *vs, uint32_t banks, const SkinPick *skin);
 // The chunks of a parallel group (vk_exec.c) add to the frame's list at once: whether a draw is listed at all is decided
 // by its own draw context (mvobj_pick, its memo per context), and only the frame's list, its memos and statistics go
 // under mo_lock there: under one lock for the whole check, the chunks' scene draws waited for each other. The order of
@@ -5229,192 +5212,29 @@ static void mvobj_draw_(VkExec *ex, const p_draw_idx *d, VkBuffer ib, VkDeviceSi
 static PlatMutex mo_lock = PLAT_MUTEX_INIT;
 
 static void mvobj_draw(VkExec *ex, const p_draw_idx *d, VkBuffer ib, VkDeviceSize ib_off) {
-    if (MO.failed || !ex->dc->B.st_valid) return;
-    if (RT_V111) {
-        // the upscaler, or frame generation without one (vk_dlaa_fg_only), takes the motion
-        if (!(vk_dlaa_available() || vk_dlaa_fg_only()) || (!pose_enabled() && !skin_enabled())) return;
-    } else if (!vk_mvprev_on()) return;
+    if (!vk_dlaa_model_motion() || MO.failed || !ex->dc->B.st_valid) return;
+    if (!(vk_dlaa_available() || vk_dlaa_fg_only()) || !skin_enabled()) return;
     static int timed = -1;
     if (timed < 0) timed = rt_knob("MVOBJ_TIMES", "0");   // NX2NAVI_MVOBJ_TIMES=1: the summary's times (the clock reads cost)
     uint64_t t0 = timed ? kern_now_ns() : 0;
     const GfxShader *vs;
     uint32_t banks;
-    MotionOwner owner = {0};
     SkinPick skin = {0};
-    int listed = mvobj_pick(ex, d, &vs, &banks, &owner, &skin, t0);
+    TrackedModelSample prior = ex->tracked_model;
+    int listed = mvobj_pick(ex, d, &vs, &banks, &skin, t0);
     int lk = listed && vk_exec_shared();
     if (lk) plat_mutex_lock(&mo_lock);
-    if (listed) mvobj_draw_(ex, d, ib, ib_off, t0, vs, banks, &owner, skin.stride ? &skin : NULL);
+    if (listed) mvobj_draw_(ex, d, ib, ib_off, t0, vs, banks, &skin);
     if (t0) __atomic_add_fetch(&MO.ns_check, kern_now_ns() - t0, __ATOMIC_RELAXED);
     if (lk) plat_mutex_unlock(&mo_lock);
-}
-
-// NX2NAVI_MVOBJ_BANKS=1 (test): for scene draws, the words of each other uniform bank (c3, c6, c8-c16) that changed
-// since the same shader's draw last frame, logged at frame 3000: where the time that moves wind and water lives
-static void mvobj_banks(VkExec *ex) {
-    DrawCtx *const cx = ex->dc;
-    static int on = -1;
-    if (on < 0) on = rt_knob("MVOBJ_BANKS", "0");
-    if (!on || !cx->B.st_valid) return;
-    uint64_t frame = __atomic_load_n(&gfx_counters.frames, __ATOMIC_RELAXED);
-    if (frame < 2999 || frame > 3000) return;
-    static struct { const GfxShader *vs; int bank; uint64_t frame; float w[64]; int n; } tab[4096];
-    static int logged;
-    const GfxShaderRes *ur;
-    int nu = gfx_shader_resources(cx->B.st.vs, GFX_RES_UBO, &ur);
-    for (int i = 0; i < nu; i++) {
-        int bank = ur[i].slot;
-        if (bank < 3 || bank == 4 || bank == 5 || bank == 7 || bank > 16) continue;
-        const p_bind_buf *u = &ex->ubo[NVN_STAGE_VS][bank - 3];
-        uint32_t n = u->size < 256 ? (uint32_t)u->size / 4 : 64;
-        const float *now = n ? (const float *)vk_usnap_bytes(u->addr, n * 4) : NULL;
-        if (!now) continue;
-        uint32_t k =
-            (uint32_t)(((uintptr_t)cx->B.st.vs ^ (uint64_t)bank * 0x9E3779B97F4A7C15ull) * 0xff51afd7ed558ccdull >> 52);
-        if (frame == 2999) {
-            tab[k].vs = cx->B.st.vs, tab[k].bank = bank, tab[k].frame = frame, tab[k].n = (int)n;
-            memcpy(tab[k].w, now, n * 4);
-        } else if (tab[k].vs == cx->B.st.vs && tab[k].bank == bank && tab[k].frame == 2999 && logged < 80) {
-            char line[700];
-            int o = 0, nd = 0;
-            for (int j = 0; j < tab[k].n && j < (int)n && o < 600; j++)
-                if (memcmp(&tab[k].w[j], &now[j], 4)) nd++, o += snprintf(line + o, sizeof line - o, " [%d] %g>%g", j, tab[k].w[j], now[j]);
-            if (nd) logged++, rt_log("mvbanks: vs %p c%d size %#llx: %d words%s", (const void *)cx->B.st.vs, bank,
-                                     (unsigned long long)u->size, nd, line);
-            tab[k].frame = 0;
-        }
-    }
-}
-
-// 1: old is cur a little changed or the same (every float within 10 %, at least 1.0 and at most 4.0); *changed: not
-// the same. The cap: NX2navi's world positions are in the thousands, and 10 % of them let another object's block a few
-// units away pass as this one moved; nothing moves 4 units in a frame.
-static int mo_similar(const uint8_t *cur, const uint8_t *old, uint64_t n, int *changed) {
-    *changed = 0;
-    if (!memcmp(cur, old, n)) return 1;
-    // word by word as integers; float arithmetic only on two normal floats (the blocks hold integers too, and
-    // denormal arithmetic took this loop 1.9 million cycles a block)
-    const uint32_t *x = (const uint32_t *)cur, *y = (const uint32_t *)old;
-    for (uint64_t w = 0; w < n / 4; w++) {
-        if (x[w] == y[w]) continue;
-        uint32_t ex = x[w] >> 23 & 0xff, ey = y[w] >> 23 & 0xff;
-        if (!ex || ex == 0xff || !ey || ey == 0xff) continue;   // not both normal floats: an integer or a tiny value
-        float fx, fy;
-        memcpy(&fx, &x[w], 4), memcpy(&fy, &y[w], 4);
-        float dd = fabsf(fx - fy), tol = 0.1f * fabsf(fy);
-        if (dd > (tol < 1.0f ? 1.0f : tol > 4.0f ? 4.0f : tol)) return 0;
-    }
-    *changed = 1;
-    return 1;
-}
-
-// Last frame's copy of a block, accepted when it is this frame's block a little changed (mo_similar,
-// which see): a block of another object the address rule found would make motion up. 1 and *out: found (the block itself
-// when it is unchanged, *changed 0); 0: none, the draw keeps this frame's block there.
-static int mo_prev_block(int index, const p_bind_buf *u, VkDescriptorBufferInfo *out, int *changed) {
-    uint64_t max = LIM.ubo_max, n = u->size < max ? u->size : max, pa;
-    int how;
-    *changed = 0;
-    // c9 and c11 keep this frame's block. With the copies the address rule finds for c11 and last frame's c9, the
-    // c4 c7 c9 c11 draws (walls, cliffs, arches) got several pixels of motion under a still camera (NX2NAVI_MV_CHECK,
-    // those draws alone: 34 % of the picture moving; with c11 kept, 0.8 %). With c11 kept, their c9 still changes every
-    // frame while nothing moves (the check's per-draw line: about 120 such draws a frame changed in c9 alone), the
-    // object scale the picture shows is 0.6-0.8 of theirs, and with Link stopped against a cliff 40-77 % of the picture
-    // got 1-3 px of motion that flipped direction, three times the warp error of the camera's vectors. With c9 kept too,
-    // the turning run is as good (object warp error 0.46 of the camera's). Why their copies are wrong is not known.
-    // NX2NAVI_MVPREV_SKIP=<hex bank mask> (test) replaces the default a00 (bit n: cn).
-    static long skip = -2;
-    if (skip == -2) {
-        const char *e = cfg_get("NX2NAVI_MVPREV_SKIP");
-        skip = e && *e ? strtol(e, NULL, 16) : 1L << 9 | 1L << 11;
-    }
-    if (skip >> (index + 3) & 1) return 0;
-    uint64_t c0 = __builtin_ia32_rdtsc();
-    int found = vk_mvprev_find(index, u->addr, u->size, &pa, &how);
-    uint64_t c1 = __builtin_ia32_rdtsc();
-    MO.cyc[0] += c1 - c0, MO.ncyc++, MO.big += n;
-    if (index >= 0 && index < 14) MO.lk[index][found ? how : MVPREV_NONE]++;
-    if (!found || !vk_usnap_find(pa, n, LIM.ubo_align, out)) return 0;
-    if (how == MVPREV_SELF) return 1;   // bound at the same address last frame: not written again
-    const uint8_t *map = vk_usnap_map(), *cur = vk_usnap_bytes(u->addr, n);
-    uint64_t c2 = __builtin_ia32_rdtsc();
-    MO.cyc[1] += c2 - c1;
-    if (!cur) return 0;
-    const uint8_t *old = map + out->offset;
-    static long trust = -2;   // NX2NAVI_MVPREV_TRUST=<hex bank mask> (test): the copy found is taken without the check
-    if (trust == -2) {
-        const char *e = cfg_get("NX2NAVI_MVPREV_TRUST");
-        trust = e && *e ? strtol(e, NULL, 16) : 0;
-    }
-    if (trust >> (index + 3) & 1) {
-        *changed = memcmp(cur, old, n) != 0;
-        return 1;
-    }
-    int r = mo_similar(cur, old, n, changed);
-    MO.cyc[2] += __builtin_ia32_rdtsc() - c2;
-    if (!r && index >= 0 && index < 14) MO.lk[index][4]++;
-    return r;
-}
-
-// mo_prev_block once per block and list: many draws share their blocks (the scene's c14, a model's c7 and c9 across
-// its parts), and the lookup with its comparison was most of the checks' time.
-static int mo_prev_cached(int index, const p_bind_buf *u, VkDescriptorBufferInfo *out, int *changed) {
-    static struct { uint64_t gen, addr, size; int index, r, changed; VkDescriptorBufferInfo out; } bc[4096];
-    uint32_t i = (uint32_t)((u->addr ^ (uint64_t)index << 56 ^ u->size << 40) * 0x9E3779B97F4A7C15ull >> 52);
-    if (bc[i].gen == mo_gen && bc[i].addr == u->addr && bc[i].size == u->size && bc[i].index == index) {
-        *out = bc[i].out, *changed = bc[i].changed;
-        return bc[i].r;
-    }
-    int r = mo_prev_block(index, u, out, changed);
-    bc[i].gen = mo_gen, bc[i].addr = u->addr, bc[i].size = u->size, bc[i].index = index;
-    bc[i].r = r, bc[i].changed = *changed, bc[i].out = *out;
-    return r;
-}
-
-static int mo_legacy_previous(VkExec *ex, uint64_t frame, uint32_t banks, uint64_t t0, uint64_t tp,
-                              VkDescriptorBufferInfo prevb[17], uint32_t *have_out, uint32_t *changed_mask) {
-    static struct { uint64_t frame, key; int moving; VkDescriptorBufferInfo b[17]; uint32_t have; } memo[8192];
-    uint64_t key = banks;
-    for (int b = 3; b <= 16; b++)
-        if (banks >> b & 1 && b != 4) key = (key ^ ex->ubo[NVN_STAGE_VS][b - 3].addr) * 0x100000001b3ull;
-    uint32_t mi = (uint32_t)(key * 0xff51afd7ed558ccdull >> 51);
-    uint32_t have = 0;
-    if (memo[mi].frame == frame && memo[mi].key == key) {
-        if (!memo[mi].moving) {
-            if (t0) MO.ns_still += kern_now_ns() - tp;
-            MO.still++;
-            return 0;
-        }
-        memcpy(prevb, memo[mi].b, sizeof memo[mi].b), have = memo[mi].have;
-    } else {
-        MO.misses++;
-        int moving = 0;
-        for (int b = 3; b <= 16; b++) {
-            if (!(banks >> b & 1) || b == 4) continue;
-            const p_bind_buf *u = &ex->ubo[NVN_STAGE_VS][b - 3];
-            int changed;
-            if (u->addr && u->size && mo_prev_cached(b - 3, u, &prevb[b], &changed))
-                have |= 1u << b, moving |= changed << b;   // the banks whose block changed
-        }
-        memo[mi].frame = frame, memo[mi].key = key, memo[mi].moving = moving;
-        memcpy(memo[mi].b, prevb, sizeof memo[mi].b), memo[mi].have = have;
-        if (!moving) {
-            if (t0) MO.ns_still += kern_now_ns() - tp;
-            MO.still++;
-            return 0;
-        }
-    }
-    *have_out = have;
-    *changed_mask = (uint32_t)memo[mi].moving;
-    return 1;
+    ex->tracked_model = prior;
 }
 
 // Whether the draw goes on to the frame's list (mvobj_draw_), with its motion variant and the banks its position reads;
 // this draw context alone decides (no lock in a chunk): the draw's state, and the variant memo per context.
-static int mvobj_pick(VkExec *ex, const p_draw_idx *d, const GfxShader **vs_out, uint32_t *banks_out, MotionOwner *owner_out,
+static int mvobj_pick(VkExec *ex, const p_draw_idx *d, const GfxShader **vs_out, uint32_t *banks_out,
                       SkinPick *skin_out, uint64_t t0) {
     DrawCtx *const cx = ex->dc;
-    if (!vk_exec_in_chunk()) mvobj_banks(ex);   // a test's log of every scene draw (its tables are not shared)
     const VkExecTarget *z = &ex->depth;
     if (!z->image || z->width < DLAA_SCENE_MIN_W || z->format != VK_FORMAT_D32_SFLOAT || cx->B.st.samples > 1 ||
         cx->B.st.raster_discard)
@@ -5422,20 +5242,16 @@ static int mvobj_pick(VkExec *ex, const p_draw_idx *d, const GfxShader **vs_out,
     // solid geometry only, which tests and writes the scene depth: effects, particles and screen quads write none, and
     // drawn again they would put their motion on the surfaces behind them (DLSS takes those from the surface)
     if (!cx->B.st.ds.dt) return 0;
-    if (!cx->B.st.ds.dw && !(RT_V111 && cx->B.st.ds.df == NVN_DEPTH_FUNC_EQUAL && ex->color[0].image &&
+    if (!cx->B.st.ds.dw && !(cx->B.st.ds.df == NVN_DEPTH_FUNC_EQUAL && ex->color[0].image &&
                          (vk_pipeline_target_wmask(&cx->B.st, 0) & 7))) return 0;
     // An opaque colour pass can use EQUAL against a depth prepass. Its geometry is already in the scene depth.
-    if (RT_V111) {
+    {
         VkViewport v = base_viewport(ex);
         if (ex->ubo[0][0].size != 0x3500 || d->instances > 1 || d->base_instance || cx->B.st.color.blend_en || cx->B.st.ds.st ||
             ex->pass_layers != 1 || z->level || z->base_layer || z->layers != 1 ||
             v.x != 0.0f || v.y != (float)z->height ||
             v.width != (float)z->width || v.height != -(float)z->height) return 0;
-        // the player's own draw (ownership records), else any other skinned character's (vk_skin_motion.inc)
-        if (!pose_owner(ex, owner_out)) {
-            __atomic_add_fetch(&pose_unowned, 1, __ATOMIC_RELAXED);
-            if (!skin_pick(ex, skin_out)) return 0;
-        }
+        if (!skin_pick(ex, ex->work_scope && !vk_dlaa_reverse_only() ? &ex->work_scope->model : NULL, skin_out)) return 0;
     }
     // a vertex shader that reads a user bank besides the camera's (c4) may move on its own
     const GfxShaderRes *ur;
@@ -5467,7 +5283,6 @@ static int mvobj_pick(VkExec *ex, const p_draw_idx *d, const GfxShader **vs_out,
         uint32_t extra = gfx_shader_outputs(v, io) & ~gfx_shader_outputs(cx->B.st.vs, io);
         uint32_t banks = extra ? gfx_shader_mvprev_banks(v) & 0x1fff8u : 0;
         vmemo[vi].of = cx->B.st.vs, vmemo[vi].vs = v, vmemo[vi].banks = banks;
-        if (!RT_V111) vk_mvprev_want((banks & ~(1u << 4)) >> 3);   // binding index = bank - 3
     }
     const GfxShader *vs = vmemo[vi].vs;
     uint32_t banks = vmemo[vi].banks;
@@ -5475,38 +5290,16 @@ static int mvobj_pick(VkExec *ex, const p_draw_idx *d, const GfxShader **vs_out,
         __atomic_add_fetch(&MO.no_out, 1, __ATOMIC_RELAXED);
         return skin_pick_left(skin_out, SKIN_BANKS_OTHER);
     }
-    // a position without the scene camera (c4) has a view of its own (c8 c9 c10 [c13]: its c8 is at a new address every
-    // frame, last frame's is never found): drawn again it would get this frame's view and no camera motion
-    // (NX2NAVI_MV_CHECK while turning: 6.2 px end-point error against the camera vectors' 1.7)
-    static int noc4 = -1;
-    if (noc4 < 0) noc4 = rt_knob("MVOBJ_NOC4", "0");   // NX2NAVI_MVOBJ_NOC4=1 (test): drawn again all the same
-    if (!(banks >> 4 & 1) && !noc4) {
+    // Only replay positions that read the scene camera.
+    if (!(banks & (1u << 4))) {
         __atomic_add_fetch(&MO.no_out, 1, __ATOMIC_RELAXED);
         return skin_pick_left(skin_out, SKIN_BANKS_OTHER);
     }
-    // only positions that read an object's own blocks: bones (c5), place (c7) or c6. The rest (terrain and grass: c14
-    // c15 c16, with or without c9) measured no better than the camera's motion (NX2NAVI_MV_CHECK, turning, those draws
-    // alone: object warp error 0.112 against the camera's 0.113, the object part 0.4 of what the picture shows) and
-    // were half the draws checked and listed. NX2NAVI_MVOBJ_ALL=1 (test) takes them again.
-    static int all = -1;
-    if (all < 0) all = rt_knob("MVOBJ_ALL", "0");
-    if (!all && !(banks & (1u << 5 | 1u << 6 | 1u << 7))) {
+    // Only replay positions that read object transform or skinning data.
+    if (!(banks & (1u << 5 | 1u << 6 | 1u << 7))) {
         __atomic_add_fetch(&MO.no_out, 1, __ATOMIC_RELAXED);
         return skin_pick_left(skin_out, SKIN_BANKS_OTHER);
     }
-    // NX2NAVI_MVOBJ_ONLY=<hex bank mask> (test): only draws whose position reads no bank outside the mask (bit n: cn)
-    static long only = -2;
-    if (only == -2) {
-        const char *e = cfg_get("NX2NAVI_MVOBJ_ONLY");
-        only = e && *e ? strtol(e, NULL, 16) : -1;
-    }
-    if (only >= 0 && banks & ~(uint32_t)only & ~(1u << 4)) return skin_pick_left(skin_out, SKIN_BANKS_OTHER);
-    static long exact = -2;   // NX2NAVI_MVOBJ_EXACT=<hex bank mask> (test): only draws with exactly these position banks
-    if (exact == -2) {
-        const char *e = cfg_get("NX2NAVI_MVOBJ_EXACT");
-        exact = e && *e ? strtol(e, NULL, 16) : -1;
-    }
-    if (exact >= 0 && banks != (uint32_t)exact) return skin_pick_left(skin_out, SKIN_BANKS_OTHER);
     *vs_out = vs, *banks_out = banks;
     return 1;
 }
@@ -5514,69 +5307,26 @@ static int mvobj_pick(VkExec *ex, const p_draw_idx *d, const GfxShader **vs_out,
 // A draw mvobj_pick took, onto the frame's list (in a chunk under mo_lock): the list begins at the first such draw of
 // the frame's submission (mo_emit drops a list of another frame, submission or depth format).
 static void mvobj_draw_(VkExec *ex, const p_draw_idx *d, VkBuffer ib, VkDeviceSize ib_off, uint64_t t0,
-                        const GfxShader *vs, uint32_t banks, const MotionOwner *owner, const SkinPick *skin) {
+                        const GfxShader *vs, uint32_t banks, const SkinPick *skin) {
     DrawCtx *const cx = ex->dc;
     const VkExecTarget *z = &ex->depth;
     uint64_t tp = t0 ? kern_now_ns() : 0;
     uint64_t frame = __atomic_load_n(&gfx_counters.frames, __ATOMIC_RELAXED);
     if (MQ.frame != frame || MQ.fence != ex->fence || MQ.depth_fmt != z->format) mo_begin(ex, frame);
     mo_mask_note(banks, cx->B.st.vs);
-    // last frame's camera and blocks; held still when none of the position's blocks changed (most of the scenery)
-    PoseRange *pose = RT_V111 && !skin ? pose_match(ex, d, owner) : NULL;
-    if (RT_V111 && !pose && !skin) return;
     SkinDraw skin_draw;
     SkinEntry skin_entry;
     uint64_t skin_listed = 0;
-    VkDescriptorBufferInfo cam = {0}, prevb[17] = {0};
-    uint32_t have = 0, changed = 0;
-    const ActorPose *previous_pose = NULL;
-    ActorPose *pose_view = NULL;
     VkDescriptorImageInfo pose_depth = {0};
     int pose_visibility_guard = 0;
     float history[4] = {0};
-    float jit[2];
-    if (pose) {
-        const uint32_t required = (1u << 3) | (1u << 4) | (1u << 6);
-        if ((banks & required) != required || (banks & ~0xf8u)) return;
-        const GfxShaderRes *resources;
-        if (gfx_shader_resources(vs, GFX_RES_SSBO, &resources) || gfx_shader_resources(vs, GFX_RES_TEX, &resources) ||
-            gfx_shader_resources(vs, GFX_RES_IMG, &resources)) return;
-        previous_pose = pose_previous(pose, ex, d, frame, banks, &pose_view);
-        if (!previous_pose) return;
-        pose_visibility_guard = pose_guard_needed(pose, pose_view, previous_pose);
-        if (pose_visibility_guard && !vk_dlaa_pose_depth(frame, z->width, z->height, &pose_depth, history)) {
-            // Missing visibility evidence is not evidence that this valid pose vector is wrong.
-            // Keep the raw vector, with the normal current-depth and history-validity checks.
-            pose_view->guard_missing_depth = 1;
-            pose_visibility_guard = 0;
-        }
-        pose_view->visibility_guard = pose_visibility_guard;
-        VkViewport v = draw_viewport(ex);
-        jit[0] = v.x;
-        jit[1] = v.y - (float)z->height;
-    } else if (skin) {
-        // another skinned character's draw: its blocks, and whether a bone turned sharply (vk_skin_motion.inc); which
-        // draw of last frame it continues is decided when the vectors are made (skin_resolve)
-        if (!skin_try(ex, d, frame, vs, banks, skin, &skin_draw, &skin_entry, &skin_listed, &pose_visibility_guard)) return;
-        if (pose_visibility_guard && !vk_dlaa_pose_depth(frame, z->width, z->height, &pose_depth, history))
-            pose_visibility_guard = 0;   // as for the player: no depth of last frame to check against, the plain vector
-        VkViewport v = draw_viewport(ex);
-        jit[0] = v.x;
-        jit[1] = v.y - (float)z->height;
-    } else {
-        if (!vk_dlaa_prev_camera(&cam, jit)) {
-            MO.nodata++, MO.why[0]++;
-            return;
-        }
-        if (!mo_legacy_previous(ex, frame, banks, t0, tp, prevb, &have, &changed)) return;
-    }
+    if (!skin_try(ex, d, frame, vs, banks, skin, &skin_draw, &skin_entry, &skin_listed, &pose_visibility_guard)) return;
+    if (pose_visibility_guard && !vk_dlaa_pose_depth(frame, z->width, z->height, &pose_depth, history))
+        pose_visibility_guard = 0;
+    VkViewport v = draw_viewport(ex);
+    float jit[2] = {v.x, v.y - (float)z->height};
     const uint64_t token = ex->scene_projection.sample.token;
-    const SceneProjection *previous = pose ? vk_dlaa_previous_projection(frame) : NULL;
-    if ((pose || skin) && token) memcpy(jit, ex->scene_projection.sample.jitter, sizeof jit);
-    unsigned char previous_camera[SCENE_CAMERA_BYTES];
-    if (pose && (token || previous_pose->projection_token) &&
-        (!token || !scene_motion_previous_bank(previous_camera, previous_pose->bytes, previous_pose->size[0],
-                                               previous_pose->projection_token, previous_pose->cam, previous))) return;
+    if (token) memcpy(jit, ex->scene_projection.sample.jitter, sizeof jit);
     if (t0) MO.ns_part[1] += kern_now_ns() - tp, MO.n_part[1]++, tp = kern_now_ns();
     GfxShaderIo io[32];
     uint32_t extra = gfx_shader_outputs(vs, io) & ~gfx_shader_outputs(cx->B.st.vs, io);
@@ -5586,10 +5336,10 @@ static void mvobj_draw_(VkExec *ex, const p_draw_idx *d, VkBuffer ib, VkDeviceSi
         return;
     }
     int loc = 31 - __builtin_clz(extra);
-    const GfxShader *fs = pose_visibility_guard ? link_motion_fs(loc) : mo_fs(loc);
+    const GfxShader *fs = pose_visibility_guard ? mo_guarded_fs(loc) : mo_fs(loc);
     if (!fs) {
         MO.no_fs++;
-        if (skin) skin_left(SKIN_NOT_READY);
+        skin_left(SKIN_NOT_READY);
         return;
     }
     VkPipeState ms = cx->B.st;
@@ -5601,14 +5351,8 @@ static void mvobj_draw_(VkExec *ex, const p_draw_idx *d, VkBuffer ib, VkDeviceSi
     ms.chmask.mask = 0x3;   // r and g of target 0
     ms.ms.a2c = 0;
     // the game's own test with its equal case (LESS -> LEQUAL, GREATER -> GEQUAL): the surface the draw left in the
-    // scene depth passes, anything nearer hides it (NX2NAVI_MVOBJ_EQUAL=1: EQUAL, for comparison)
-    static int eq = -1;
-    if (eq < 0) eq = rt_knob("MVOBJ_EQUAL", "0");
-    int df = cx->B.st.ds.df;
-    df = (eq || pose || skin) ? NVN_DEPTH_FUNC_EQUAL : df == NVN_DEPTH_FUNC_LESS ? NVN_DEPTH_FUNC_LEQUAL
-       : df == NVN_DEPTH_FUNC_GREATER ? NVN_DEPTH_FUNC_GEQUAL : df == NVN_DEPTH_FUNC_LEQUAL || df == NVN_DEPTH_FUNC_GEQUAL ? df
-       : NVN_DEPTH_FUNC_EQUAL;
-    ms.ds.dt = 1, ms.ds.dw = 0, ms.ds.df = (uint64_t)df, ms.ds.st = 0;
+    // scene depth passes, anything nearer hides it.
+    ms.ds.dt = 1, ms.ds.dw = 0, ms.ds.df = NVN_DEPTH_FUNC_EQUAL, ms.ds.st = 0;
     // the pipeline per state, kept: the lookup hashes and locks the whole state
     static struct { VkPipeState st; VkPipeline p; const VkPipeInfo *info; int used; } pmemo[64];
     static int plast = -1;   // the entry of the last draw: a model's parts in a row share the state, no hash then
@@ -5631,14 +5375,14 @@ static void mvobj_draw_(VkExec *ex, const p_draw_idx *d, VkBuffer ib, VkDeviceSi
         info = pmemo[pi].info;
         pipe = __atomic_load_n(&info->pipeline, __ATOMIC_ACQUIRE);   // its optimised build once swapped in
         if (!pipe) {
-            if (skin) skin_left(SKIN_NOT_READY);
+            skin_left(SKIN_NOT_READY);
             return;
         }
     } else {
         pipe = vk_pipeline_graphics_async(&ms, &info, &pending, 0);
         if (pending || !pipe || !info) {
             MO.building += pending != 0;
-            if (skin) skin_left(SKIN_NOT_READY);
+            skin_left(SKIN_NOT_READY);
             return;
         }
         pmemo[pi].st = ms, pmemo[pi].p = pipe, pmemo[pi].info = info, pmemo[pi].used = 1;
@@ -5659,30 +5403,15 @@ static void mvobj_draw_(VkExec *ex, const p_draw_idx *d, VkBuffer ib, VkDeviceSi
         memcpy(MQ.par_in, par_in, sizeof par_in);
     }
     memset(cx->mo_ovr, 0, sizeof cx->mo_ovr);
-    if (previous_pose) {
-        const uint8_t *data = previous_pose->bytes;
-        for (int i = 0; i < POSE_BANKS; ++i) {
-            if (!previous_pose->size[i]) continue;
-            VkDescriptorBufferInfo *b = &cx->mo_ovr[NVN_STAGE_VS][18 + i];
-            b->range = previous_pose->size[i];
-            memcpy(scratch(ex, b->range, &b->buffer, &b->offset), i == 0 && token ? previous_camera : data, b->range);
-            data += b->range;
-        }
-    } else if (skin) {
-        // where skin_resolve puts last frame's bytes of each block, once it knows whose they are
-        for (int i = 0; i < SKIN_BANKS; i++)
-            if (skin_draw.block[i] >= 0) cx->mo_ovr[NVN_STAGE_VS][18 + i] = SK.f[SK.cur].b[skin_draw.block[i]].was;
-    } else {
-        for (int bk = 3; bk <= 16; bk++)
-            cx->mo_ovr[NVN_STAGE_VS][bk + 15] = bk == 4 ? cam : (have >> bk & 1) ? prevb[bk] : ubo_info(ex, NVN_STAGE_VS, bk);
-    }
+    for (int i = 0; i < SKIN_BANKS; i++)
+        if (skin_draw.block[i] >= 0) cx->mo_ovr[NVN_STAGE_VS][18 + i] = SK.f[SK.cur].b[skin_draw.block[i]].was;
     cx->mo_ovr[NVN_STAGE_FS][3] = MQ.par;
     cx->mo_ovr_on = 1;
     int bound = mo_desc(ex, info, q, pose_visibility_guard ? &pose_depth : NULL);
     cx->mo_ovr_on = 0;
     if (!bound) {
         MO.storage++;
-        if (skin) skin_left(SKIN_STORAGE);
+        skin_left(SKIN_STORAGE);
         return;
     }
     q->pipe = pipe, q->info = info;
@@ -5698,28 +5427,24 @@ static void mvobj_draw_(VkExec *ex, const p_draw_idx *d, VkBuffer ib, VkDeviceSi
     q->it = d->itype == NVN_INDEX_TYPE_UNSIGNED_SHORT ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
     q->count = (uint32_t)d->count, q->instances = d->instances > 0 ? (uint32_t)d->instances : 1;
     q->base_vertex = d->base_vertex, q->base_instance = (uint32_t)d->base_instance;
-    q->cam = ex->ubo[NVN_STAGE_VS][pose || skin ? 0 : 1].addr;
+    q->cam = ex->ubo[NVN_STAGE_VS][0].addr;
     q->projection_token = token;
-    q->pose_index = pose ? (int)(pose - pose_ranges) + 1 : 0;
-    q->pose_view = pose ? (int)(pose_view - pose->history[frame & 1].view) : 0;
-    q->skin = skin ? 1 + pose_visibility_guard : 0;
-    if (skin) skin_commit(&skin_draw, &skin_entry, skin_listed, MQ.n);
+    q->skin = 1 + pose_visibility_guard;
+    skin_commit(&skin_draw, &skin_entry, skin_listed, MQ.n);
     MQ.n++;
     MO.draws++;
-    for (int i = 0; i < 16; i++)   // the frame's draws per position banks and changed banks (vk_mvobj_frame_masks)
-        if (!MF[i].n || (MF[i].mask == banks && MF[i].chg == changed)) {
-            MF[i].mask = banks, MF[i].chg = changed, MF[i].n++;
-            break;
-        }
     if (t0) MO.ns_rec += kern_now_ns() - t1, MO.n_rec++;
 }
 
 int vk_fg_pose_prepare(VkExec *ex, uint64_t cam, VkImage depth, uint32_t w, uint32_t h, uint64_t token) {
-    if (!RT_V111 || (!pose_enabled() && !skin_enabled())) return 0;
+    if (!skin_enabled()) return 0;
     uint64_t frame = __atomic_load_n(&gfx_counters.frames, __ATOMIC_RELAXED);
-    pose_select(frame, cam, depth, token);
     skin_resolve(ex, frame, cam, depth, w, h, token);
-    pose_status(frame);
+    if (frame % 120 == 0) {
+        char status[1200];
+        skin_status(status, sizeof status);
+        rt_log("model motion: %s", status);
+    }
     return MQ.n != 0;
 }
 
@@ -5737,13 +5462,6 @@ int vk_mvobj_execute(VkExec *ex, uint64_t cam, VkImageView mv, VkImageView depth
             o += snprintf(l + o, sizeof l - o, " %#x:%llu (u%d s%d t%d)", MM[i].mask, (unsigned long long)MM[i].n, MM[i].ubo,
                           MM[i].ssbo, MM[i].tex);
         if (o) rt_log("vk_exec: per-object motion position banks (bit n: cn) and draws:%s", l);
-        o = 0;
-        for (int i = 0; i < 14 && o < 1300; i++)
-            if (MO.lk[i][0] + MO.lk[i][1] + MO.lk[i][2] + MO.lk[i][3])
-                o += snprintf(l + o, sizeof l - o, " c%d %llu/%llu/%llu/%llu/%llu", i + 3, (unsigned long long)MO.lk[i][0],
-                              (unsigned long long)MO.lk[i][1], (unsigned long long)MO.lk[i][2],
-                              (unsigned long long)MO.lk[i][3], (unsigned long long)MO.lk[i][4]);
-        if (o) rt_log("vk_exec: per-object motion last-frame lookups (none/self/side/nearer/refused):%s", l);
     }
     if (frames % 60 == 0 && MO.ran)
         rt_log("vk_exec: per-object motion recorded a frame: %.0f draws, %.0f pipeline binds, %.0f dynamic states, %.0f "
@@ -5753,54 +5471,24 @@ int vk_mvobj_execute(VkExec *ex, uint64_t cam, VkImageView mv, VkImageView depth
                (double)MO.e_setw / MO.ran, (double)MO.e_setreuse / MO.ran);
     if (frames % 60 == 0)
         rt_log("vk_exec: per-object motion checks: filter %.2f ms (%.0f a frame), data %.2f ms (%.0f), variant and "
-               "pipeline %.2f ms (%.0f); %.0f objects looked up; still draws %.2f ms", MO.ns_part[0] / 1e6 / frames,
-               (double)MO.n_part[0] / frames,
+               "pipeline %.2f ms (%.0f)", MO.ns_part[0] / 1e6 / frames, (double)MO.n_part[0] / frames,
                MO.ns_part[1] / 1e6 / frames, (double)MO.n_part[1] / frames, MO.ns_part[2] / 1e6 / frames,
-               (double)MO.n_part[2] / frames, (double)MO.misses / frames, MO.ns_still / 1e6 / frames);
-    if (frames % 60 == 0 && MO.ncyc)
-        rt_log("vk_exec: per-object motion lookups: %llu cycles finding last frame's, %llu the copies, %llu comparing, "
-               "a lookup; %llu bytes a lookup", (unsigned long long)(MO.cyc[0] / MO.ncyc),
-               (unsigned long long)(MO.cyc[1] / MO.ncyc), (unsigned long long)(MO.cyc[2] / MO.ncyc),
-               (unsigned long long)(MO.big / MO.ncyc));
-    if (frames % 60 == 0)
-        rt_log("vk_exec: per-object motion: %llu draws read place or bones, %llu of them still, %llu drawn again, %llu without last frame's data, %llu "
-               "waiting for a shader or pipeline; %llu frames ran, %llu dropped (no data: camera %llu, bones %llu, place %llu, "
-               "bones copy %llu, place copy %llu; uniform alignment %llu; variant without its output %llu, with storage %llu, "
-               "no fragment shader %llu; another camera %llu)",
-               (unsigned long long)MO.cand, (unsigned long long)MO.still, (unsigned long long)MO.draws, (unsigned long long)MO.nodata,
-               (unsigned long long)MO.building,
-               (unsigned long long)MO.ran, (unsigned long long)MO.dropped, (unsigned long long)MO.why[0],
-               (unsigned long long)MO.why[1], (unsigned long long)MO.why[2], (unsigned long long)MO.why[3],
-               (unsigned long long)MO.why[4], (unsigned long long)LIM.ubo_align, (unsigned long long)MO.no_out,
-               (unsigned long long)MO.storage, (unsigned long long)MO.no_fs, (unsigned long long)MO.other_cam);
+               (double)MO.n_part[2] / frames);
     if (!MQ.n) return 0;
-    static int exec = -1;
-    if (exec < 0) exec = rt_knob("MVOBJ_EXEC", "1");   // NX2NAVI_MVOBJ_EXEC=0: listed, never recorded (test)
-    if (!exec) {
-        mo_drop();
-        return 0;
-    }
     uint64_t frame = __atomic_load_n(&gfx_counters.frames, __ATOMIC_RELAXED);
     if (MQ.frame != frame || MQ.fence != ex->fence || MQ.depth_fmt != depth_fmt) {
         mo_drop();
         return 0;
     }
-    int fo = 0;
-    for (int i = 0; i < 16 && MF[i].n && fo < (int)sizeof fm_last - 40; i++)
-        fo += snprintf(fm_last + fo, sizeof fm_last - fo, " %#x/%#x:%u", MF[i].mask, MF[i].chg, MF[i].n);
-    if (!fo) fm_last[0] = 0;
     // only draws with the scene camera block (vk_dlaa.c mv_pass's): last frame's camera they get is that block's, and
     // a draw of another view would move by the difference between the two views
     int kept = 0;
     for (int i = 0; i < MQ.n; i++)
-        if (MQ.d[i].cam == cam && MQ.d[i].projection_token == token && (!MQ.d[i].pose_index ||
-            pose_ranges[MQ.d[i].pose_index - 1].history[frame & 1].view[MQ.d[i].pose_view].selected) &&
-            (!MQ.d[i].skin || (MQ.d[i].skin > 0 && SK.resolved))) {   // a skinned draw: one skin_resolve paired
-            if (MQ.d[i].pose_index) ++pose_written[pose_ranges[MQ.d[i].pose_index - 1].actor];
-            if (MQ.d[i].skin) skin_recorded(MQ.d[i].skin == 2);
+        if (MQ.d[i].cam == cam && MQ.d[i].projection_token == token &&
+            (MQ.d[i].skin > 0 && SK.resolved)) {   // a skinned draw: one skin_resolve paired
+            skin_recorded(MQ.d[i].skin == 2);
             MQ.d[kept++] = MQ.d[i];
         }
-        else if (!MQ.d[i].skin) MO.other_cam++;   // a skinned draw left out has its own count (skin_status)
     MQ.n = kept;
     if (!MQ.n) {
         mo_drop();
@@ -7660,8 +7348,6 @@ static void op_draw_impl(VkExec *ex, uint32_t op, const void *payload) {
     }
 }
 
-// The last executed list's draws as " <position banks>/<changed banks>:<draws>" (bit n: cn), for NX2NAVI_MV_CHECK's lines.
-const char *vk_mvobj_frame_masks(void) { return fm_last; }
 
 // NX2NAVI_REPLAY_TIME (default 0, off): times each op so the frame-time summary can say how the replay splits between
 // draws, binds and transfers. The clock reads cost a fraction of a millisecond a frame, which is why it is off by

@@ -1278,6 +1278,7 @@ typedef struct Cont {
     uint64_t *h;            // private copies of the recordings it has still to walk (cont_new), the one being walked
     int n, i;
     const op_hdr *at;       // the wait it stopped at in h[i] (NULL: not started)
+    const p_model_scope *work_scope; // points into the private copy of h[i]
     uint64_t since;         // vk_exec_submit_seq when it stopped
     int has_st;             // st holds the queue's state (else the running state carries over, as for any submission)
     uint8_t *st;
@@ -1569,12 +1570,18 @@ static int cont_walk(VkExec *ex, Cont *c) {
             rt_log("vk: event order: a held submission goes on after %llu submissions without its signal",
                    (unsigned long long)(vk_exec_submit_seq - c->since));
     }
+    ex->work_scope = c->work_scope;
+    if (c->work_scope)
+        ex->work_scope_end = (uintptr_t)(c->work_scope + 1) + c->work_scope->bytes;
+    c->work_scope = NULL;
     for (; c->i < c->n; c->i++) {
         const op_hdr *from = c->at ? nvn_op_next(c->at) : nvn_op_first(c->h[c->i]);
         c->at = NULL;
         const op_hdr *stop = walk(ex, from, 0);
         if (stop) {
             c->at = stop;
+            if ((uintptr_t)stop < ex->work_scope_end) c->work_scope = ex->work_scope;
+            ex->work_scope = NULL;
             c->since = vk_exec_submit_seq;
             return 1;
         }
@@ -1821,9 +1828,17 @@ int vk_exec_mesh_run(const void *cur, const void **out, int max) {
 
 // One op of the stream other than those that steer the walk (END, JUMP, CALL and WAIT_EVENT: walk).
 static void op_one(VkExec *ex, const op_hdr *h) {
+    if (ex->work_scope && (uintptr_t)h >= ex->work_scope_end) ex->work_scope = NULL;
     const void *a = nvn_op_payload(h);
     switch (h->op) {
-    case OP_BEGIN: break;
+    case OP_BEGIN: ex->work_scope = NULL; break;
+    case OP_MODEL_SCOPE:
+        // An outer shape call supplies the live owner for the entire copied range.
+        if (!ex->work_scope) {
+            ex->work_scope = a;
+            ex->work_scope_end = (uintptr_t)nvn_op_next(h) + ex->work_scope->bytes;
+        }
+        break;
     case OP_SET_RT: set_rt(ex, a); break;
     case OP_CLEAR_COLOR: clear_color(ex, a); break;
     case OP_CLEAR_DS: clear_ds(ex, a); break;
@@ -1980,7 +1995,7 @@ static void op_one(VkExec *ex, const op_hdr *h) {
 // The ops a run may hold; JUMP is followed.
 static int run_op(uint32_t op) {
     switch (op) {
-    case OP_BEGIN: case OP_VIEWPORTS: case OP_SCISSOR: case OP_DEPTH_RANGE: case OP_STENCIL: case OP_POLY_OFFSET:
+    case OP_BEGIN: case OP_MODEL_SCOPE: case OP_VIEWPORTS: case OP_SCISSOR: case OP_DEPTH_RANGE: case OP_STENCIL: case OP_POLY_OFFSET:
     case OP_BLEND_COLOR: case OP_DEPTH_CLAMP: case OP_RASTER_DISCARD: case OP_PRIM_RESTART: case OP_COPY_STRIDE:
     case OP_SET_TEX_POOL: case OP_SET_SAMP_POOL: case OP_BIND_PROGRAM: case OP_BIND_STATE: case OP_BIND_VATTR:
     case OP_BIND_VSTREAM: case OP_BIND_VBUF: case OP_BIND_UBO: case OP_BIND_SSBO: case OP_BIND_TEX: case OP_BIND_SAMP:
@@ -2611,7 +2626,7 @@ static const op_hdr *walk(VkExec *ex, const op_hdr *h, int depth) {
         if (RR.on > 0) runs_op(h->op);
         if (!op_linear(h->op)) vk_exec_brk++;
         switch (h->op) {
-        case OP_END: return NULL;
+        case OP_END: ex->work_scope = NULL; return NULL;
         case OP_JUMP: h = (const op_hdr *)(uintptr_t)((const p_jump *)a)->target; continue;
         case OP_CALL:
             if (depth >= CALL_DEPTH) rt_fatal("vk: command buffer calls nested deeper than %d", CALL_DEPTH);
@@ -2781,7 +2796,13 @@ int vk_exec_record(VkCommandBuffer cb, const uint64_t *handles, int n, uint64_t 
             AH.i = i;
             const op_hdr *stop = walk(ex, nvn_op_first(handles[i]), 0);
             if (!stop) continue;
-            cont_push(slot, cont_new(handles, n, i, stop));   // the rest of this submission waits for its signal
+            Cont *held = cont_new(handles, n, i, stop);
+            // Rebase the scope into the same private copy as the wait command.
+            uintptr_t scope = (uintptr_t)ex->work_scope;
+            if (scope >= handles[i] && scope < (uintptr_t)stop && (uintptr_t)stop < ex->work_scope_end)
+                held->work_scope = (const p_model_scope *)(uintptr_t)(held->h[0] + (scope - handles[i]));
+            ex->work_scope = NULL;
+            cont_push(slot, held);
             evo_held++;
             vk_exec_evt('h', NULL, 0);
             break;

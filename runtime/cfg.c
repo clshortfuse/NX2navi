@@ -1,4 +1,4 @@
-﻿// nx2navi.ini: file-backed defaults for the NX2NAVI_* environment variables (docs/controls.md, nx2navi.ini.example).
+// nx2navi.ini: file-backed defaults for the NX2NAVI_* environment variables (docs/controls.md, nx2navi.ini.example).
 // Format: "key = value" lines, '#' or ';' at the start of a line begins a comment, [sections] only group. A key is a
 // variable name without "NX2NAVI_" (an optional NX2NAVI_ prefix is accepted), case-insensitive. A value is the rest of the
 // line, trimmed, optionally in double quotes; an empty value counts as unset. For a setting with a set of values (a row
@@ -50,7 +50,7 @@ static const char *const known[] = {
     "BIND_SKIP", "BIND_STATS", "BIND_UP", "BIND_X", "BIND_Y",
     "BIND_ZL", "BIND_ZR", "BLOCK_VIEWS_3D", "CACHE_DIE", "CLOTH_REALTIME", "COLOR_BRIGHTNESS", "COMPUTE_KEEP", "COLOR_CONTRAST", "COLOR_GAMMA",
     "COLOR_PRESET", "COLOR_SATURATION", "CONTACT_DEBUG", "CONTACT_SHADOWS", "CORE_DIAG", "CRIT", "CRIT_OUT",
-    "DMABUF", "DMABUF_MB", "DRAW_CRUMBS", "GPA_LATE", "DESC_TEMPLATE", "DEVICE_PROFILE", "DISCORD_APP_ID", "DISCORD_IMAGE", "DISCORD_RPC", "DLAA", "DLAA_CAM_KEEP", "DLAA_CUT", "DLSS_IDLE_FREE", "DLAA_EDGE_FILL", "DLAA_AT_UPSCALER", "FFX_DEBUG", "FFX_KEYS", "FSR3_SHARPEN", "DLAA_JITTER", "DLAA_JITTER_TEST", "DLSS_LOD_BIAS_TEST", "DLAA_MV", "DLAA_MASKDEBUG", "DLAA_MVDEBUG", "DLAA_OBJMV", "DLAA_SURVEY", "DLAA_TARGET_KEEP", "DLAA_TIMES", "DLSS", "DLSS_CHAR_MASK", "DLSS_PRESET", "DLSS_PREBLOOM", "DLSS_RANGE", "DLSS_REACTIVE", "DUMP", "DUMP_BUF", "DUMP_DIR",
+    "DMABUF", "DMABUF_MB", "DRAW_CRUMBS", "GPA_LATE", "DESC_TEMPLATE", "DEVICE_PROFILE", "DISCORD_APP_ID", "DISCORD_IMAGE", "DISCORD_RPC", "DLAA", "DLAA_CAM_KEEP", "DLAA_CUT", "DLSS_IDLE_FREE", "DLAA_EDGE_FILL", "DLAA_AT_UPSCALER", "FFX_DEBUG", "FFX_KEYS", "FSR3_SHARPEN", "DLAA_JITTER", "DLAA_JITTER_TEST", "DLSS_LOD_BIAS_TEST", "DLAA_MV", "DLAA_MVDEBUG", "DLAA_SURVEY", "DLAA_TARGET_KEEP", "DLAA_TIMES", "DLSS", "DLSS_PRESET", "DLSS_PREBLOOM", "DLSS_RANGE", "DUMP", "DUMP_BUF", "DUMP_DIR",
     "UPSCALER_IDLE_WAIT",
     "DUMP_LOG", "DUMP_RAW", "DUMP_SHADERS", "DUMP_FILE", "DS3", "LOG_CS_BINDS", "LOG_TEX_FLAGS", "LOG_MESH", "MESH", "POOL", "NATIVE_TENSOR", "LOG_RCOND", "LOG_RT_SIZES", "DUMP_WHITE", "DUMP_AFTER", "DUMP_MOVIE", "SUBMIT_FINISH", "ACQUIRE_WAIT", "CRASH_FILTER_GUARD", "CS_FALLBACK", "EXEFS", "FEEDBACK", "FIX_C0", "FIX_ZERO", "FLIGHT", "FLIGHT_AT", "FLIGHT_DIR", "FLIGHT_FRAMES", "GPU_TIMELINE",
     "FFX_PIPE_CACHE", "FLIGHT_SPIKE_MS", "FREEZE_QUIET_MS", "FREEZE_LOAD_HOLD_MS", "STUTTER_MAP", "PAR_JOBS", "PIPE_RELEASE", "FLIGHT_THUMBS", "FLIGHT_EVERY", "FLIGHT_FLASH", "FLIGHT_FLASH_DIFF", "FLIGHT_FLASH_CELLS", "FLUSH_SPAN", "FLUSH_UPLOAD", "FOG_CULL", "FOLIAGE_SHADOW_CULL", "FOLIAGE_SHADOW_VRS", "FOV", "FOV_PATCH", "FG_HUDLESS_SHOW", "FG_MULT", "FPS60", "FPS_LIMIT", "FRAMEGEN", "FRAMEGEN_MULTIPLIER", "FREEZE_IDLE", "FREEZE_ASYNC", "FREEZE_BUDGET_US", "FREE_CORES",
@@ -61,10 +61,9 @@ static const char *const known[] = {
     "HDR_TONEMAP", "HDR_TONE_SLOPE", "HIGHFPS_FIX", "INPUT", "INPUT_RECORD", "INPUT_SCRIPT", "LANG", "LIB_PREBUILD",
     "BIG_BUILD_FREE_MB", "BIG_BUILD_MAX_MB", "BUILD_FREE_MB", "BUILD_RESERVE_MB", "LIB_PREBUILD_BIG", "LIB_PREBUILD_BIG_BG", "COMPUTE_WARM_REUSE", "LIB_PREBUILD_KEEP", "LIB_PREBUILD_THREADS", "LIB_WARM", "LINE_WIDTH", "POOL_SHOWN_FIRST", "POOL_DATA_FIRST", "TEX_REUSE_NAMED", "TEX_OVERWRITTEN_USED", "PIPE_LINK_MS", "FRAME_HOLD_MS", "PACE_SMOOTH", "OQ_BATCH", "OQ_HOLD", "QUAD_INDEX", "CLEAR_SMALL_CPU", "GATE_WAIT_MS", "LOCALE", "LOD_GUARD", "LSTICK_DEADZONE", "MEMORY", "MEM_CENSUS", "MEM_NEED_MB", "MENU_LANG", "MENU_SOUND_VOLUME", "MENU_TEST",
     "MENU_CURSOR", "MENU_CURSOR_LOG", "MENU_TEST_CLICK", "MENU_TEST_DIR", "MENU_TEST_SET", "MINIMAL_LAYOUT", "MICROPHONE", "MIRROR_GAP", "MODS_DIR", "MODS_DISABLED", "MODS_ORDER", "MODS_REBUILD", "MONITOR", "MOTION", "MOUSE_MODE", "MOUSE_DIRECT_PATCH", "MOUSE_SENS", "MOUSE_TRACE", "MOVIE_HOST", "MOVIE_PACE", "MOVIE_CLOCK", "TEST_HITCH", "SPRINT_BUTTON", "SPRINT_MODE", "SPRINT_BUTTON_PATCH", "TEXT_SPEED", "TEXT_SPEED_PATCH",
-    "MOTION_GUARD_DEGREES", "MOTION_POLICY_TRACE", "SELECTIVE_MOTION", "SELECTIVE_MOTION_RAW",   // motion_owner.c, vk_fg_pose.inc
+    "MOTION_GUARD_DEGREES",   // vk_skin_motion.inc
     "SKIN_MOTION",   // vk_skin_motion.inc
-    "MVOBJ_ALL", "MVOBJ_BANKS", "MVOBJ_EQUAL", "MVOBJ_EXACT", "MVOBJ_EXEC", "MVOBJ_NOC4", "MVOBJ_ONLY", "MVOBJ_TIMES", "MVPREV_CHECK", "MVPREV_GROW", "MVPREV_SKIP", "MVPREV_TRUST", "MV_CHECK",
-    "MV_SURVEY",
+    "MVOBJ_TIMES",
     "HANDLE_CENSUS",
     "PIPE_SEED_BOOT", "ONE_PER_CORE", "OPERATION_MODE", "OUTPUT_RES", "PAD_LAYOUT", "PACE_HZ", "PASS_CRUMBS", "PATCH_OUTPUT", "PATCH_RES_FIXED", "PATCH_SCENE", "PATCH_SCENE_PROJECTION", "PATCH_WIDE_ASPECT", "PATCH_WIDE_HUD", "PATCH_WIDE_MOVIE", "PATCH_WIDE_OUT", "PATCH_FREECAM", "PATCH_OCCLUSION_OFF", "PATCH_WIDE_SAVE", "PATCH_WIDE_SCENE", "PCSS", "PCSS_K", "PERF_OVERLAY", "PERF_SLOW_MS", "PIPELINE_CACHE", "PIPELINE_CACHE_MAX_MB", "PIPELINE_CACHE_PLAY", "PIPELINE_CACHE_PLAY_MB", "PIPE_BINARIES", "PIPE_BINARIES_MAX_MB", "PIPE_FEEDBACK", "PIPE_MEMO", "PIPE_PREBUILD", "PIPE_SEED", "PIPE_SKIP", "PIPE_SYNC", "PIPE_WAIT", "POWER_FULL", "TEX_SAME", "TEX_SAME_BIG", "TEX_FLAT3D", "TEX_KEEP_TAKEN", "TEX_RATE_LOW", "TEX_HARD_ORDER", "TEX_STALE_KEPT", "ASTC_SCRATCH_TRIM", "PRESENT_HELD", "HELD_SYNC",
     "PRESENT_ORDER",
@@ -95,7 +94,7 @@ static const char *const known[] = {
     "TEX_COMPACT", "TEX_COMPACT_MIN_MB", "TEX_COMPACT_FRAME_MB",   // texture compaction (vk_texture.c); no menu row
     "STANDIN_FILTER",   // the filter of the scene upscaler's stand-in (vk_tonemap.c); no menu row
     // developer switches read with cfg_get, rt_knob or vk_caps.c env_u32, without a menu row (tests/cfg_rows_check.py)
-    "AUDIO_DUMP", "DEFER_STAMP", "DEPTH_TWIN", "DLAA_ZFIT", "DUMP_SKIP_RUNS", "DUMP_TEX", "DUMP_UBO", "EVENT_ORDER",
+    "AUDIO_DUMP", "DEFER_STAMP", "DEPTH_TWIN", "DUMP_SKIP_RUNS", "DUMP_TEX", "DUMP_UBO", "EVENT_ORDER",
     "GATHER_BIAS", "PIN_SWEEP", "REC_CHECK", "REC_DELAY_US", "REG_ORDER", "SHADOW", "ZERO_LOCALS",
     // hang_watch.c: the hang watch's seconds
     "HANG_WATCH_S",
@@ -135,7 +134,7 @@ static const struct { const char *key, *section; } sections[] = {
     {"HDR_HIGHLIGHT_SAT", "display"}, {"HDR_BLOWOUT", "display"}, {"HDR_FLARE", "display"}, {"HDR_HUE", "display"},
     {"HDR_GRADE", "display"}, {"HDR_MIDGRAY", "display"}, {"HDR_MATCH_SLOPE", "display"}, {"HDR_TONE_SLOPE", "display"},
     {"HDR_HUE_CLIP", "display"}, {"SHADOW_RES", "display"},
-    {"DLAA", "display"}, {"FSR4", "display"}, {"FSR4_FG", "display"}, {"DLSS", "display"}, {"DLSS_PRESET", "display"}, {"DLSS_IDLE_FREE", "display"}, {"DLSS_RANGE", "display"}, {"DLSS_PREBLOOM", "display"}, {"DLSS_CHAR_MASK", "display"}, {"FXAA", "display"}, {"AA", "display"},
+    {"DLAA", "display"}, {"FSR4", "display"}, {"FSR4_FG", "display"}, {"DLSS", "display"}, {"DLSS_PRESET", "display"}, {"DLSS_IDLE_FREE", "display"}, {"DLSS_RANGE", "display"}, {"DLSS_PREBLOOM", "display"}, {"FXAA", "display"}, {"AA", "display"},
     {"UPSCALER_IDLE_WAIT", "display"},
     {"FRAMEGEN", "display"}, {"FRAMEGEN_MULTIPLIER", "display"}, {"FG_MULT", "display"}, {"SKIN_MOTION", "display"},
     {"LOW_LATENCY", "display"}, {"REFLEX_LIMIT", "display"},
@@ -184,7 +183,7 @@ static const struct { const char *key, *section; } sections[] = {
     {"DRAW_CRUMBS", "diagnostics"}, {"TRACE", "diagnostics"}, {"FLIGHT", "diagnostics"}, {"PASS_CRUMBS", "diagnostics"}, {"FLIGHT_SPIKE_MS", "diagnostics"}, {"STUTTER_MAP", "diagnostics"}, {"PAR_JOBS", "performance"}, {"PIPE_RELEASE", "performance"},
     {"FLIGHT_FLASH", "diagnostics"}, {"FLIGHT_FLASH_DIFF", "diagnostics"}, {"FLIGHT_FLASH_CELLS", "diagnostics"},
     {"WB_FENCE_LIMIT", "diagnostics"}, {"WB_MERGE", "diagnostics"}, {"WB_EXACT", "diagnostics"}, {"MEM_CENSUS", "diagnostics"}, {"WB_NO_REUP", "diagnostics"}, {"WB_PROBE", "diagnostics"}, {"WB_SPLIT", "performance"}, {"SHADOW_BULK_WRITE", "performance"}, {"WB_LAZY", "performance"}, {"HEAP_LAZY", "performance"}, {"BARRIER_GAME", "performance"}, {"MESH_AHEAD", "performance"}, {"MESH_FALLBACK", "performance"}, {"MESH_FALLBACK_MB", "performance"}, {"MESH_FALLBACK_WORKERS", "performance"}, {"MESH_FALLBACK_HOLD", "performance"}, {"WB_LAZY_TOUCH", "diagnostics"}, {"WB_LAZY_UNLOCKED", "diagnostics"}, {"WB_LAZY_CHUNK", "performance"}, {"FLUSH_UPLOAD", "diagnostics"}, {"GPA_TWIN_MAX_KB", "diagnostics"}, {"MIRROR_CAPTURE_KB", "diagnostics"}, {"WB_SKIP_MB", "diagnostics"},
-    {"WB_MERGE_MAX", "diagnostics"}, {"MV_SURVEY", "diagnostics"}, {"TEXUP_LOG_MS", "diagnostics"},
+    {"WB_MERGE_MAX", "diagnostics"}, {"TEXUP_LOG_MS", "diagnostics"},
     {"WAIT_WATCH_S", "diagnostics"},
     {"PRESENT_ORDER", "diagnostics"},
     {"HANDLE_CENSUS", "diagnostics"},
@@ -242,7 +241,7 @@ static const CfgMeta metas[] = {
     // vk_dlssg.c limit_allowed: with DLSS Frame Generation, Reflex holds the frame limit where each frame starts; 0 leaves
     // it to the game's own limiter
     {"REFLEX_LIMIT", "1", "0|1", LIVE},
-    {"DLSS_CHAR_MASK", "65", "0|35|65|100", LIVE}, {"FXAA", "1", "0|1", LIVE},
+    {"FXAA", "1", "0|1", LIVE},
     // vk_skin_motion.inc skin_enabled: motion vectors of their own for every skinned character, not the player alone
     {"SKIN_MOTION", "1", "0|1", RESTART},
     {"AA", "game", "game|off|fxaa|smaa|taa", LIVE},   // vk_aa.c: what runs in place of the game's SMAA

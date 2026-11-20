@@ -3,7 +3,7 @@
 // every texture a 2D one, float vertex inputs and colour outputs. Against the 3,093 (program, answers) pairs a play
 // session of Ocarina recorded, that guess matched 89.5%: vertex 77.3%, compute 88.1%, fragment 99.6%. With two readings
 // of the first translation, one more translation for the programs they change, --prepare-shaders matched 98.3% of them
-// (vertex 97.1%, compute 96.0%, fragment 99.6%; last-frame vertex variants, vk_mvprev.c, are not prepared):
+// (vertex 97.1%, compute 96.0%, fragment 99.6%; last-frame vertex variants are not prepared):
 //
 // - Vertex inputs. A vertex attribute without an answer is declared float, and a shader that reads it as an integer
 //   then bitcasts the loaded value to an integer type. Such inputs are answered uint: of the 313 integer inputs met

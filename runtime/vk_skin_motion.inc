@@ -1,10 +1,4 @@
-// Motion vectors for every skinned character (NX2NAVI_SKIN_MOTION, skin_motion in nx2navi.ini; game 1.1.1). The
-// player's meshes get their own motion through ownership records (motion_owner.c, vk_fg_pose.inc): a draw is the
-// player's when a block it binds belongs to a model of the player's actor. People, animals and enemies have no such
-// record, so the camera's motion was all they got, and DLSS and FSR 3.1 smeared them as they moved. This file gives
-// them the same second draw, with last frame's pose and camera into the motion vector target, without knowing whose
-// they are. A draw the player's path takes (pose_owner) never comes here.
-//
+// Model motion replays eligible skinned draws with the matched previous pose and camera.
 // A skinned scene draw (skin_pick): a draw that passes the scene filter of mvobj_pick (solid, one instance, into a
 // scene-size depth target with the scene context at c3), whose vertex shader reads a matrix palette
 // (gfx_shader.c reflect_palette states that rule and what it matched) from one of the uniform banks c3 to c7, and
@@ -63,7 +57,7 @@ enum { SKIN_NOT_READY = SKIN_PAIR_WHYS,   // its variant, fragment shader or pip
        SKIN_UNUSED,                       // the frame's list was not recorded (another submission made the vectors)
        SKIN_WHYS };
 
-typedef struct { uint8_t stride, bank; } SkinPick;   // skin_pick: the bytes of a bone matrix (0: not a skinned draw)
+typedef struct { uint8_t stride, bank, tracked; } SkinPick;   // skin_pick: the bytes of a bone matrix (0: not a skinned draw)
                                                      // and the palette's bank, counted from c3
 
 typedef struct {
@@ -141,27 +135,50 @@ static int skin_joint_format(uint32_t fmt) {
     }
 }
 
+static int skin_tracked_palette(const VkExec *ex, int bank, unsigned stride) {
+    const TrackedModelSample *model = &ex->tracked_model;
+    // The shape part is VS index 1; the shader selects which of VS indices 3 and 4 supplies its palette.
+    if (!model->identity || (bank != 3 && bank != 4)) return 0;
+    const p_bind_buf *part = &ex->ubo[NVN_STAGE_VS][1], *pal = &ex->ubo[NVN_STAGE_VS][bank];
+    return tracked_model_palette_matches(model, part->addr, part->size, pal->addr, pal->size, stride);
+}
+
 // Whether the draw being replayed is a skinned scene draw (the rule at the top; the caller has applied the scene
 // filter). Reads the draw's own state only: the chunks of a parallel group ask at once.
-static int skin_pick(VkExec *ex, SkinPick *out) {
+static int skin_pick(VkExec *ex, const TrackedModelSample *work_model, SkinPick *out) {
     out->stride = 0;
     if (!skin_enabled() || !(vk_dlaa_active() || vk_dlaa_fg_only())) return 0;   // the upscaler or frame generation alone
     const DrawCtx *cx = ex->dc;
     int slot, storage;
-    uint32_t joints;
-    int stride = gfx_shader_palette(cx->B.st.vs, &slot, &storage, &joints);
-    if (!stride || joints >> 16) return 0;
+    uint32_t joints, raw_joints;
+    int stride = gfx_shader_palette(cx->B.st.vs, &slot, &storage, &joints, &raw_joints);
+    if (!stride || (joints | raw_joints) >> 16) return 0;
+    int tracked = 0, bank = slot - 3;
+    if (!storage && (bank == 3 || bank == 4) && rt_patch_enabled(rt_patch_set("tracked_models"))) {
+        const p_bind_buf *part = &ex->ubo[NVN_STAGE_VS][1], *pal = &ex->ubo[NVN_STAGE_VS][bank];
+        if (work_model && tracked_model_palette_matches(work_model, part->addr, part->size, pal->addr, pal->size, stride)) {
+            ex->tracked_model = *work_model;
+            tracked = 1;
+        } else {
+            if (!ex->tracked_model.identity && part->addr && pal->addr)
+                ex->tracked_model = tracked_model_resolve(part->addr, part->size);
+            tracked = skin_tracked_palette(ex, bank, stride);
+        }
+    }
+    if (raw_joints && !tracked) return 0;
     for (int l = 0; l < 16; l++) {
         va_st a;
         memcpy(&a, &cx->B.st.vattr[l], sizeof a);
         if ((joints >> l & 1) && !skin_joint_format(a.fmt)) return 0;
+        // The raw-bit shader path consumes the first component of a byte joint attribute.
+        if ((raw_joints >> l & 1) && a.fmt != NVN_FORMAT_R8UI) return 0;
     }
     __atomic_add_fetch(&SK.seen, 1, __ATOMIC_RELAXED);
     if (storage || slot < 3 || slot >= 3 + SKIN_BANKS) {
         skin_left(SKIN_BANKS_OTHER);
         return 0;
     }
-    out->stride = (uint8_t)stride, out->bank = (uint8_t)(slot - 3);
+    out->stride = (uint8_t)stride, out->bank = (uint8_t)(slot - 3), out->tracked = tracked;
     return 1;
 }
 
@@ -189,7 +206,7 @@ static int skin_block(VkExec *ex, SkinFrame *f, const p_bind_buf *u, uint64_t to
     // asked of the snapshot for every draw: a block the submission itself writes between two draws is dropped from
     // it there, and the bytes kept for the first draw are not the second one's
     VkDescriptorBufferInfo snap;
-    if (!u->addr || !u->size || u->size > LIM.ubo_max || u->size > POSE_BYTES ||
+    if (!u->addr || !u->size || u->size > LIM.ubo_max || u->size > (128u * 1024u) ||
         !vk_usnap_find(u->addr, u->size, LIM.ubo_align, &snap))
         return -1;
     uint32_t h = (uint32_t)(skin_mix(u->addr, u->size ^ token) >> 40) & (SKIN_SLOTS - 1);
@@ -220,8 +237,43 @@ static int skin_block(VkExec *ex, SkinFrame *f, const p_bind_buf *u, uint64_t to
     return f->nb++;
 }
 
+static float skin_rotation_trace_limit(void) {
+    static int degrees;
+    static float limit;
+    if (!degrees) {
+        const char *setting = cfg_get("NX2NAVI_MOTION_GUARD_DEGREES");   // motion_guard_degrees in nx2navi.ini too
+        degrees = setting && !strcmp(setting, "35") ? 35 : setting && !strcmp(setting, "45") ? 45 : 60;
+        limit = degrees == 60 ? 2.0f : degrees == 45 ? 2.41421356f : 2.63830409f;
+        rt_log("motion policy: rotation guard threshold %d degrees per rendered frame", degrees);
+    }
+    return limit;
+}
+// Two 3x4 matrices (rows of four floats) of one part or bone, this frame's and last frame's: 1 when both are plain
+// rotations and the turn between them is past the guard threshold. vk_skin_motion.inc asks it for each bone of a palette.
+static int skin_matrix_sharp(const uint8_t *now, const uint8_t *prev) {
+    float m[2][12];
+    const uint8_t *p[2] = {now, prev};
+    for (int k = 0; k < 2; ++k) {
+        memcpy(m[k], p[k], sizeof m[k]);
+        for (int a = 0; a < 3; ++a) {
+            for (int b = a; b < 3; ++b) {
+                float dot = 0.0f;
+                for (int j = 0; j < 3; ++j) dot += m[k][4 * a + j] * m[k][4 * b + j];
+                float wanted = a == b ? 1.0f : 0.0f;
+                if (!(dot >= wanted - 0.005f && dot <= wanted + 0.005f)) return 0;
+            }
+        }
+    }
+    float trace = 0.0f;
+    for (int i = 0; i < 3; ++i)
+        for (int j = 0; j < 3; ++j) trace += m[0][4 * i + j] * m[1][4 * i + j];
+    // trace(R1 * transpose(R0)) = 1 + 2*cos(angle). The selected threshold controls
+    // when this part needs visibility filtering.
+    return trace < skin_rotation_trace_limit();
+}
+
 // Whether a bone of the palette block c of this frame turned sharply against the palette block l of last frame
-// (pose_matrix_sharp); kept for the pieces that share the palette.
+// (skin_matrix_sharp); kept for the pieces that share the palette.
 static int skin_sharp(SkinFrame *f, const SkinFrame *last, int c, int l, uint32_t stride) {
     SkinBlock *b = &f->b[c];
     const SkinBlock *o = &last->b[l];
@@ -230,7 +282,7 @@ static int skin_sharp(SkinFrame *f, const SkinFrame *last, int c, int l, uint32_
     if (b->size != o->size) return 0;
     const uint8_t *now = f->bytes + b->at, *then = last->bytes + o->at;
     for (uint32_t at = 0; at + stride <= b->size && !b->sharp; at += stride)
-        if (memcmp(now + at, then + at, 48)) b->sharp = pose_matrix_sharp(now + at, then + at);
+        if (memcmp(now + at, then + at, 48)) b->sharp = skin_matrix_sharp(now + at, then + at);
     return b->sharp;
 }
 
@@ -285,8 +337,12 @@ static int skin_try(VkExec *ex, const p_draw_idx *d, uint64_t frame, const GfxSh
     *se = (SkinEntry){.key = skin_mix(skin_mix(mesh, (uint64_t)(uintptr_t)cx->B.st.vs), (uint64_t)(uintptr_t)cx->B.st.fs),
                       .order = vk_exec_stream_pos() << 24 | (uint64_t)f->n, .palette = pal->addr,
                       .bytes = (uint32_t)pal->size};
+    if (pick->tracked) {
+        se->identity = ex->tracked_model.identity;
+        se->shape = ex->tracked_model.shape;
+    }
     *listed = here;
-    int at = consecutive && !pose_raw() ? skin_find(last->e, last->ne, se->key) : -1;
+    int at = consecutive ? skin_find(last->e, last->ne, se) : -1;
     for (uint32_t k = 0; at >= 0 && k < last->e[at].of && !*guard; k++) {
         const SkinDraw *ld = &last->d[last->e[at + (int)k].tag];
         if (ld->palette == sd->palette) *guard = skin_sharp(f, last, sd->block[sd->palette], ld->block[ld->palette], sd->stride);
@@ -411,13 +467,13 @@ static void skin_recorded(int guarded) {
     SK.own++, SK.guarded += guarded != 0, SK.pending--;
 }
 
-// The skinned draws' part of the motion status line (pose_status): since the start, every draw skin_pick took, the
+// Model motion status: since the start, every draw skin_pick took, the
 // ones drawn with their own motion, and the others by why they kept the camera's.
 static int skin_status(char *out, size_t cap) {
     out[0] = 0;
     if (!skin_enabled()) return 0;
     const uint64_t *y = SK.why;
-    return snprintf(out, cap, "; skinned draws seen %llu, drawn with their own motion %llu (checked against last frame's "
+    return snprintf(out, cap, "skinned draws seen %llu, drawn with their own motion %llu (checked against last frame's "
                     "depth %llu), left to the camera: carried by another draw of the mesh %llu, not drawn last frame %llu, "
                     "drawn another number of times %llu, palette of another size %llu, palette at another address %llu, "
                     "too far from last frame's %llu, shared block disagrees %llu, another view %llu, shader or pipeline "

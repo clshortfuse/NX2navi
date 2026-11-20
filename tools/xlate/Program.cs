@@ -148,7 +148,7 @@ static class SwshXlate
         // "subgroup": n: lanes per subgroup when the host cannot pin 32 (AMD GCN/Vega run 64): ballots and votes span n lanes.
         public int QueryHostSubgroupSize() => _job["subgroup"] is JsonNode n ? (int)n : 32;
         // "mvprev": true: the vertex shader also writes last frame's position, computed from slots bank + 15 in place of
-        // the user banks c3-c16 (patch 0015, runtime/vk_mvprev.c); res.json's "mvprev" names the output location (-1:
+        // the user banks c3-c16 (patch 0015); res.json's "mvprev" names the output location (-1:
         // none) and "mvprev_banks" the banks the position depends on (bit n: cn).
         public bool QueryMotionPrevious() => _job["mvprev"] is JsonValue v && v.TryGetValue<bool>(out bool b) && b;
         // "zero_locals": true: function-local variables start at 0 (patch 0016, runtime/vk_caps.c decides per driver).

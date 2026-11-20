@@ -44,6 +44,17 @@ static int paired_actor(const SkinEntry *e) {
 }
 
 int main(void) {
+    SkinEntry prior[] = {{.key = 1, .identity = 11, .palette = 10, .bytes = 48},
+                         {.key = 1, .identity = 22, .palette = 20, .bytes = 48}};
+    SkinEntry next[] = {{.key = 1, .identity = 22, .palette = 30, .bytes = 48},
+                        {.key = 1, .identity = 11, .palette = 40, .bytes = 48},
+                        {.key = 1, .identity = 33, .palette = 10, .bytes = 48}};
+    skin_number(prior, 2);
+    skin_number(next, 3);
+    skin_pair(next, 3, prior, 2, 1);
+    CHECK(next[0].prev == 0 && next[1].prev == 1 && next[2].prev == -1,
+          "tracked instances pair across palette rotation and order changes, never by another owner's address");
+
     // one character whose palette copies take turns: nothing in its first frame, its place's address is not known
     // in the second, paired from the third on
     Actor one[1] = {{.key = 7, .order = 10, .copy = {0x1000, 0x1400}, .bytes = 960}};
@@ -137,7 +148,7 @@ int main(void) {
     CHECK(e[0].why == SKIN_SIZE && e[0].prev == -1, "a palette of another size is not paired (%d)", e[0].why);
 
     // a key that was not drawn, and one in an empty list
-    CHECK(skin_find(e, 1, 1234) == -1 && skin_find(e, 0, 7) == -1, "a key not in the list is not found");
+    CHECK(skin_find(e, 1, &(SkinEntry){.key = 1234}) == -1 && skin_find(e, 0, &(SkinEntry){.key = 7}) == -1, "a key not in the list is not found");
 
     // skin_near: every bone's translation within the limit
     float now[2][12] = {{1, 0, 0, 10, 0, 1, 0, 20, 0, 0, 1, 30}, {1, 0, 0, 11, 0, 1, 0, 21, 0, 0, 1, 31}}, then[2][12];

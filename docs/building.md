@@ -53,9 +53,7 @@ hactool reads `-k <prod.keys>`; MSYS2 shells set `HOME`, which hides its default
 
 ## Build
 
-From the repository root, in PowerShell. Every step that depends on the game version takes it as `<ver>`: `v143` for
-1.4.3, `v121` for 1.2.1 or `v110` for 1.1.0. The tools default to `v121` when `--version` is left out. Saves load on any
-of them.
+Run the commands from the repository root in PowerShell. The Ocarina game builder targets 1.1.1 (`v111`).
 
 1. Python environments (once). `.venv` runs the lifter and the build; `.venv-py314` runs the extraction scripts, which
    need the stdlib `compression.zstd` of Python 3.14:
@@ -98,8 +96,7 @@ of them.
    a Linux build with the distribution's compiler can meet) the same step writes the font's bytes as
    `runtime/ui/roboto_ttf.h` (git ignores it), which `menu.cpp` then includes.
    The runtime's own shaders (upscaling, HDR, texture decode and the like) are in the repository as source only:
-   GLSL and SPIR-V assembly in `runtime\shaders\`, and two small ones assembled by `tools\make_dlaa_mask.py` and
-   `tools\make_mvobj_fs.py`. `build_game.py` compiles them into `runtime\<name>_spv.h` (git ignores these) before it
+   GLSL and SPIR-V assembly in `runtime\shaders\`, and one assembled by `tools\make_mvobj_fs.py`. `build_game.py` compiles them into `runtime\<name>_spv.h` (git ignores these) before it
    compiles the runtime, with `glslc`, `spirv-as` and `spirv-val` from the `shaderc` and `spirv-tools` packages above,
    and again whenever a source changed. `python tools\build_shaders.py` does that step alone; `--check` only reports
    the headers that are missing or stale.
@@ -939,6 +936,10 @@ outside their sets are logged with their line, at most 16 lines and a count; a f
 load and one for the menu. The launcher's reader (`launcher/gameini.py`) has the same comment lines in
 `tests\launcher_test.py` `PlayerIniTest`, and `tools/make_game.py`'s own reads of `shader_carry` and `guest_opt`
 (`shader_carry`, `guest_opt_ini`) theirs in `MakeGameTest`. No game files.
+
+**Motion GPU timing.** set `NX2NAVI_DLAA_TIMES=1` in the process environment. The existing
+`dlaa times` log reports average `object motion` GPU time every 600 completed timing
+samples during DLSS/DLAA evaluation. This interval includes object-motion replay and its barriers, not CPU recording time.
 
 The lifter (`recomp/`) and the CPU headers (`runtime/cpu.h`, `runtime/simd.h`) are checked against Unicorn. Every lifter
 change passes these, all run with `.venv`:

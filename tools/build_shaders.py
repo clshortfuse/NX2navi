@@ -7,7 +7,7 @@ missing and the stale ones before it compiles the runtime. Three kinds of source
     runtime/shaders/<name>.comp, .vert, .frag   GLSL, compiled with glslc (one name per shader) and checked with spirv-val
     runtime/shaders/<name>.mesh, .task          the same for the mesh fallback probe's mesh and task shaders (SPIR-V 1.5)
     runtime/shaders/<name>.spvasm               SPIR-V assembly, assembled with spirv-as and checked with spirv-val
-    tools/make_dlaa_mask.py, make_mvobj_fs.py   shaders assembled in Python (ASSEMBLED); they need no other tool
+    tools/make_mvobj_fs.py   shader assembled in Python (ASSEMBLED); they need no other tool
 
 One more kind of header is no shader: a file the runtime embeds (EMBEDDED: the menu's font, the SMAA lookup textures) as
 a list of its bytes, for a compiler without #embed (runtime/ui/menu.cpp, runtime/vk_aa.c include them). It needs no tool.
@@ -40,7 +40,7 @@ MESH_TARGET = 'vulkan1.2'   # mesh and task shaders need SPIR-V 1.4 or later
 ASM = '.spvasm'
 ASM_TARGET = 'vulkan1.3'
 # header name -> the script beside this one that assembles it; the script's HEADER is the header's text
-ASSEMBLED = {'dlaa_mask': 'make_dlaa_mask.py', 'mvobj_fs': 'make_mvobj_fs.py'}
+ASSEMBLED = {'mvobj_fs': 'make_mvobj_fs.py'}
 # a file below runtime/ the runtime embeds -> the header of its bytes, below runtime/ too (git ignores it)
 EMBEDDED = {'ui/fonts/Roboto-Medium.ttf': 'ui/roboto_ttf.h',
             'third_party/smaa/AreaTex.bin': 'smaa_area_tex.h', 'third_party/smaa/SearchTex.bin': 'smaa_search_tex.h'}

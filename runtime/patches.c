@@ -46,6 +46,7 @@ __attribute__((constructor)) static void day_register(void) {
 #endif
 
 #include "scene_projection_impl.h"
+#include "tracked_model_cpu_impl.h"
 
 #if RT_PATCH_COUNT
 static const struct { const char *name, *env; int on; } sets[] = {

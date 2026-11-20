@@ -1,16 +1,16 @@
 // Which draw of last frame a skinned draw of this frame continues (vk_skin_motion.inc), for the motion vectors of
-// skinned characters. The player's meshes are known by ownership records (motion_owner.c); every other character's
-// draws have no such record, so a draw is paired with last frame's by what it binds:
+// skinned characters. Draws pair by what they bind, with tracked lifetime and shape when verified:
 //   key      the mesh and the program: the vertex buffers its shader reads, the index buffer, the index count, width
 //            and base vertex, and the vertex and fragment shader (the caller hashes them, skin_mix);
 //   number   the draw's place among this frame's draws with the same key, counted in the order of the command stream
 //            (order), not the order the replay's threads reached them in: two characters of one model share the key.
-// A draw is paired with last frame's draw of the same key and number, and with none when anything is in doubt, as a
+// A tracked draw must have a unique match for its mesh, program, lifetime and shape in each frame. Unkeyed draws
+// pair by key and number. When anything is in doubt there is no pair, as a
 // vector from another character's pose is worse than the camera's:
 //   SKIN_NEW      there was no last frame's list, or the key was not in it (the character appeared);
 //   SKIN_COUNT    the key was drawn a different number of times last frame (one appeared or left: the numbers shifted);
 //   SKIN_SIZE     the palette had another size;
-//   SKIN_ADDRESS  the palette is at neither of the two addresses this key and number last had. The game keeps two
+//   SKIN_ADDRESS  for unkeyed draws, the palette is at neither of the two addresses this key and number last had. The game keeps two
 //                 copies of an object's block that take turns, so one object's palette is at last frame's address
 //                 (not written again) or at the other copy's, where it was the frame before that. A third address is
 //                 another object in this place: two characters of one model changed places in the draw order, or one
@@ -26,6 +26,8 @@ enum { SKIN_PAIRED, SKIN_NEW, SKIN_COUNT, SKIN_SIZE, SKIN_ADDRESS, SKIN_PAIR_WHY
 
 typedef struct {
     uint64_t key;       // the mesh and program
+    uint64_t identity;  // tracked lifetime, or zero for stream-order matching
+    uint32_t shape;
     uint64_t order;     // place in the frame's command stream; unique within a frame
     uint64_t palette;   // address of the palette block
     uint32_t bytes;     // its size
@@ -43,9 +45,16 @@ static inline uint64_t skin_mix(uint64_t h, uint64_t v) {
     return h * 0xff51afd7ed558ccdull;
 }
 
+static inline int skin_key_cmp(const SkinEntry *x, const SkinEntry *y) {
+    if (x->key != y->key) return x->key < y->key ? -1 : 1;
+    if (x->identity != y->identity) return x->identity < y->identity ? -1 : 1;
+    return x->shape < y->shape ? -1 : x->shape > y->shape;
+}
+
 static int skin_entry_cmp(const void *a, const void *b) {
     const SkinEntry *x = a, *y = b;
-    if (x->key != y->key) return x->key < y->key ? -1 : 1;
+    int key_order = skin_key_cmp(x, y);
+    if (key_order) return key_order;
     return x->order < y->order ? -1 : x->order > y->order;
 }
 
@@ -54,21 +63,21 @@ static inline void skin_number(SkinEntry *e, int n) {
     qsort(e, (size_t)n, sizeof *e, skin_entry_cmp);
     for (int i = 0; i < n;) {
         int j = i;
-        while (j < n && e[j].key == e[i].key) j++;
+        while (j < n && !skin_key_cmp(&e[j], &e[i])) j++;
         for (int k = i; k < j; k++) e[k].nth = (uint32_t)(k - i), e[k].of = (uint32_t)(j - i);
         i = j;
     }
 }
 
 // The first entry with key in a numbered list, -1 when there is none; its .of entries follow each other.
-static inline int skin_find(const SkinEntry *e, int n, uint64_t key) {
+static inline int skin_find(const SkinEntry *e, int n, const SkinEntry *key) {
     int lo = 0, hi = n;
     while (lo < hi) {
         int mid = lo + (hi - lo) / 2;
-        if (e[mid].key < key) lo = mid + 1;
+        if (skin_key_cmp(&e[mid], key) < 0) lo = mid + 1;
         else hi = mid;
     }
-    return lo < n && e[lo].key == key ? lo : -1;
+    return lo < n && !skin_key_cmp(&e[lo], key) ? lo : -1;
 }
 
 // Pairs this frame's numbered entries with those of the last list made (numbered and paired in its own frame).
@@ -78,9 +87,9 @@ static inline void skin_pair(SkinEntry *cur, int ncur, const SkinEntry *last, in
     for (int i = 0; i < ncur; i++) {
         SkinEntry *c = &cur[i];
         c->prev = -1, c->before = 0, c->why = SKIN_NEW;
-        int p = skin_find(last, nlast, c->key);
+        int p = skin_find(last, nlast, c);
         if (p < 0) continue;
-        if (last[p].of != c->of) {
+        if (last[p].of != c->of || (c->identity && c->of != 1)) {
             if (consecutive) c->why = SKIN_COUNT;
             continue;
         }
@@ -91,7 +100,7 @@ static inline void skin_pair(SkinEntry *cur, int ncur, const SkinEntry *last, in
         }
         c->before = c->palette != l->palette ? l->palette : l->before;
         if (!consecutive) continue;
-        if (c->palette != l->palette && c->palette != l->before) {
+        if (!c->identity && c->palette != l->palette && c->palette != l->before) {
             c->why = SKIN_ADDRESS;
             continue;
         }

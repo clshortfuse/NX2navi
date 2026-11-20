@@ -10,6 +10,9 @@ Covered contributions:
 - Contributions to the 1.1.1 port that replaces viewport jitter with scene
   projection jitter, including temporal resolve and character motion-vector
   integration.
+- Contributions to model motion-vector ownership for 1.1.1: work-entry
+  lifetime and shape tracking, scoped command metadata, reverse fallback,
+  and related debug controls, tests, and documentation.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

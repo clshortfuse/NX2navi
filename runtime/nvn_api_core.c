@@ -11,7 +11,6 @@
 
 #include "cfg.h"
 #include "gfx.h"
-#include "motion_owner.h"
 #include "host.h"
 #include "nvn_api.h"
 #include "nvn_pool_index.h"
@@ -354,7 +353,6 @@ NVN_API(nvnMemoryPoolInitialize) {
 // void nvnMemoryPoolFinalize(NVNmemoryPool *p)
 static void pool_finalize(pool_t *o) {
     if (o->magic != NVN_POOL_MAGIC) return;
-    motion_owner_forget_range((uint64_t)(uintptr_t)o->mem,o->size);
     if (pool_gpu_visible(o)) index_del(o);
     gfx_backend()->pool_fini(o);
     if (nvn_gpu_only((uintptr_t)o->mem)) gva_free((uintptr_t)o->mem);
@@ -448,7 +446,6 @@ static int check_request(const pool_t *v, const nvn_mapping_t *r, int i) {
 NVN_API(nvnMemoryPoolMapVirtual) {
     NVN_BLOCKING();   // as nvnMemoryPoolInitialize
     pool_t *v = arg_p(c, 0);
-    motion_owner_forget_range((uint64_t)(uintptr_t)v->mem,v->size);
     int n = (int)arg_x(c, 1);
     const nvn_mapping_t *r = arg_p(c, 2);
     if (v->magic != NVN_POOL_MAGIC || !(v->flags & NVN_MEMORY_POOL_FLAGS_VIRTUAL) || !v->mem) {
@@ -496,12 +493,11 @@ NVN_API(nvnBufferInitialize) {
         ret_x(c, 0);
         return;
     }
-    motion_owner_forget((uintptr_t)o);
     *o = (buf_t){BUF_MAGIC, s->pool, s->off, s->size};
     ret_x(c, 1);
 }
 // void nvnBufferFinalize(NVNbuffer *b)
-NVN_API(nvnBufferFinalize) { motion_owner_forget((uintptr_t)arg_p(c, 0)); memset(arg_p(c, 0), 0, sizeof(buf_t)); }
+NVN_API(nvnBufferFinalize) { memset(arg_p(c, 0), 0, sizeof(buf_t)); }
 static uint64_t buf_address(const buf_t *o) { return o->pool && o->pool->mem ? (uintptr_t)o->pool->mem + (uint64_t)o->off : 0; }
 // The mapping of a buffer with no pool behind it (no buffer, or one whose nvnBufferInitialize failed): memory of its
 // own, zero at first, instead of address 0, since the game's scene-loading thread has been seen filling such a mapping

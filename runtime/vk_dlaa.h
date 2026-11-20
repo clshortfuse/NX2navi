@@ -7,6 +7,8 @@
 // output renders 640 wide, smaller windows less.
 #define DLAA_SCENE_MIN_W 320u
 
+#include "motion_vectors.h"
+
 int vk_dlaa_wanted(void);   // the setting is on (the device may still lack DLSS)
 // DLSS Frame Generation through NGX itself (vk_dlaa.c vk_ngxfg_*, gfx_present.c's presenter): NX2NAVI_FRAMEGEN = dlss
 // where Streamline does not run (every build but the Windows one, where these all answer 0).
@@ -27,7 +29,7 @@ int vk_dlaa_needs_restart(void);   // the menu's upscaler cannot start in this r
 // of the last frame armed for it alone (vk_dlaa.c fg_only_frame): the scene's size, a jitter of 0.
 int vk_dlaa_fg_inputs(VkFfxImage *depth, VkFfxImage *mv, float *jx, float *jy, int *reset);
 // 1 while frame generation runs without an upscaler and the frame is armed for its inputs alone (vk_dlaa.c
-// fg_only_frame): the motion passes run as for the upscaler (vk_usnap.c, vk_exec_draw.c, vk_mvprev.c), nothing is
+// fg_only_frame): the motion passes run as for the upscaler (vk_usnap.c, vk_exec_draw.c), nothing is
 // jittered. Read at each present.
 int vk_dlaa_fg_only(void);
 // ... their views, and this frame's camera for DLSS Frame Generation (vk_dlssg.c): matrices for row vectors (v * M, the
@@ -95,25 +97,11 @@ void vk_dlaa_scene_projection(const p_scene_projection *p);
 void vk_dlaa_viewport(VkExec *ex, VkViewport *v);
 void vk_dlaa_pass_end(VkExec *ex);       // vk_exec.c, a pass just ended: the edges of a jittered pass's targets are filled
 void vk_dlaa_jitter_check(VkExec *ex);   // before each draw's fixed state: records the viewport again where its jitter changes
-// vk_mvsurvey.c (NX2NAVI_MV_SURVEY): notes the uniform blocks of each scene draw, beside vk_dlaa_draw; each present
-// compares them with the previous frames' and logs a summary now and then.
-void vk_mvsurvey_draw(VkExec *ex);
-void vk_mvsurvey_frame(void);
-void vk_mvprev_draw(VkExec *ex);   // vk_mvprev.c: notes the scene draw's object and bone blocks
 // Per-object motion (vk_exec_draw.c): the moving scene draws are listed again during the replay with
 // their vertex shader's last-frame variant; vk_dlaa.c mv_pass records them over the camera motion into ex->cb (and
 // leaves every binding of the replay to be set again; draws whose camera block is not cam are left out).
-// vk_dlaa_prev_camera: last frame's camera block and this frame's jitter, 0 when there is no history.
 int vk_mvobj_execute(VkExec *ex, uint64_t cam, VkImageView mv, VkImageView depth, VkFormat depth_fmt, uint32_t w,
                      uint32_t h, uint64_t token);
-int vk_dlaa_prev_camera(VkDescriptorBufferInfo *out, float jitter[2]);
-// vk_mvcheck.c (NX2NAVI_MV_CHECK, test): mv_pass hands it the motion image after the camera pass and, after the object
-// pass, the motion image again and the scene light target it ran on; it measures how well the vectors fit the picture.
-void vk_mvcheck_camera(VkCommandBuffer cb, VkImage mv, uint32_t w, uint32_t h, float jx, float jy);
-void vk_mvcheck_final(VkCommandBuffer cb, uint64_t fence, VkImage mv, VkImage cimg, VkFormat cfmt, uint32_t level,
-                      uint32_t layer, uint32_t w, uint32_t h, float jx, float jy);
-const char *vk_mvobj_frame_masks(void);   // vk_exec_draw.c: the last motion list, per position and changed banks
-void vk_mvcheck_output(VkCommandBuffer cb, VkImage out, uint32_t ow, uint32_t oh);   // after DLSS on a check frame
 // vk_exec_draw.c, once a draw's fragment shader is known: 1 skips the draw (the game's FXAA while NX2NAVI_FXAA is 0, its
 // scaling draw when DLSS wrote the scaled picture).
 int vk_dlaa_skip_draw(VkExec *ex, const GfxShader *fs);

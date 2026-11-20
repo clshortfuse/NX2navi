@@ -48,7 +48,7 @@ typedef struct {                                           // the translator's a
     uint16_t local[3]; uint32_t shared_bytes;
     uint8_t depth_minus_w;
     uint8_t mvprev;                                        // VS: also write last frame's position (patch 0015,
-                                                           // vk_mvprev.c); packed as bit 7 of the depth_minus_w byte
+                                                           // used by model replay); packed as bit 7 of the depth_minus_w byte
 } GfxShaderAnswers;
 typedef struct GfxShader GfxShader;                        // SPIR-V words + parsed reflection; owned by the cache
 const GfxShader *gfx_shader_get(int stage, const uint8_t *control, const uint8_t *code, uint64_t code_size,
@@ -174,7 +174,7 @@ uint32_t gfx_shader_mvprev_banks(const GfxShader *s);   // a last-frame variant:
 // VS: the matrix palette its skinning reads (gfx_shader.c reflect_palette, which states the rule). 0: none. Else the
 // bytes of one bone matrix (48 or 64), *slot the uniform bank c[slot] it is read from, or with *storage 1 the storage
 // buffer index, and *joints the input Locations whose integer values pick the matrices.
-int gfx_shader_palette(const GfxShader *s, int *slot, int *storage, uint32_t *joints);
+int gfx_shader_palette(const GfxShader *s, int *slot, int *storage, uint32_t *joints, uint32_t *raw_joints);
 void gfx_shader_local_size(const GfxShader *s, uint32_t local[3]);     // CS: the LocalSize execution mode; 1, 1, 1 otherwise
 
 // ---- back end (gfx_null.c, vk_*.c). Called by the NVN front end (nvn_api_*.c, nvn_ext.c) on guest threads.

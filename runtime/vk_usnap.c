@@ -24,7 +24,6 @@
 #include "host.h"
 #include "nvn_api.h"
 #include "vk.h"
-#include "motion_owner.h"
 #include "vk_dlaa.h"
 #include "platform/platform.h"
 
@@ -54,7 +53,6 @@ static struct {
     int on;                     // this submission has a snapshot
     uint64_t fence, gen;
     Arena *arena;
-    MotionOwnerSnapshot *owners;
     Rng *col;                   // collected ranges
     int ncol, ccol;
     Reg *reg;                   // merged, sorted by lo, disjoint
@@ -74,7 +72,6 @@ static PlatMutex gather_lock = PLAT_MUTEX_INIT;
 // A copy taken at the submit call for the replay thread (vk_usnap_take), in submission order.
 typedef struct Taken {
     struct Taken *next;
-    MotionOwnerSnapshot *owners;
     Arena *arena;
     Reg *reg;
     int nreg, n;
@@ -146,34 +143,8 @@ static void collect(const op_hdr *h, int depth) {
             const p_bind_buf *b = a;
             if (b->addr && b->size) {
                 uint64_t n = b->size < MAX_RANGE ? b->size : MAX_RANGE;
-                // the vertex stage's object and bone blocks: also the game's other copy on either side, which still
-                // holds last frame's (vk_mvprev.c)
-                uint64_t step = vk_mvprev_step(b->stage, b->index, b->size);
-                // which neighbours lie in an imported pool, per block and vk_mem_gen: the same blocks are bound by
-                // many draws, and two resolves for each binding were a quarter of the snapshot's time
-                static struct { uint64_t addr, size, gen; int ok; } nc[1024];
-                uint32_t ci = (uint32_t)((b->addr ^ n << 48) * 0x9E3779B97F4A7C15ull >> 54);
-                uint64_t gen = vk_mem_gen();
-                int known = step && nc[ci].addr == b->addr && nc[ci].size == n && nc[ci].gen == gen, ok = 0;
-                for (int k = step ? -1 : 0; k <= (step ? 1 : 0); k++) {
-                    uint64_t at = b->addr + (uint64_t)((int64_t)k * (int64_t)step);
-                    if (k < 0 && b->addr < step) continue;
-                    // a neighbour past its pool would make the whole merged region fail the pool check below, and
-                    // the bindings in it read live memory again
-                    VkMemSpan sp;
-                    uint64_t lo = at & ~(uint64_t)(ALIGN - 1);
-                    if (k && known) {
-                        if (!(nc[ci].ok >> (k + 1) & 1)) continue;
-                    } else if (k) {
-                        if (!vk_mem_lookup(lo, at + n - lo, &sp) || sp.alloc || !sp.pool || sp.avail < at + n - lo ||
-                            (sp.cls != VK_MCLS_HOST_CACHED && sp.cls != VK_MCLS_HOST_UNC))
-                            continue;
-                        ok |= 1 << (k + 1);
-                    }
-                    if (U.ncol == U.ccol) U.col = grow(U.col, &U.ccol, sizeof *U.col);
-                    U.col[U.ncol++] = (Rng){at & ~(uint64_t)(ALIGN - 1), at + n};
-                }
-                if (step && !known) nc[ci].addr = b->addr, nc[ci].size = n, nc[ci].gen = gen, nc[ci].ok = ok;
+                if (U.ncol == U.ccol) U.col = grow(U.col, &U.ccol, sizeof *U.col);
+                U.col[U.ncol++] = (Rng){b->addr & ~(uint64_t)(ALIGN - 1), b->addr + n};
             }
         }
         h = nvn_op_next(h);
@@ -315,10 +286,6 @@ void vk_usnap_take(const uint64_t *handles, int n) {
     Taken *t = calloc(1, sizeof *t);
     if (!t) rt_fatal("vk_usnap: out of memory");
     t->n = n, t->first = handles[0];
-    if (motion_owner_enabled()) {
-        t->owners = malloc(sizeof *t->owners);
-        if (t->owners) motion_owner_capture(t->owners);
-    }
     int creg = 0;
     plat_mutex_lock(&gather_lock);
     U.ncol = 0;
@@ -351,7 +318,6 @@ void vk_usnap_take(const uint64_t *handles, int n) {
 
 static void taken_free(Taken *t) {
     if (t->arena) arena_done(t->arena);
-    free(t->owners);
     free(t->reg);
     free(t);
 }
@@ -380,7 +346,6 @@ static int adopt(const uint64_t *handles, int n) {
             if (wr_hits(U.reg[i].lo, U.reg[i].hi)) U.reg[i].dropped = 1, U.inflight++;
         U.arena = t->arena, t->arena = NULL;
         U.on = 1;
-        U.owners = t->owners, t->owners = NULL;
         U.subs++, U.regions += (uint64_t)U.nreg, U.bytes += t->total, U.copy_ns += t->ns;
     }
     taken_free(t);
@@ -389,7 +354,6 @@ static int adopt(const uint64_t *handles, int n) {
 
 void vk_usnap_begin(const uint64_t *handles, int n, uint64_t fence) {
     if (!U.mode) U.mode = rt_knob("UBO_SNAPSHOT", "1") + 1;   // stored +1: 0 is "not read yet"
-    free(U.owners), U.owners = NULL;
     U.on = 0, U.fence = fence, U.gen++;
     summary();
     if (!RT_KNOB_ON(U.mode - 1)) {
@@ -398,11 +362,6 @@ void vk_usnap_begin(const uint64_t *handles, int n, uint64_t fence) {
         return;
     }
     if (adopt(handles, n)) return;
-    // Without a producer snapshot, asynchronous replay must not read present-day actor ownership.
-    if (!gfx_replay_async() && motion_owner_enabled()) {
-        U.owners = malloc(sizeof *U.owners);
-        if (U.owners) motion_owner_capture(U.owners);
-    }
     uint64_t t0 = kern_now_ns();
     plat_mutex_lock(&gather_lock);
     U.ncol = 0;
@@ -441,7 +400,6 @@ void vk_usnap_begin(const uint64_t *handles, int n, uint64_t fence) {
 
 void vk_usnap_end(uint64_t fence) {
     if (U.arena) vk_completion_add(fence, arena_done, U.arena), U.arena = NULL;
-    free(U.owners), U.owners = NULL;
     U.on = 0, U.gen++;
 }
 
@@ -547,7 +505,6 @@ const uint8_t *vk_usnap_bytes(uint64_t addr, uint64_t n) {
 
 // The arenas back on the free list (vk_exec_draw_shutdown: the device is idle, every completion ran).
 void vk_usnap_shutdown(void) {
-    free(U.owners), U.owners = NULL;
     plat_mutex_lock(&free_lock);
     for (Arena *a = free_arenas, *next; a; a = next) next = a->next, vmaDestroyBuffer(vk_ctx()->vma, a->buf, a->alloc), free(a->cpu), free(a);
     free_arenas = NULL;
@@ -563,23 +520,4 @@ void vk_usnap_sizes(PerfSizes *s) {
     plat_mutex_unlock(&free_lock);
     perf_size(s, "free uniform snapshot arenas", n, 0, b);
     perf_size(s, "uniform snapshot GPU writes", (uint64_t)__atomic_load_n(&U.nwr, __ATOMIC_RELAXED), 0, PERF_SIZE_NONE);
-}
-
-// Ownership travels with the uniform snapshot. A missing, GPU-written, or overlapping range is not a match.
-int vk_usnap_motion_owner(uint64_t address, uint64_t size, MotionOwner *out) {
-    if (!U.on || !U.owners || !size || address > UINT64_MAX - size ||
-        vk_usnap_why(address, size) != VK_USNAP_FOUND) return 0;
-    // The producer excludes overlapping identities and sorts the remaining disjoint ranges once.
-    // Most scene draws are unowned, so do not scan every player binding for each one.
-    unsigned lo = 0, hi = U.owners->count;
-    while (lo < hi) {
-        unsigned mid = lo + (hi - lo) / 2;
-        if (U.owners->bindings[mid].address <= address) lo = mid + 1;
-        else hi = mid;
-    }
-    if (!lo) return 0;
-    const MotionOwnerBinding *b = &U.owners->bindings[lo - 1];
-    if (size > b->size || address - b->address > b->size - size) return 0;
-    *out = b->owner;
-    return 1;
 }

@@ -18,6 +18,7 @@
 #include "cfg.h"
 #include "gfx.h"
 #include "host.h"
+#include "motion_vectors.h"
 #include "nvn_api.h"
 #include "nvn_hmap.h"
 #include "nvn_submit_guard.h"
@@ -413,10 +414,10 @@ void nvn_pins_stats(uint64_t *live, uint64_t *freed) {
 // deferred: 0 unknown, 1 none, 2 some; used_min: the minute of its last use (copy_age); pins: texture pins its ops name,
 // counted in their refs (pin_refs); busy: synchronous submissions of it between their prepare and the end of their
 // replay (nvn_submit_prepare, nvn_submit_done; atomic, see nvn_submit_guard.h).
-typedef struct { uint64_t magic, bytes, made_at, used_at, deferred, used_min; uint32_t pins, busy; } copy_prefix;
+typedef struct { uint64_t magic, bytes, made_at, used_at, deferred, used_min, host_only; uint32_t pins, busy; } copy_prefix;
 _Static_assert(sizeof(copy_prefix) % 8 == 0, "records stay 8-byte aligned");
 // a session held over 200,000 copies (the note at COPY_AGE_MINS): busy shares the 8 bytes pins had
-_Static_assert(sizeof(copy_prefix) == 56, "copy_prefix keeps its size");
+_Static_assert(sizeof(copy_prefix) == 64, "copy_prefix keeps its size");
 typedef struct { uintptr_t lo, hi; uint8_t *copy; } cmd_copy;
 typedef struct { cmd_copy *v; uint32_t n, cap; } copy_bucket;
 static PlatMutex copy_lock = PLAT_MUTEX_INIT;    // guards the two maps, the counters and every prefix
@@ -516,11 +517,16 @@ uint64_t nvn_handle_bytes(uint64_t handle) {
 }
 
 // Marks a live copy used by submission now; its size from OP_BEGIN to OP_END inclusive.
-static uint64_t copy_touch(uint64_t handle, uint64_t now, const char *what) {
+static uint64_t copy_touch(uint64_t handle, uint64_t now, const char *what, uint64_t *host_only) {
     plat_mutex_lock_shared(&copy_lock);
     copy_prefix *pf = copy_find(handle);
     uint64_t bytes = 0;
-    if (pf) __atomic_store_n(&pf->used_at, now, __ATOMIC_RELAXED), bytes = pf->bytes, copy_age(pf, copy_minute());
+    if (pf) {
+        __atomic_store_n(&pf->used_at, now, __ATOMIC_RELAXED);
+        bytes = pf->bytes;
+        *host_only = pf->host_only;
+        copy_age(pf, copy_minute());
+    }
     plat_mutex_unlock_shared(&copy_lock);
     if (!pf) rt_fatal("nvn: %s: command handle %#llx is not a live recording (released or never recorded)", what,
                       (unsigned long long)handle);
@@ -534,7 +540,7 @@ static uint8_t *flatten_recording(const uint8_t *p, size_t n) {
     uint8_t *out = realloc_wait(NULL, sizeof(copy_prefix) + n, "command copy");
     if (!out) rt_fatal("nvn: command copy allocation");
     memcpy(out + sizeof(copy_prefix), p, n);
-    uint64_t pins_named = 0;
+    uint64_t pins_named = 0, host_only = 0;
     for (size_t at = 0;;) {   // the records stay checked: a corrupt one stops here, not in the replay
         op_hdr h;
         memcpy(&h, p + at, sizeof h);
@@ -545,6 +551,13 @@ static uint8_t *flatten_recording(const uint8_t *p, size_t n) {
         int k = PIN_OPS >> h.op & 1 ? op_pins(h.op, out + sizeof(copy_prefix) + at + 8, pinned) : 0;
         for (int i = 0; i < k; i++) pin_ref(pinned[i], 1, 0);
         pins_named += (uint64_t)k;
+        if (h.op == OP_MODEL_SCOPE) {
+            const p_model_scope *scope = (const void *)(p + at + sizeof h);
+            if (h.size != sizeof h + sizeof *scope || n - at - h.size < sizeof h ||
+                scope->bytes > n - at - h.size - sizeof h || (scope->bytes & 7))
+                rt_fatal("nvn: invalid model ownership range at %p", (const void *)(p + at));
+            host_only += h.size;
+        }
         at += h.size;
         if (h.op == OP_END) {
             if (at != n) rt_fatal("nvn: recording at %p ends at %zu of %zu bytes", (const void *)p, at, n);
@@ -553,7 +566,7 @@ static uint8_t *flatten_recording(const uint8_t *p, size_t n) {
     }
     if (pins_named > UINT32_MAX) rt_fatal("nvn: recording at %p names %llu texture pins", (const void *)p,
                                           (unsigned long long)pins_named);
-    *(copy_prefix *)out = (copy_prefix){.magic = COPY_MAGIC, .bytes = n, .pins = (uint32_t)pins_named};
+    *(copy_prefix *)out = (copy_prefix){.magic = COPY_MAGIC, .bytes = n, .host_only = host_only, .pins = (uint32_t)pins_named};
     return out + sizeof(copy_prefix);
 }
 
@@ -897,16 +910,21 @@ NVN_API(nvnCommandBufferIsRecording) { ret_x(c, cmd_of(c)->recording != 0); }
 // so a handle may be gone by the time the caller is submitted. Deferred binds stay deferred. A copy is OP_BEGIN, its
 // records and OP_END (flatten_recording checked them), so the records go over as one block; usage grows by the same
 // bytes as record by record.
-static void inline_recording(cmd_t *o, uint64_t handle, const char *what) {
+static void inline_recording(cmd_t *o, uint64_t handle, const char *what, const TrackedModelSample *sample) {
     if (!handle) rt_fatal("nvn: %s with a null handle", what);
-    uint64_t bytes = copy_touch(handle, __atomic_load_n(&nsubmits, __ATOMIC_RELAXED), what);
+    uint64_t host_only = 0;
+    uint64_t bytes = copy_touch(handle, __atomic_load_n(&nsubmits, __ATOMIC_RELAXED), what, &host_only);
     if (bytes <= 16) return;
     size_t body = (size_t)bytes - 16;
+    if (sample && sample->identity) {
+        *REC(o, OP_MODEL_SCOPE, p_model_scope) = (p_model_scope){*sample, body};
+        hw_fix(o, 0);
+    }
     cmd_reserve(o, body);
     memcpy(o->cur, (const uint8_t *)(uintptr_t)handle + 8, body);
     o->cur += body;
     o->cmd_used += body;
-    o->hw_used += body;
+    o->hw_used += body - host_only;
     o->last_rec = 0;
 }
 // void nvnCommandBuffer{Call,Copy}Commands(NVNcommandBuffer *cmd, int n, const NVNcommandHandle *handles)
@@ -914,13 +932,24 @@ NVN_API(nvnCommandBufferCallCommands) {
     cmd_t *o = cmd_of(c);
     int n = (int)arg_x(c, 1);
     const uint64_t *h = arg_p(c, 2);
-    for (int i = 0; i < n; i++) inline_recording(o, h[i], "CallCommands");
+    TrackedModelSample sample = {0};
+    if (n == 1 && vk_dlaa_record_model_motion() && !vk_dlaa_reverse_only() && rt_patch_enabled(rt_patch_set("tracked_models"))) {
+        unsigned entry = 0;
+        switch (c->x[30]) {
+        case UINT64_C(0x7000067618): entry = 27; break;
+        case UINT64_C(0x700006d978): entry = 23; break;
+        case UINT64_C(0x700006b7d8): entry = 27; break;
+        case UINT64_C(0x70000590c8): entry = 22; break;
+        }
+        if (entry) sample = tracked_model_work_sample(c->x[entry]);
+    }
+    for (int i = 0; i < n; i++) inline_recording(o, h[i], "CallCommands", &sample);
 }
 NVN_API(nvnCommandBufferCopyCommands) {
     cmd_t *o = cmd_of(c);
     int n = (int)arg_x(c, 1);
     const uint64_t *h = arg_p(c, 2);
-    for (int i = 0; i < n; i++) inline_recording(o, h[i], "CopyCommands");
+    for (int i = 0; i < n; i++) inline_recording(o, h[i], "CopyCommands", NULL);
 }
 
 // ---------- CommandBuffer: commands with CPU-visible results (performed by the back end in GPU order)
@@ -1301,7 +1330,8 @@ NVN_API(nvnCommandBufferDrawArraysInstanced) {
 // NVNbufferAddress indices)
 NVN_API(nvnCommandBufferDrawElements) {
     cmd_t *o = cmd_of(c);
-    *REC(o, OP_DRAW_IDX, p_draw_idx) = (p_draw_idx){(int)arg_x(c, 1), (int)arg_x(c, 2), (int)arg_x(c, 3), 0, 0, 1, arg_x(c, 4)};
+    *REC(o, OP_DRAW_IDX, p_draw_idx) = (p_draw_idx){(int)arg_x(c, 1), (int)arg_x(c, 2), (int)arg_x(c, 3),
+                                                    0, 0, 1, arg_x(c, 4)};
     hw_fix(o, 48);
 }
 // void nvnCommandBufferDrawElementsBaseVertex(..., NVNbufferAddress indices, int base_vertex)
@@ -1594,7 +1624,7 @@ const char *nvn_op_name(uint32_t op) {
         "DRAW_IDX", "DISPATCH", "BARRIER", "SET_TEX_POOL", "SET_SAMP_POOL", "COPY_B2T", "COPY_STRIDE", "BLEND_COLOR",
         "COPY_T2B", "BIND_IMG", "COPY_T2T", "RESET_COUNTER", "CLEAR_TEX", "DEPTH_CLAMP", "RENDER_ENABLE",
         "RASTER_DISCARD", "RENDER_COND", "PRIM_RESTART", "DRAW_IDX_IND", "DISPATCH_IND", "CLEAR_BUF", "PUSH_CC", "DRAW_MESH", "DRAW_MESH_IND",
-        "WAIT_EVENT", "SCENE_PROJECTION",
+        "WAIT_EVENT", "SCENE_PROJECTION", "MODEL_SCOPE",
     };
     _Static_assert(sizeof names / sizeof *names == OP_COUNT_, "one name per op");
     return op < OP_COUNT_ ? names[op] : "?";

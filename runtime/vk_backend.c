@@ -26,7 +26,6 @@
 #include "cfg.h"
 #include "flight.h"
 #include "gfx.h"
-#include "motion_owner.h"
 #include "host.h"
 #include "nvn_api.h"
 #include "perfmon.h"
@@ -298,11 +297,11 @@ static int frame_hold(uint32_t skipped, int resized, uint64_t frame) {
 // A present closes the frame for the replay (frame_end): the trace and conditional-render frame counts
 // (vk_exec_frame_log, whose vk_exec_cond_frame_end moves the frame count the conditional draws go by), dynamic
 // resolution's step, the DLSS state of the frame (vk_dlaa_frame: the mode and its LOD bias, the frame's points and
-// the swap image, the idle releases), the motion tables (vk_mvsurvey_frame, vk_mvprev_frame swaps its two) and the GPU
+// the swap image, the idle releases) and the GPU
 // pass timing. The replay reads and writes all of it as it records, under the submission lock. With the replay on the
 // submitting threads the game presents on one thread while another may be replaying, and running it at the present
 // then reset it in the middle of that replay: a DLSS frame reset halfway (a shake, a frame without the upscaler), the
-// motion tables swapped halfway (a ghost; with NX2NAVI_MVPREV_CHECK=1 a write out of bounds), the conditional draws
+// conditional draws
 // counted against the next frame. So it runs under the submission lock: at the present when the lock is free, else
 // first thing in the next submission, on whichever thread makes it (vk_sync.c submit, vk_present_frames_owed), or on
 // the present thread before the frame's blit (present_frame_closed), whichever takes the lock first. The blit reads what
@@ -317,8 +316,6 @@ static void frame_end(uint64_t frame, const tex_t *t) {   // t: the presented te
     dynres_frame();   // before vk_dlaa_frame reads the DLSS mode it may override
     vk_exec_barrier_log(frame);
     vk_dlaa_frame();
-    vk_mvsurvey_frame();
-    vk_mvprev_frame();
     vk_gpu_passes_frame(frame);
 }
 
@@ -888,7 +885,6 @@ void gfx_exit_log(void) {
 }
 
 static void vk_be_present(const tex_t *t, const int crop[4], uint64_t at_ns) {
-    motion_owner_present();
     vk_sync_start();
     gfx_tl_present();
     vk_dlssg_game_present();
