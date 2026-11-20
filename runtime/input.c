@@ -334,36 +334,12 @@ static void walk_get(void) {
     }
 }
 
-static int mouse_selector;
-int input_direct_mouse_selector_active(void) { return __atomic_load_n(&mouse_selector, __ATOMIC_RELAXED) != 0; }
-
-// Selector 1 is a radial wheel, 2..4 are distinct horizontal quick lists; only a wheel retains a virtual cursor.
 // Under `lock`.
-static void mouse_camera(int32_t out[2], int selector) {
+static void mouse_camera(int32_t out[2]) {
     static uint64_t frame = ~0ull, t0;
     static int32_t held[2];
-    static int was_selector;
-    static float cursor[2];
-    static InputMouseRow row;
     uint64_t now = plat_now_ns();
     int32_t dx, dy;
-    if (!input_direct_mouse_enabled() || !ikb_captured()) selector = 0;
-    __atomic_store_n(&mouse_selector, selector, __ATOMIC_RELAXED);
-    if (selector) {
-        if (was_selector != selector) cursor[0] = cursor[1] = 0, row = (InputMouseRow){0};
-        was_selector = selector;
-        ikb_mouse_take(&dx, &dy);
-        if (selector == 1) input_direct_mouse_radial(dx, dy, mouse_sens_get(), cursor, out);
-        else input_direct_mouse_row(dx, mouse_sens_get(), now, &row, out);
-        held[0] = held[1] = 0; frame = ~0ull;
-        return;
-    }
-    if (was_selector) {
-        was_selector = 0; cursor[0] = cursor[1] = 0; row = (InputMouseRow){0};
-        ikb_mouse_take(&dx, &dy);   // release the wheel without sending its last movement to the camera
-        held[0] = held[1] = out[0] = out[1] = 0; frame = ~0ull;
-        return;
-    }
     if (input_direct_mouse_active()) {
         held[0] = held[1] = out[0] = out[1] = 0;
         frame = ~0ull;
@@ -1259,13 +1235,7 @@ static void poll_merged(uint64_t *buttons, int32_t *lx, int32_t *ly, int32_t *rx
             input_map_stick(down, 1, k);
             if (walk) k[0] = (int32_t)(k[0] * walk_scale), k[1] = (int32_t)(k[1] * walk_scale);
             pick(&sr[0], &sr[1], k[0], k[1]);
-            // The buttons whose selector the right stick picks from. None in Ocarina (1.1.1): its D-pad acts at once
-            // (ocarina, accessory, Navi, boots), and with L or R held the camera input update goes on taking the
-            // mouse; where an update stops taking it, the mouse is the right stick again (mouse_camera).
-            int selector = rt_game_version == 111 ? 0
-                               : b & (1ull << B_L) ? 1 : b & (1ull << B_UP) ? 2 :
-                                 b & (1ull << B_LEFT) ? 3 : b & (1ull << B_RIGHT) ? 4 : 0;
-            mouse_camera(k, selector);
+            mouse_camera(k);
             pick(&sr[0], &sr[1], k[0], k[1]);
             int32_t shake = shake_stick(input_map_held(down, B_SHAKE));
             if (shake) sr[0] = shake, sr[1] = 0;
@@ -1307,7 +1277,7 @@ static volatile uint64_t g_block_closed, g_menu_closed;
 
 int input_cursor_allowed(void) {
     const char *in = cfg_get("NX2NAVI_INPUT");
-    return g_block != 1 && g_menu != 1 && mouse_sens_get() > 0 && !(in && !strcmp(in, "none")) && !menu_cursor_pointer();
+    return g_block != 1 && g_menu != 1 && mouse_sens_get() > 0 && !(in && !strcmp(in, "none"));
 }
 
 void input_block(int on) {
@@ -1345,7 +1315,6 @@ static int blocked(volatile int32_t *flag, volatile uint64_t *closed, const char
 
 void input_poll(uint64_t *buttons, int32_t *lx, int32_t *ly, int32_t *rx, int32_t *ry) {
     poll_merged(buttons, lx, ly, rx, ry);
-    if (!g_block && !g_menu) menu_cursor_poll(buttons);
     const int32_t axes[4] = {*lx, *ly, *rx, *ry};
     int text = blocked(&g_block, &g_block_closed, "text entry", *buttons, axes),
         menu = blocked(&g_menu, &g_menu_closed, "menu", *buttons, axes);

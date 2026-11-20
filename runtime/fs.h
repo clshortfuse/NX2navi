@@ -46,7 +46,7 @@ int romfs_patches_loaded(void);                            // a romfs-patches ma
 // folder had a manifest at start; and why the folder the settings asked for at start was not loaded (ROMFS_PROMPTS_OK
 // for any other folder: it was not asked for). romfs-patches-pc goes by that name also where romfs-patches-pc-<w>x<h>
 // stands in for it (romfs.c overlay_init).
-enum { ROMFS_PROMPTS_OK, ROMFS_PROMPTS_MISSING, ROMFS_PROMPTS_FAILED, ROMFS_PROMPTS_SHAPE, ROMFS_PROMPTS_MODS,
+enum { ROMFS_PROMPTS_OK, ROMFS_PROMPTS_MISSING, ROMFS_PROMPTS_FAILED, ROMFS_PROMPTS_MODS,
        ROMFS_PROMPTS_PATCHES };
 const char *romfs_prompts(void);
 int romfs_prompts_ready(const char *folder);

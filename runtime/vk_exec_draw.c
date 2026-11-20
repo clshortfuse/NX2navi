@@ -6824,7 +6824,7 @@ static uint64_t cs_guest_hash(const prog_t *p) {
 // weight passes are left out and its composition is replaced by vk_aa_record, from the same composite (the sampled
 // R11G11B10F image of the output's size) into the same scene target, through the integer storage view the game's own
 // pass writes it with. 1: the dispatch is handled (left out or replaced). NX2NAVI_AA_LOG=1 logs each compute program's
-// guest code hash once, with its dispatch size and output, to find the passes in another game version.
+// guest code hash once, with its dispatch size and output, to identify the passes.
 static int aa_dispatch(VkExec *ex, int x, int y, int z) {
     int mode = vk_aa_mode();
     if (mode == VK_AA_GAME || !ex->prog) return 0;

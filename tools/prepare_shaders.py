@@ -37,8 +37,8 @@ Game-derived output stays in the build directory (ignored). The list is read at 
 bundles it; it stays out of the repository), else from refs/ through git with the rows its history dropped
 (tools/shader_list.py); nothing of it is copied into the repository. Needs Python 3.14 (compression.zstd), so run it in .venv-py314 or the embeddable 3.14:
 
-    .venv-py314\\Scripts\\python tools\\prepare_shaders.py build\\v121 [--version v121] [--list <tsv>] [--no-run]
-                                                     [--romfs DIR --exefs DIR]   # instead of build\\extracted\\<version>
+    .venv-py314\\Scripts\\python tools\\prepare_shaders.py build\\v111 [--version v111] [--list <tsv>] [--no-run]
+                                                     [--romfs DIR --exefs DIR]   # instead of the build directory’s assets
 """
 import argparse
 import hashlib
@@ -54,6 +54,7 @@ ROOT = Path(__file__).resolve().parents[1]
 while not (ROOT / 'tools' / 'shader_census.py').is_file() and ROOT != ROOT.parent:
     ROOT = ROOT.parent
 sys.path.insert(0, str(ROOT / 'tools'))
+from mod_files import require_game_111  # noqa: E402
 import pipeline_list  # noqa: E402
 import shader_list  # noqa: E402
 from shader_census import inventory  # noqa: E402
@@ -88,7 +89,7 @@ RETRIES = 3
 
 BUNDLED_LIST = ROOT / 'tools' / 'data' / 'shader_list.tsv'   # the installer archive carries a copy (no git, no refs/)
 if not BUNDLED_LIST.is_file():
-    BUNDLED_LIST = ROOT / 'data' / 'shader_list.tsv'          # release folder layout (tools/make_release.py)
+    BUNDLED_LIST = ROOT / 'data' / 'shader_list.tsv'          # build kit layout
 
 
 BUNDLED_PIPELINES = ROOT / 'tools' / 'data' / 'pipeline_list.bin'   # as BUNDLED_LIST: out of the repository
@@ -229,10 +230,10 @@ def driver_crashed(out):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument('build', type=Path, help='build directory holding nx2navi.exe (build\\v121)')
-    ap.add_argument('--version', default='v121', help='build/extracted/<version>')
-    ap.add_argument('--romfs', type=Path, help='RomFS directory (default build/extracted/<version>/romfs)')
-    ap.add_argument('--exefs', type=Path, help='ExeFS directory (default build/extracted/<version>/exefs)')
+    ap.add_argument('build', type=Path, help='game build directory (for example build/v111)')
+    ap.add_argument('--version', choices=('v111',), default='v111', help='supported game version (default: v111)')
+    ap.add_argument('--romfs', type=Path, help='RomFS directory (default <build>/romfs)')
+    ap.add_argument('--exefs', type=Path, help='ExeFS directory (default <build>/exefs)')
     ap.add_argument('--list', help='a shader_list.tsv instead of tools/data/shader_list.tsv or refs/MacNativeGames')
     ap.add_argument('--no-run', action='store_true', help='write the seed files only')
     ap.add_argument('--no-list', action='store_true', help='default variants only, without a shared shader list')
@@ -240,21 +241,23 @@ def main():
     ap.add_argument('--no-pipeline-list', action='store_true', help='no shared pipeline list, also when one is bundled')
     ap.add_argument('--all-shaders', action='store_true',
                     help='also the default variants SLOW_UNUSED leaves out (an hour more of GPU driver builds)')
-    ap.add_argument('--exe', default='nx2navi.exe' if os.name == 'nt' else 'nx2navi',
-                    help='the game executable in the build directory that runs --prepare-shaders')
+    ap.add_argument('--exe', help='game executable in the build directory (default: ocarina, then nx2navi)')
     a = ap.parse_args()
+    romfs = a.romfs or a.build / 'romfs'
+    exefs = a.exefs or a.build / 'exefs'
+    try:
+        require_game_111(exefs)
+    except ValueError as e:
+        ap.error(str(e))
     t0 = time.monotonic()
     variants, prio = parse_list('' if a.no_list else read_list(a.list))
-    extracted = ROOT / 'build' / 'extracted' / a.version
     listed = len(variants)
-    shaders, _ = inventory(a.romfs or extracted / 'romfs', a.exefs or extracted / 'exefs', everything=False)
-    # A missing list row says nothing about the walk: the list covers several versions, and 1.1.0 holds 17,587 of its
-    # 41,414 rows, so most rows are absent because the game does not have them, not because the walk missed them. A walk
-    # that found next to nothing does say something: the shader directories have moved.
+    shaders, _ = inventory(romfs, exefs, everything=False)
+    # The shared list includes variants of other games or builds. Only a nearly empty walk warrants searching every file.
     if len(shaders) < max(64, listed // 20):
         print(f'only {len(shaders)} shaders found of the {listed} listed variants: reading every RomFS file instead',
               flush=True)
-        shaders, _ = inventory(a.romfs or extracted / 'romfs', a.exefs or extracted / 'exefs')
+        shaders, _ = inventory(romfs, exefs)
     t1 = time.monotonic()
     progs, recs, seen, skipped = {}, [], set(), {'not in this version': 0, 'stage': 0}
     left_out = 0 if a.all_shaders else sum(1 for s in shaders.values() if slow_unused(s))
@@ -310,7 +313,11 @@ def main():
           f'seed written in {time.monotonic() - t0:.1f} s', flush=True)
     if a.no_run:
         return 0
-    exe = out / a.exe
+    suffix = '.exe' if os.name == 'nt' else ''
+    default_exe = f'ocarina{suffix}'
+    if not (out / default_exe).is_file() and (out / f'nx2navi{suffix}').is_file():
+        default_exe = f'nx2navi{suffix}'
+    exe = out / (a.exe or default_exe)
     r = subprocess.run([str(exe), '--prepare-shaders'], cwd=str(out))
     for _ in range(RETRIES):
         if not r.returncode or not driver_crashed(out):
@@ -318,7 +325,7 @@ def main():
         print(f'prepare_shaders: the graphics driver crashed while building shaders (rc={r.returncode}); building them '
               'again without the variants it was building (nx2navi.exe --warm-shaders)', flush=True)
         r = subprocess.run([str(exe), '--warm-shaders'], cwd=str(out))
-    print(f'{a.exe} --prepare-shaders: rc={r.returncode}; total {time.monotonic() - t0:.1f} s')
+    print(f'{exe.name} --prepare-shaders: rc={r.returncode}; total {time.monotonic() - t0:.1f} s')
     return r.returncode
 
 

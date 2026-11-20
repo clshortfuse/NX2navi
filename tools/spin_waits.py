@@ -2,7 +2,7 @@
 # ("Spin waits": spin_rw, spin_kind, spin_rmw, spin_lock, spin_store, spin_quick, spin_region, spin_region1).
 """Find the spin waits of the ExeFS modules and print them as `spin` lines of a patch table (recomp/patches.py).
 
-Usage: spin_waits.py --exefs build/extracted/v143/exefs --patches recomp/patches-v143.txt [--modules main,subsdk0,sdk]
+Usage: spin_waits.py --exefs build/v111/exefs --patches recomp/patches-v111.txt [--modules main,subsdk0,sdk]
 
 A guest loop that polls memory until another thread changes it fills only its own core on the Switch, where a better
 thread pinned there preempts it. Here it holds one of the three virtual cores (runtime/kernel.c) and a host core, and

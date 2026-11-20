@@ -205,7 +205,7 @@ static int remove_tree_retry(const char *path) {
 // open, in this or another process (a virus scanner, Explorer's preview, a sync tool), and a folder an elevated run
 // made can refuse it too. ready-<n> then stays the newest save: later working copies are made from it, and the next
 // Commit and the next start try (3) to (5) again. The game's Commit returns 0 once the steps are queued; a thread runs
-// them (95-135 ms on the game thread before, in the 1.4.3 fight save) while every change to the working copy waits in
+// them while every change to the working copy waits in
 // save_touched, and Unmount and the next Commit wait too. A crash in that time loses this Commit only, and a failed
 // one is logged instead of returned. The recovery rule at start (save_recover):
 //   new present          an unfinished copy: deleted (rollback). An older build renamed save/<uid> away before its

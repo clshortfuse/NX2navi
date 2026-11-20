@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Peiikai (MIT; see THIRD_PARTY_NOTICES.md).
 """Generate C for the ExeFS modules: function discovery, then parallel emission into chunked C files.
 
-Usage: gen.py --exefs build/extracted/v121/exefs --out generated/v121 [--modules main,subsdk0,sdk] [--jobs N]
+Usage: gen.py --exefs build/v111/exefs --out generated/v111 [--modules main,subsdk0,sdk] [--jobs N]
               [--limit N] [--chunk-fns N] [--chunk-bytes B] [--big-fn B] [--patches FILE]
 
 Output, under --out:
@@ -52,13 +52,13 @@ TERMINATORS = ('b', 'br', 'ret', 'trap')
 MUSTTAIL = '__attribute__((musttail)) return'
 
 # Estimated bytes of C per instruction, by class, for chunking (estimate_sizes()).
-# Least squares over every function of main, subsdk0 and sdk (1.2.1) gives 62 / 75 / 48 bytes per instruction, 38
+# A measured estimate for functions of main, subsdk0 and sdk gives 62 / 75 / 48 bytes per instruction, 38
 # per function and 4.5 per instruction of a function with a `br` (switches; the all-label fallback costs about 60
 # per instruction but is rare); the median error per function is 7 %.
 EST_INT = 62
 EST_SIMD = 75
 EST_SIMD_LDST = 48
-EST_FN = 38          # per function: signature, FN_ENTER, closing brace
+EST_FN = 38          # per function: signature and closing brace
 EST_BR_LABELS = 10   # per instruction of a function with a `br`: switch cases, or labels if it falls back
 
 
@@ -392,13 +392,13 @@ class Emitter:
             cases = ' '.join(f'case {hx(t)}: goto L_{t:x};' for t in range(entry, end, 4))
             redispatch = f'{MUSTTAIL} {fb}(c);'
             out = [f'static void {fb}(Cpu *c);',
-                   f'void {fname(entry)}(Cpu *c) {{', f'    FN_ENTER({hx(entry)});', f'    c->pc = {hx(entry)};',
+                   f'void {fname(entry)}(Cpu *c) {{', f'    c->pc = {hx(entry)};',
                    f'    {redispatch}', '}',
                    f'static void {fb}(Cpu *c) {{', f'    switch (c->pc) {{ {cases} default: break; }}',
                    f'    {MUSTTAIL} rt_dispatch(c);']
         else:
             redispatch = f'{MUSTTAIL} rt_dispatch(c);'
-            out = [f'void {fname(entry)}(Cpu *c) {{', f'    FN_ENTER({hx(entry)});']
+            out = [f'void {fname(entry)}(Cpu *c) {{']
             if fp.used:
                 out.append('    ' + fp.decl())
 
@@ -628,7 +628,7 @@ def remove_stale(moddir, name, nchunks, errors):
     return removed
 
 
-# Peak memory of one emit worker on 1.4.3 is 1.3 GiB (1.5 GiB with margin); the parent holds about 0.7 GiB.
+# A measured emit worker peaks at 1.3 GiB (1.5 GiB with margin); the parent holds about 0.7 GiB.
 WORKER_MEM = 1536 << 20
 MEM_SHARE = 0.8  # of the free memory the workers may take, the rest is for the system and other programs
 

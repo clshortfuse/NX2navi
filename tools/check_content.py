@@ -86,7 +86,7 @@ def problems_for(path: Path, allow_large: bool = False, data: bytes | None = Non
 def compiled_shader(path: Path) -> bool:
     """A SPIR-V binary or a header of SPIR-V words. The repository holds its shaders as source (runtime/shaders/, the
     tools/make_*.py assemblers) and tools/build_shaders.py builds runtime/<name>_spv.h from them when the game is
-    built. A build kit or a release folder carries the headers, so make_kit.py and make_release.py, which call
+    built. A build kit or a release folder carries the headers, so make_kit.py and make_appimage.py, which call
     problems_for, are not held to this."""
     return path.suffix.lower() == ".spv" or path.name.lower().endswith("_spv.h")
 
@@ -98,7 +98,7 @@ RECORD_MAGICS = (b"NX2NSPRG", b"NX2NSANS", b"NX2NPKEY", b"NX2NPLST")
 
 def recorded_in_play(path: Path, data: bytes | None) -> bool:
     """A shader-programs.bin, shader-answers.bin, pipeline-keys.bin or a pipeline list, by its first bytes. A build kit
-    or a release folder may carry a pipeline list (data/pipeline_list.bin), so make_kit.py and make_release.py, which
+    or a release folder may carry a pipeline list (data/pipeline_list.bin), so make_kit.py and make_appimage.py, which
     call problems_for, are not held to this."""
     if data is None:
         if not path.is_file():
@@ -111,7 +111,7 @@ def recorded_in_play(path: Path, data: bytes | None) -> bool:
 def execution_profile(path: Path) -> bool:
     """The counts an instrumented game wrote (.profraw) or their merged profile (.profdata, tools/pgo.py): they name
     the lifted functions and count their branches, so they are derived from the game's code. A launcher release or
-    an installer release may carry a profile (data/pgo-<version>.profdata), so make_launcher.py and make_release.py,
+    an installer release may carry a profile (data/pgo-<version>.profdata), so make_launcher.py and make_appimage.py,
     which call problems_for, are not held to this."""
     return path.suffix.lower() in (".profdata", ".profraw")
 

@@ -14,7 +14,7 @@
 //                       primary flag and DPI; needs no game files
 //     --selftest        layout, dispatch table and host-function registry; needs no game files
 //     --probe-mods      the mods folder scan, order and switches (mods.c); needs no game files
-//     --probe-loader    load and relocate the modules, check them against the measured 1.2.1 values
+//     --probe-loader    load and relocate the modules, check v111 relocation and constructor invariants
 //     --probe-kernel, --probe-ipc, --probe-services, --probe-fs    host probes
 //     --probe-discord  the Rich Presence IPC exchange; skips without a Discord client; no game files
 //     --probe-dpi       the process DPI awareness (per-monitor v2) and the primary monitor's size; no game files
@@ -264,8 +264,6 @@ static RtConfig cfg;
 const RtConfig *rt_config(void) { return &cfg; }
 
 // ---- runtime services the generated code calls (cpu.h)
-volatile int g_fnprof = 0;   // resolution.c switches it on until the game sets its render size (res_fn_hit)
-void fnprof_hit(uint64_t addr, uint64_t lr, uint64_t x0) { (void)lr, res_fn_hit(addr, x0); }
 
 void rt_brk(Cpu *c, uint32_t imm, uint64_t pc) {
     char at[128], lr[128];
@@ -673,7 +671,7 @@ static int usage(const char *argv0) {
     return 2;
 }
 
-// Paths for a copied folder (tools/package_build.py). Per path: NX2NAVI_EXEFS, NX2NAVI_ROMFS, NX2NAVI_PROFILE_DIR, else the
+// Game data paths relative to the executable. Per path: NX2NAVI_EXEFS, NX2NAVI_ROMFS, NX2NAVI_PROFILE_DIR, else the
 // folder next to nx2navi.exe (exefs with main.npdm, romfs with romfs.bin, any profile folder) if it is there, else the
 // path baked in at build time. A relative value is relative to nx2navi.exe's folder.
 static char pp_exefs[PLAT_PATH_MAX * 2], pp_romfs[PLAT_PATH_MAX * 2], pp_profile[PLAT_PATH_MAX * 2];

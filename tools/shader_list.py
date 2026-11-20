@@ -4,8 +4,8 @@ read it: every row of one revision, plus the V rows of every older revision that
 The list drops V rows its producer's runtime no longer needs: default variants, which that runtime translates for every
 shader (dropped 2026-10-22 to 2026-10-25), and variants that differ only in vertex input or colour
 output types (2026-10-26). Our answers (runtime/gfx_shader.c) still tell those apart, so a dropped row names a variant
-our play meets: at 1340bee the list alone has 134 rows of 1.4.3 shaders, its history 24,839, and of 1.2.1 6,771 and
-25,238. A row no draw asks for costs one translation. No copy of the list goes into the repository.
+play may meet. Shader preparation keeps only the rows whose shader keys occur in the local game inventory.
+No copy of the list goes into the repository.
 """
 import subprocess
 import sys

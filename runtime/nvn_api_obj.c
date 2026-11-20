@@ -760,19 +760,6 @@ NVN_API(nvnWindowSetCrop) {
 }
 
 // ---------- Present pacing
-// The vsync thread ticks at a fixed 60 Hz whatever the monitor does, so one game frame lasts `interval` ticks. With
-// the real-time frame step (frame_rate.c) game speed does not depend on the interval, so a frame is shown when it is
-// ready, at most at the frame limit (NX2NAVI_FPS_LIMIT: 30 to 240 per second or the monitor's rate): holding it to the
-// 2nd or 3rd tick would only add latency and 50 ms frames.
-#define VSYNC_HZ 60ull
-static uint64_t present_period(const win_t *o) {
-    if (frame_step_realtime() || frame_free_running()) return frame_step_cap_ns();   // frame_rate.c: the limit alone
-    static int pace_hz = -1;   // NX2NAVI_PACE_HZ=<n> (test runs): present at n per second whatever the game's interval
-    if (pace_hz < 0) pace_hz = cfg_get("NX2NAVI_PACE_HZ") ? atoi(cfg_get("NX2NAVI_PACE_HZ")) : 0;
-    if (pace_hz > 0) return 1000000000ull / (uint64_t)pace_hz;
-    return (o->interval > 0 ? (uint64_t)o->interval : 1ull) * 1000000000ull / VSYNC_HZ;
-}
-
 // The present slot is the previous slot plus one period. Early: wait for the slot. Late by
 // less than a period: present at once and keep the phase. Behind by a period or more: restart from now, no catch-up
 // burst, except while a movie plays (frame_step_movie_hz): then the slots are kept through a lateness up to
@@ -877,7 +864,7 @@ NVN_API(nvnQueuePresentTexture) {
     win_t *o = arg_p(c, 1);
     int idx = (int)arg_x(c, 2);
     movie_tick(c);   // ov_movie.c: hand over decoded movie frames that are due; needs the core, so before the wait
-    res_present(c);  // resolution.c: a DLSS mode change sets the game's render size again, between frames
+
     wide_present();  // widescreen.c: Ocarina's DLSS render scale
     NVN_BLOCKING();
     if (o->magic != NVN_WIN_MAGIC || idx < 0 || idx >= o->ntex || idx >= 4 || !o->tex[idx])
@@ -895,7 +882,7 @@ NVN_API(nvnQueuePresentTexture) {
         if (hitch_every) rt_log("nvn: a %d ms late frame every %d presents (NX2NAVI_TEST_HITCH)", hitch_ms, hitch_every);
     }
     if (hitch_every && o->presents % (uint64_t)hitch_every == 0) plat_wait_ns((uint64_t)hitch_ms * 1000000);
-    uint64_t period = present_period(o), now = kern_now_ns();
+    uint64_t period = frame_step_cap_ns(), now = kern_now_ns();
     // A driver's low-latency sleep (vk_lowlat.c) or Reflex with DLSS Frame Generation (vk_dlssg.c) holds the next frame
     // to the period where the frame starts, before its pad read, so this pacer holds at most the game's ceiling: the
     // present goes out as soon as it is drawn and the image is free again at once, or a ceiling's period after its

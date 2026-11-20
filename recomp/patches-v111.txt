@@ -236,8 +236,7 @@ site res_fixed main 805bd0 360041e8 1400020f            # tbz w8, #0, #0x80640c 
 site res_fixed main 80641c 9a888128 aa1f03e8            # csel x8, x9, x8, hi -> mov x8, xzr (state 0)
 site res_fixed main 806420 52a7f009 @page:x9 b940f129   # mov w9, #0x3f800000 -> adrp x9, page; ldr w9, [x9, #240]
 
-# Camera aspect ratio: the camera update (main+0x4c48c0, the same code as the camera update site in
-# recomp/patches-v143.txt) copies the camera's near, far, vertical angle and ratio (camera +0x134..+0x140) into the
+# Camera aspect ratio: the camera update (main+0x4c48c0) copies the near, far, vertical angle and ratio (camera +0x134..+0x140) into the
 # sead perspective projection the renderer reads (+0x98..+0xb0; the projection's own matrix update, main+0x3485cc0, does
 # not run in play: the renderer builds its matrices from these fields). The replacement loads the ratio as before and
 # puts the page's ratio in its place when it is within the page's tolerance of 16:9 (the camera's value is not the bit

@@ -127,7 +127,7 @@ void flight_init(void) {
     const char *d = cfg_get("NX2NAVI_FLIGHT_DIR");
     char tmp[PLAT_PATH_MAX];
     if (d && *d) snprintf(tmp, sizeof tmp, "%s", d);
-    else {   // <exe dir>/../flight: build/flight for build/v121*/nx2navi.exe
+    else {   // <exe dir>/../flight: build/flight for build/v111/ocarina.exe
         char *slash = plat_exe_path(tmp, sizeof tmp) ? plat_last_sep(tmp) : NULL;
         if (slash) snprintf(slash, sizeof tmp - (size_t)(slash - tmp), "/../flight");
         else snprintf(tmp, sizeof tmp, "flight");

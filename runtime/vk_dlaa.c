@@ -471,7 +471,7 @@ int vk_dlaa_available(void) { return vk_dlaa_wanted() && N.available; }
 // with no depth, and the HUD is drawn over that target at the output size. DLSS runs at the begin of that pass: it
 // reads the light target and its result is blitted into the pass's target, whose scaling draw is then skipped. The
 // HUD, drawn afterwards into the same target, is never jittered nor passed through DLSS.
-// The scaling draw is not always that FXAA shader: at a 1280x720 scene and 1920x1080 output (1.4.3, dlss = quality)
+// The scaling draw is not always that FXAA shader: at a 1280x720 scene and 1920x1080 output
 // the game's tonemap (guest fs 7e114c4330dc212a) reads the light target and writes the output-sized target itself,
 // over DLSS's picture, so the jittered scene reached the screen and the whole picture shook. So from DLSS's evaluation
 // to the frame's end, draws in passes larger than the light target sample DLSS's output in its place
@@ -2717,7 +2717,6 @@ static int srgb8(VkFormat f) { return f == VK_FORMAT_R8G8B8A8_SRGB || f == VK_FO
 // DLAA's depth and motion.
 static int output_target(VkFormat f) { return srgb8(f) || vk_hdr_native_picture(f); }
 
-double wide_dlss_share(void);   // widescreen.c: the DLSS mode's share of the picture (1 DLAA), 0 off
 
 // ---------------------------------------------------------------- before the bloom (NX2NAVI_DLSS_PREBLOOM)
 // What the upscaler gets at the game's upscaler (vk_dlaa_upscaler) is the armed pair of the bloom composite: measured on
@@ -3172,7 +3171,7 @@ static void dlss_mode(void) {
     if (!m) m = cfg_value("NX2NAVI_DLSS");
     if (strcmp(m, mode)) {
         snprintf(mode, sizeof mode, "%s", m);
-        res_dlss_mode(m);
+
         bias_on = -1;
     }
     int b = dl_active();

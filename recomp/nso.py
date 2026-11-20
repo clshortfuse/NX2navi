@@ -66,7 +66,7 @@ class Nso:
         strtab = dyn.get(DT_STRTAB, 0)
         self.strtab = strtab
         self.needed = [self.cstr(strtab + n) for n in needed]
-        # dynsym count from DT_HASH nchain, or from DT_GNU_HASH (1.4.3 sdk and subsdk0 have no DT_HASH)
+        # dynsym count from DT_HASH nchain, or from DT_GNU_HASH
         self.syms = []
         nsyms = self.symbol_count()
         if nsyms and DT_SYMTAB in dyn:
@@ -83,7 +83,7 @@ class Nso:
                 for i in range(n):
                     r_off, r_info, r_add = struct.unpack_from('<QQq', self.image, b + i * 24)
                     self.relocs.append((r_off, r_info & 0xFFFFFFFF, r_info >> 32, r_add))
-        # DT_RELR (1.4.3): packed RELATIVE relocations whose addend is the word in place. An even entry is an address
+        # DT_RELR: packed RELATIVE relocations whose addend is the word in place. An even entry is an address
         # (relocate it, continue after it); an odd entry is a bitmap of the next 63 words.
         if DT_RELR in dyn:
             where = 0

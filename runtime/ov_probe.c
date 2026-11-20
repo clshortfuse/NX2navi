@@ -700,9 +700,9 @@ static void probe_media_gfx(void) {
 // ---- software keyboard (swkbd.c): ShowKeyboardArg built by the SDK's own setters, as the horse naming does
 enum { KB_TYPE = 0x00, KB_DISABLED = 0x1c, KB_HEADER = 0x24, KB_GUIDE = 0x1a8, KB_MAX_LEN = 0x3ac, KB_MIN_LEN = 0x3b0,
        KB_UTF8 = 0x3bd, KB_INIT_LEN = 0x3c4, STRING_SIZE = 0x7d4, SWKBD_CANCELED = 0x29f };
-#define ARG_WORK (RT_V143 ? 0x518 : 0x4d0)   // SDK 20.5 grew KeyboardConfig (swkbd.c)
+#define ARG_WORK 0x4d0
 #define ARG_WORK_SIZE (ARG_WORK + 8)
-#define ARG_SIZE (RT_V143 ? 0x548 : 0x500)
+#define ARG_SIZE 0x500
 
 static uint64_t sdk(const char *name) {
     uint64_t a = ldr_symbol(name);
@@ -907,20 +907,14 @@ static void probe_menu_text(void) {
         for (size_t i = 1; i < sizeof langs / sizeof *langs; i++)
             CHECK(!strcmp(ui_text_in(langs[i], (UiTextId)id), ui_text_in("en", (UiTextId)id)), "language name %d differs in %s", id, langs[i]);
     CHECK(!strcmp(ui_text_in("en", UI_MENU_LANGNAME_RU), "Русский"), "Russian is not shown as Russian");
-    // game language list: pt-BR only where the build ships USpt; the Switch variants are entries of their own
     {
         UiGameLang gl[16];
-        int n121 = ui_text_game_langs(121, gl, 16), has[16] = {0};
-        for (int i = 0; i < n121; i++) CHECK(strcmp(gl[i].code, "pt-BR"), "1.2.1 game language list offers pt-BR");
-        int n143 = ui_text_game_langs(143, gl, 16), pt = 0;
-        for (int i = 0; i < n143; i++) {
-            pt |= !strcmp(gl[i].code, "pt-BR");
-            for (int j = 0; j < i; j++) CHECK(strcmp(gl[i].code, gl[j].code), "duplicate game language %s", gl[i].code);
-        }
-        CHECK(pt && n143 == n121 + 1, "1.4.3 game language list lacks pt-BR");
+        int n = ui_text_game_langs(gl, 16), has[3] = {0};
         static const char *const want[] = {"en-GB", "fr-CA", "es-419"};
-        for (int w = 0; w < 3; w++)
-            for (int i = 0; i < n143; i++) has[w] |= !strcmp(gl[i].code, want[w]);
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < i; j++) CHECK(strcmp(gl[i].code, gl[j].code), "duplicate game language %s", gl[i].code);
+            for (int w = 0; w < 3; w++) has[w] |= !strcmp(gl[i].code, want[w]);
+        }
         CHECK(has[0] && has[1] && has[2], "game language list lacks en-GB, fr-CA or es-419");
     }
     // the overlay formats keep their conversions
@@ -1061,8 +1055,8 @@ int probe_services(void) {
         for (int k = 0; k < NOBS; k++)
             if (!strcmp(observers[k], n)) obs_bound++;
     }
-    for (int k = 0; k < NOV; k++)   // 1.2.1 lists no add-on content
-        CHECK(ovs[k].bound || (!RT_V143 && !strcmp(ovs[k].key, "aoc.ListAddOnContent")), "override %s matches no relocation",
+    for (int k = 0; k < NOV; k++)
+        CHECK(ovs[k].bound || !strcmp(ovs[k].key, "aoc.ListAddOnContent"), "override %s matches no relocation",
               ovs[k].name);
     for (int k = 0; k < NOBS; k++) CHECK(hostfn_observer(observers[k]), "observer %s is not linked", observers[k]);
     CHECK(obs_bound == NOBS, "%d of %d observers match a JUMP_SLOT", obs_bound, NOBS);

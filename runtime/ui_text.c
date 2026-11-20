@@ -72,11 +72,6 @@ static const char *const text_en[UI_TEXT_COUNT] = {
     // printf format of the overlay line in FPS mode: the frame rate
     [UI_PERF_LINE_FPS] = "%.0f fps",
     [UI_MENU_GRAPHICS] = "Picture",
-    [UI_MENU_OUTPUT_RES] = "Game resolution",
-    [UI_MENU_OUTPUT_RES_DESC] = "The resolution the game draws at. Higher needs a stronger GPU.",
-    [UI_MENU_RENDER_SCALE] = "3D render scale",
-    [UI_MENU_RENDER_SCALE_DESC] = "Size of the 3D scene. Higher is sharper but slower.",
-    [UI_MENU_RENDER_SCALE_GAME] = "Game (83 %)",
     [UI_MENU_UPSCALER] = "Scaling to the window",
     [UI_MENU_UPSCALER_DESC] = "How the game's picture is fitted to the window. Larger window: FSR keeps edges and detail "
                               "sharper than bilinear. Smaller window (Ocarina draws 2560 x 1440): the picture is shrunk "
@@ -87,11 +82,6 @@ static const char *const text_en[UI_TEXT_COUNT] = {
     [UI_MENU_GAME_ASPECT_DESC] = "Widens the view. HUD and menus stay 16:9.",
     [UI_MENU_GAME_ASPECT_16_9] = "16:9 (the game's)", [UI_MENU_GAME_ASPECT_WINDOW] = "Window shape",
     [UI_MENU_GAME_ASPECT_21_9] = "21:9", [UI_MENU_GAME_ASPECT_32_9] = "32:9",
-    [UI_MENU_FOV] = "Field of view",
-    [UI_MENU_FOV_DESC] = "How much of the world the camera shows, in percent of the game's own. Game version 1.4.3 only.",
-    [UI_MENU_SHADOW_RES] = "Shadow map size",
-    [UI_MENU_SHADOW_RES_DESC] = "Shadow detail. Higher costs more GPU power.",
-    [UI_MENU_SHADOW_RES_GAME] = "Game (changes)",
     [UI_MENU_ANISO] = "Texture filtering",
     [UI_MENU_ANISO_DESC] = "Anisotropic filtering of surface textures: ground, roads and walls seen at a shallow angle stay sharp into the distance instead of blurring. Game: the level the game asks for, as on the Switch.",
     [UI_MENU_ANISO_GAME] = "Game",
@@ -172,8 +162,6 @@ static const char *const text_en[UI_TEXT_COUNT] = {
     [UI_MENU_CONTACT_SHADOWS] = "Contact shadows",
     [UI_MENU_CONTACT_SHADOWS_DESC] = "Small sun shadows the shadow maps miss: at feet, under stones, in grass and creases. "
                                      "Traced on the screen after lighting. Takes effect at the next start.",
-    [UI_MENU_SHADOW_RANGE] = "Shadow cascade range",
-    [UI_MENU_SHADOW_RANGE_DESC] = "Keeps shadows sharp further away.",
     [UI_MENU_DLAA] = "NVIDIA DLSS / DLAA",
     [UI_MENU_DLAA_DESC] = "NVIDIA DLSS for the 3D scene (NVIDIA RTX GPUs; " DLSS_FILE " next to " EXE_FILE "): smoother "
                           "edges and less shimmer. The HUD is not touched. The mode below sets the resolution it works "
@@ -330,7 +318,6 @@ static const char *const text_en[UI_TEXT_COUNT] = {
     [UI_MENU_PROMPTS_MISSING] = "prompt files missing: tools/pad_prompts.py makes them",
     [UI_MENU_PROMPTS_FAILED] = "prompt files damaged: make them again with tools/pad_prompts.py",
     [UI_MENU_PROMPTS_RESTART] = "prompts change after restart",
-    [UI_MENU_PROMPTS_OFF_SHAPE] = "off at a game resolution not 16:9",
     [UI_MENU_PROMPTS_OFF_MODS] = "off: a RomFS mod replaces their files",
     [UI_MENU_PROMPTS_OFF_PATCHES] = "off while NX2NAVI_ROMFS_PATCHES is set",
     [UI_MENU_RESTART] = "Restart now",
@@ -347,11 +334,9 @@ static const char *const text_en[UI_TEXT_COUNT] = {
     [UI_MENU_STICK_DEADZONE_DESC] = "How far a stick must move to register. Raise it if a stick drifts.",
     [UI_MENU_STICK_DEADZONE_NOW] = "stick now: %.0f %%",
     [UI_MENU_MOUSE_MODE] = "Mouse camera",
-    [UI_MENU_MOUSE_MODE_DESC] = "Direct: the camera turns by how far the mouse moves, as in a PC game, with no stick dead zone or curve (games 1.1.1 and 1.4.3; other versions use stick emulation). Stick emulation: the mouse acts as the right stick.",
+    [UI_MENU_MOUSE_MODE_DESC] = "Direct: the camera turns by how far the mouse moves, as in a PC game, with no stick dead zone or curve. Stick emulation: the mouse acts as the right stick.",
     [UI_MENU_MOUSE_STICK] = "Stick emulation",
     [UI_MENU_MOUSE_DIRECT] = "Direct",
-    [UI_MENU_MENU_CURSOR] = "Mouse in the game's menus",
-    [UI_MENU_MENU_CURSOR_DESC] = "In the game's own menus (title, inventory, shops, dialogue choices) the pointer shows: the item under it is selected, left click confirms, right click goes back. Only after the mouse or a key was used last, so a gamepad sees the menus unchanged (game 1.4.3).",
     [UI_MENU_MOUSE_SENS] = "Mouse camera sensitivity",
     [UI_MENU_MOUSE_SENS_DESC] = "How fast the mouse turns the camera.",
     [UI_MENU_WALK_KEY] = "Walk key",
@@ -510,7 +495,6 @@ static const char *const text_en[UI_TEXT_COUNT] = {
     [UI_MENU_TEX_ALIAS] = "Texture aliasing", [UI_MENU_TEX_ALIAS_DESC] = "A new texture created over a live texture's memory starts with that content instead of empty.",
     [UI_MENU_TEX_VRAM_PRESSURE] = "Texture memory limit", [UI_MENU_TEX_VRAM_PRESSURE_DESC] = "Percent of video memory above which textures the game released are dropped (they come back from storage when used again). 0 keeps them.",
     [UI_MENU_ASTC_BC] = "Compress ASTC to BC3", [UI_MENU_ASTC_BC_DESC] = "With the GPU decoder: re-encodes decoded ASTC textures to BC3, a quarter of the video memory. Textures look slightly blockier. Auto: on for GPUs with 4 GB of video memory or less.",
-    [UI_MENU_LOD_GUARD] = "LOD guard", [UI_MENU_LOD_GUARD_DESC] = "Prevents objects flashing in the wrong place or a flat far field for a frame, by waiting for the game to finish rewriting level-of-detail data before the GPU reads it.",
     [UI_MENU_FIX_C0] = "Constant buffer fix",
     [UI_MENU_FIX_C0_DESC] = "Fills the driver-reserved constant bank c0 (storage sizes, dispatch size, point size, base instance) instead of reading zeros.",
     [UI_MENU_FIX_ZERO] = "Zero new GPU memory",
@@ -734,11 +718,6 @@ static const char *const text_ru[UI_TEXT_COUNT] = {
     [UI_MENU_PERF_OFF] = "Выкл.", [UI_MENU_PERF_FPS] = "FPS", [UI_MENU_PERF_FULL] = "Полный",
     [UI_PERF_LINE_FPS] = "%.0f к/с",
     [UI_MENU_GRAPHICS] = "Изображение",
-    [UI_MENU_OUTPUT_RES] = "Разрешение игры",
-    [UI_MENU_OUTPUT_RES_DESC] = "Разрешение, в котором рисуется игра. Чем выше, тем больше нагрузка на видеокарту.",
-    [UI_MENU_RENDER_SCALE] = "Масштаб 3D-отрисовки",
-    [UI_MENU_RENDER_SCALE_DESC] = "Размер 3D-сцены. Выше — чётче, но медленнее.",
-    [UI_MENU_RENDER_SCALE_GAME] = "Как в игре (83 %)",
     [UI_MENU_UPSCALER] = "Масштабирование под окно",
     [UI_MENU_UPSCALER_DESC] = "Как картинка игры вписывается в окно. Окно больше: FSR сохраняет края и детали чётче "
                               "билинейного. Окно меньше (Ocarina рисует 2560 × 1440): картинка уменьшается, и FSR "
@@ -759,11 +738,6 @@ static const char *const text_ru[UI_TEXT_COUNT] = {
     [UI_MENU_GAME_ASPECT_DESC] = "Расширяет обзор. Интерфейс и меню остаются 16:9.",
     [UI_MENU_GAME_ASPECT_16_9] = "16:9 (как в игре)", [UI_MENU_GAME_ASPECT_WINDOW] = "По окну",
     [UI_MENU_GAME_ASPECT_21_9] = "21:9", [UI_MENU_GAME_ASPECT_32_9] = "32:9",
-    [UI_MENU_FOV] = "Поле зрения",
-    [UI_MENU_FOV_DESC] = "Сколько мира показывает камера, в процентах от игрового. Только для версии игры 1.4.3.",
-    [UI_MENU_SHADOW_RES] = "Размер карты теней",
-    [UI_MENU_SHADOW_RES_DESC] = "Детализация теней. Выше — больше нагрузка на видеокарту.",
-    [UI_MENU_SHADOW_RES_GAME] = "Как в игре (меняется)",
     [UI_MENU_ANISO] = "Фильтрация текстур",
     [UI_MENU_ANISO_DESC] = "Анизотропная фильтрация текстур поверхностей: земля, дороги и стены под острым углом остаются чёткими вдали, а не размываются. Игра: уровень, который запрашивает игра, как на Switch.",
     [UI_MENU_ANISO_GAME] = "Игра",
@@ -845,8 +819,6 @@ static const char *const text_ru[UI_TEXT_COUNT] = {
     [UI_MENU_CONTACT_SHADOWS] = "Контактные тени",
     [UI_MENU_CONTACT_SHADOWS_DESC] = "Мелкие тени от солнца, которых нет на картах теней: у ног, под камнями, в траве и "
                                      "складках. Считаются по экрану после освещения. Действует после перезапуска.",
-    [UI_MENU_SHADOW_RANGE] = "Дальность каскадов теней",
-    [UI_MENU_SHADOW_RANGE_DESC] = "Сохраняет чёткие тени на большем расстоянии.",
     [UI_MENU_DLAA] = "NVIDIA DLSS / DLAA",
     [UI_MENU_DLAA_DESC] = "NVIDIA DLSS для 3D-сцены (видеокарты NVIDIA RTX; " DLSS_FILE " рядом с " EXE_FILE "): ровнее "
                           "края и меньше мерцания. Интерфейс не затрагивается. Режим ниже задаёт разрешение, с которым он "
@@ -986,7 +958,6 @@ static const char *const text_ru[UI_TEXT_COUNT] = {
     [UI_MENU_PROMPTS_MISSING] = "нет файлов подсказок: их создаёт tools/pad_prompts.py",
     [UI_MENU_PROMPTS_FAILED] = "файлы подсказок повреждены: создайте их снова tools/pad_prompts.py",
     [UI_MENU_PROMPTS_RESTART] = "подсказки сменятся после перезапуска",
-    [UI_MENU_PROMPTS_OFF_SHAPE] = "выкл. при разрешении игры не 16:9",
     [UI_MENU_PROMPTS_OFF_MODS] = "выкл.: мод RomFS заменяет их файлы",
     [UI_MENU_PROMPTS_OFF_PATCHES] = "выкл., пока задан NX2NAVI_ROMFS_PATCHES",
     [UI_MENU_RESTART] = "Перезапустить сейчас",
@@ -1003,11 +974,9 @@ static const char *const text_ru[UI_TEXT_COUNT] = {
     [UI_MENU_STICK_DEADZONE_DESC] = "Насколько нужно сдвинуть стик, чтобы он сработал. Увеличьте при дрейфе.",
     [UI_MENU_STICK_DEADZONE_NOW] = "стик сейчас: %.0f %%",
     [UI_MENU_MOUSE_MODE] = "Управление мышью",
-    [UI_MENU_MOUSE_MODE_DESC] = "Прямое: камера поворачивается на столько, на сколько сдвинута мышь, как в играх для ПК, без мёртвой зоны и кривой стика (версии игры 1.1.1 и 1.4.3; на других версиях эмуляция стика). Эмуляция стика: мышь работает как правый стик.",
+    [UI_MENU_MOUSE_MODE_DESC] = "Прямое: камера поворачивается на столько, на сколько сдвинута мышь, как в играх для ПК, без мёртвой зоны и кривой стика. Эмуляция стика: мышь работает как правый стик.",
     [UI_MENU_MOUSE_STICK] = "Эмуляция стика",
     [UI_MENU_MOUSE_DIRECT] = "Прямое",
-    [UI_MENU_MENU_CURSOR] = "Мышь в меню игры",
-    [UI_MENU_MENU_CURSOR_DESC] = "В меню самой игры (заставка, инвентарь, магазины, варианты ответа) появляется указатель: пункт под ним выбирается, левый щелчок подтверждает, правый возвращает назад. Только если последними использовались мышь или клавиатура, поэтому с геймпадом меню не меняются (версия игры 1.4.3).",
     [UI_MENU_MOUSE_SENS] = "Чувствительность мыши",
     [UI_MENU_MOUSE_SENS_DESC] = "Как быстро мышь поворачивает камеру.",
     [UI_MENU_WALK_KEY] = "Клавиша шага",
@@ -1148,7 +1117,6 @@ static const char *const text_ru[UI_TEXT_COUNT] = {
     [UI_MENU_TEX_ALIAS] = "Наследование содержимого текстур", [UI_MENU_TEX_ALIAS_DESC] = "Новая текстура поверх памяти живой текстуры получает её содержимое, а не пустую.",
     [UI_MENU_TEX_VRAM_PRESSURE] = "Предел памяти текстур", [UI_MENU_TEX_VRAM_PRESSURE_DESC] = "Процент видеопамяти, выше которого освобождённые игрой текстуры удаляются (при повторном использовании загружаются снова). 0 — не удалять.",
     [UI_MENU_ASTC_BC] = "Сжатие ASTC в BC3", [UI_MENU_ASTC_BC_DESC] = "С декодером на GPU: декодированные текстуры ASTC пересжимаются в BC3 и занимают вчетверо меньше видеопамяти. Текстуры чуть более блочные. Авто: включено на видеокартах с 4 ГБ видеопамяти и меньше.",
-    [UI_MENU_LOD_GUARD] = "Защита LOD", [UI_MENU_LOD_GUARD_DESC] = "Не даёт объектам мелькать не на своём месте, а дальнему плану — на кадр становиться плоским: ждёт, пока игра допишет данные уровней детализации, и только потом их читает GPU.",
     [UI_MENU_FIX_C0] = "Исправление константного буфера",
     [UI_MENU_FIX_C0_DESC] = "Заполняет зарезервированный драйвером банк констант c0 (размеры хранилищ, размер запуска, размер точки, базовый экземпляр) вместо чтения нулей.",
     [UI_MENU_FIX_ZERO] = "Обнулять новую память GPU",
@@ -1357,11 +1325,6 @@ static const char *const text_pt_br[UI_TEXT_COUNT] = {
     [UI_MENU_PERF_OFF] = "Desligado", [UI_MENU_PERF_FPS] = "FPS", [UI_MENU_PERF_FULL] = "Completo",
     [UI_PERF_LINE_FPS] = "%.0f fps",
     [UI_MENU_GRAPHICS] = "Imagem",
-    [UI_MENU_OUTPUT_RES] = "Resolução do jogo",
-    [UI_MENU_OUTPUT_RES_DESC] = "A resolução do jogo. Mais alta exige mais da placa de vídeo.",
-    [UI_MENU_RENDER_SCALE] = "Escala da renderização 3D",
-    [UI_MENU_RENDER_SCALE_DESC] = "Tamanho da cena 3D. Maior fica mais nítido, porém mais pesado.",
-    [UI_MENU_RENDER_SCALE_GAME] = "Jogo (83 %)",
     [UI_MENU_UPSCALER] = "Escala para a janela",
     [UI_MENU_UPSCALER_DESC] = "Como a imagem do jogo se ajusta à janela. Janela maior: o FSR mantém bordas e detalhes "
                               "mais nítidos que o bilinear. Janela menor (Ocarina desenha 2560 x 1440): a imagem é "
@@ -1579,7 +1542,6 @@ static const char *const text_pt_br[UI_TEXT_COUNT] = {
     [UI_MENU_TEX_ALIAS] = "Aliasing de texturas", [UI_MENU_TEX_ALIAS_DESC] = "Uma textura nova criada sobre a memória de uma textura viva começa com esse conteúdo em vez de vazia.",
     [UI_MENU_TEX_VRAM_PRESSURE] = "Limite de memória de texturas", [UI_MENU_TEX_VRAM_PRESSURE_DESC] = "Porcentagem da memória de vídeo acima da qual as texturas liberadas pelo jogo são descartadas (voltam do armazenamento quando usadas de novo). 0 mantém todas.",
     [UI_MENU_ASTC_BC] = "Comprimir ASTC em BC3", [UI_MENU_ASTC_BC_DESC] = "Com o decodificador da GPU: recodifica as texturas ASTC decodificadas em BC3, que ocupa um quarto da memória de vídeo. As texturas ficam um pouco mais quadriculadas. Automático: ligado em GPUs com 4 GB de memória de vídeo ou menos.",
-    [UI_MENU_LOD_GUARD] = "Proteção de LOD", [UI_MENU_LOD_GUARD_DESC] = "Evita que objetos pisquem no lugar errado ou que o plano distante fique achatado por um quadro, esperando o jogo terminar de reescrever os dados de nível de detalhe antes que a GPU os leia.",
     [UI_MENU_FIX_C0] = "Correção do buffer de constantes",
     [UI_MENU_FIX_C0_DESC] = "Preenche o banco de constantes c0 reservado ao driver (tamanhos de armazenamento, tamanho do dispatch, tamanho do ponto, instância base) em vez de ler zeros.",
     [UI_MENU_FIX_ZERO] = "Zerar memória nova da GPU",
@@ -1641,12 +1603,6 @@ static const char *const text_pt_br[UI_TEXT_COUNT] = {
     [UI_MENU_OV_FMT_FSR] = "AMD FSR 1, nitidez %d%%", [UI_MENU_OV_SCALE_NONE] = "nenhuma (1:1)",
     [UI_MENU_OV_FMT_SHRINK] = "bilinear + nitidez FSR %d%%",
     [UI_MENU_OV_SCALE_BILINEAR] = "bilinear",
-    [UI_MENU_FOV] = "Campo de visão",
-    [UI_MENU_FOV_DESC] = "Quanto do mundo a câmera mostra, em porcentagem do original do jogo. Só na versão 1.4.3 do "
-                         "jogo.",
-    [UI_MENU_SHADOW_RES] = "Tamanho do mapa de sombras",
-    [UI_MENU_SHADOW_RES_DESC] = "Detalhe das sombras. Mais alto exige mais da placa de vídeo.",
-    [UI_MENU_SHADOW_RES_GAME] = "Do jogo (varia)",
     [UI_MENU_ANISO] = "Filtragem de texturas",
     [UI_MENU_ANISO_DESC] = "Filtragem anisotrópica das texturas de superfície: chão, estradas e paredes vistos em "
                            "ângulo raso continuam nítidos ao longe em vez de borrar. Jogo: o nível que o jogo pede, "
@@ -1743,15 +1699,12 @@ static const char *const text_pt_br[UI_TEXT_COUNT] = {
     [UI_MENU_PROMPTS_PLAYSTATION] = "PlayStation",
     [UI_MENU_PROMPTS_PC] = "Teclado e mouse",
     [UI_MENU_MOUSE_MODE] = "Câmera com o mouse",
-    [UI_MENU_MOUSE_MODE_DESC] = "Direta: a câmera gira o quanto o mouse se move, como num jogo de PC, sem zona morta nem curva do analógico (jogos 1.1.1 e 1.4.3; as outras versões usam a emulação do analógico). Emulação do analógico: o mouse age como o analógico direito.",
+    [UI_MENU_MOUSE_MODE_DESC] = "Direta: a câmera gira o quanto o mouse se move, como num jogo de PC, sem zona morta nem curva do analógico. Emulação do analógico: o mouse age como o analógico direito.",
     [UI_MENU_MOUSE_STICK] = "Emulação do analógico",
     [UI_MENU_MOUSE_DIRECT] = "Direta",
-    [UI_MENU_MENU_CURSOR] = "Mouse nos menus do jogo",
-    [UI_MENU_MENU_CURSOR_DESC] = "Nos menus do próprio jogo (título, inventário, lojas, escolhas de diálogo) o ponteiro aparece: o item sob ele fica selecionado, o clique esquerdo confirma e o direito volta. Só depois de usar o mouse ou uma tecla por último, então com um controle os menus ficam como antes (jogo 1.4.3).",
     [UI_MENU_PROMPTS_MISSING] = "faltam os arquivos dos ícones: tools/pad_prompts.py os cria",
     [UI_MENU_PROMPTS_FAILED] = "arquivos dos ícones danificados: crie de novo com tools/pad_prompts.py",
     [UI_MENU_PROMPTS_RESTART] = "os ícones mudam após reiniciar",
-    [UI_MENU_PROMPTS_OFF_SHAPE] = "desligados numa resolução de jogo que não é 16:9",
     [UI_MENU_PROMPTS_OFF_MODS] = "desligados: um mod de RomFS substitui os arquivos deles",
     [UI_MENU_PROMPTS_OFF_PATCHES] = "desligados enquanto NX2NAVI_ROMFS_PATCHES está definido",
     [UI_MENU_RESTART] = "Reiniciar agora",
@@ -1774,8 +1727,6 @@ static const char *const text_pt_br[UI_TEXT_COUNT] = {
     [UI_MENU_OV_SCALE_DOWN] = "bilinear (nitidez FSR 0)",
     [UI_MENU_SHADOW_SCALE] = "Resolução das sombras",
     [UI_MENU_SHADOW_SCALE_DESC] = "Sombras mais nítidas. Mais alto exige mais da placa de vídeo.",
-    [UI_MENU_SHADOW_RANGE] = "Alcance das cascatas de sombra",
-    [UI_MENU_SHADOW_RANGE_DESC] = "Mantém as sombras nítidas a distâncias maiores.",
     [UI_MENU_CONTACT_SHADOWS] = "Sombras de contato",
     [UI_MENU_CONTACT_SHADOWS_DESC] = "Pequenas sombras do sol que os mapas de sombra não pegam: nos pés, sob pedras, "
                                      "na grama e em dobras. Traçadas na tela depois da iluminação. Vale no próximo "
@@ -1979,11 +1930,6 @@ static const char *const text_zh_hans[UI_TEXT_COUNT] = {
     [UI_PERF_LINE_FPS] = "%.0f fps",
 
     [UI_MENU_GRAPHICS] = "画面",
-    [UI_MENU_OUTPUT_RES] = "游戏分辨率",
-    [UI_MENU_OUTPUT_RES_DESC] = "游戏的渲染分辨率。越高越吃显卡。",
-    [UI_MENU_RENDER_SCALE] = "3D 渲染比例",
-    [UI_MENU_RENDER_SCALE_DESC] = "3D 场景的大小。越高越清晰，但更慢。",
-    [UI_MENU_RENDER_SCALE_GAME] = "游戏（83%）",
     [UI_MENU_UPSCALER] = "放大到窗口",
     [UI_MENU_UPSCALER_DESC] = "游戏画面适配窗口的方式。窗口更大时：FSR 比双线性更能保留边缘和细节。"
                               "窗口更小时（Ocarina 绘制 2560 × 1440）：画面被缩小，FSR 按下方强度锐化。",
@@ -2001,9 +1947,6 @@ static const char *const text_zh_hans[UI_TEXT_COUNT] = {
     [UI_MENU_GAME_ASPECT_DESC] = "扩大视野。界面和菜单保持 16:9。",
     [UI_MENU_GAME_ASPECT_16_9] = "16:9（游戏原生）", [UI_MENU_GAME_ASPECT_WINDOW] = "窗口比例",
     [UI_MENU_GAME_ASPECT_21_9] = "21:9", [UI_MENU_GAME_ASPECT_32_9] = "32:9",
-    [UI_MENU_FOV] = "视野",
-    [UI_MENU_FOV_DESC] = "镜头能看到多大范围，以游戏自身视野的百分比表示。"
-                          "仅限游戏版本 1.4.3。",
     [UI_MENU_SHARPNESS] = "FSR 锐度",
     [UI_MENU_SHARPNESS_DESC] = "FSR 的锐化强度。0 为关闭。",
     [UI_MENU_SHARPNESS_NEEDS_FSR] = "仅限 AMD FSR 1",
@@ -2297,9 +2240,6 @@ static const char *const text_zh_hans[UI_TEXT_COUNT] = {
     [UI_MENU_ASTC_BC_DESC] = "配合 GPU 解码器使用：把解码后的 ASTC 纹理重新编码为 BC3，"
                              "显存占用只有四分之一。纹理会出现轻微色块。"
                              "自动：显存 4 GB 及以下的显卡上开启。",
-    [UI_MENU_LOD_GUARD] = "LOD 保护",
-    [UI_MENU_LOD_GUARD_DESC] = "等待游戏改写完细节层次数据后再让 GPU 读取，"
-                               "避免物体错位闪现，或远景有一帧变平。",
     [UI_MENU_FIX_C0] = "常量缓冲区修正",
     [UI_MENU_FIX_C0_DESC] = "填充驱动保留的常量组 c0（存储缓冲区大小、派发大小、点大小、"
                             "基础实例），而不是读取零值。",
@@ -2391,9 +2331,6 @@ static const char *const text_zh_hans[UI_TEXT_COUNT] = {
     [UI_MENU_OV_FMT_SHRINK] = "双线性 + FSR 锐化 %d%%",
     [UI_MENU_OV_SCALE_NONE] = "无（1:1）",
     [UI_MENU_OV_SCALE_BILINEAR] = "双线性",
-    [UI_MENU_SHADOW_RES] = "阴影贴图尺寸",
-    [UI_MENU_SHADOW_RES_DESC] = "阴影细节。越高越吃显卡。",
-    [UI_MENU_SHADOW_RES_GAME] = "游戏默认（会变化）",
     [UI_MENU_ANISO] = "纹理过滤",
     [UI_MENU_ANISO_DESC] = "表面纹理的各向异性过滤：以小角度看到的地面、道路和墙壁在远处依然清晰，而不会模糊。游戏：使用游戏请求的级别，与 Switch 上相同。",
     [UI_MENU_ANISO_GAME] = "游戏",
@@ -2455,15 +2392,12 @@ static const char *const text_zh_hans[UI_TEXT_COUNT] = {
     [UI_MENU_PROMPTS_PLAYSTATION] = "PlayStation",
     [UI_MENU_PROMPTS_PC] = "键盘和鼠标",
     [UI_MENU_MOUSE_MODE] = "鼠标视角",
-    [UI_MENU_MOUSE_MODE_DESC] = "直接：镜头按鼠标移动的距离转动，与电脑游戏相同，没有摇杆死区和响应曲线（游戏 1.1.1 和 1.4.3；其他版本使用摇杆模拟）。摇杆模拟：鼠标相当于右摇杆。",
+    [UI_MENU_MOUSE_MODE_DESC] = "直接：镜头按鼠标移动的距离转动，与电脑游戏相同，没有摇杆死区和响应曲线。摇杆模拟：鼠标相当于右摇杆。",
     [UI_MENU_MOUSE_STICK] = "摇杆模拟",
     [UI_MENU_MOUSE_DIRECT] = "直接",
-    [UI_MENU_MENU_CURSOR] = "在游戏菜单中使用鼠标",
-    [UI_MENU_MENU_CURSOR_DESC] = "在游戏自身的菜单中（标题、背包、商店、对话选项）显示指针：指针下的项目被选中，左键确认，右键返回。仅在最后使用的是鼠标或键盘时生效，因此使用手柄时菜单保持不变（游戏 1.4.3）。",
     [UI_MENU_PROMPTS_MISSING] = "缺少按键提示文件：请用 tools/pad_prompts.py 生成",
     [UI_MENU_PROMPTS_FAILED] = "按键提示文件已损坏：请用 tools/pad_prompts.py 重新生成",
     [UI_MENU_PROMPTS_RESTART] = "按键提示重启后生效",
-    [UI_MENU_PROMPTS_OFF_SHAPE] = "游戏分辨率不是 16:9 时关闭",
     [UI_MENU_PROMPTS_OFF_MODS] = "已关闭：RomFS 模组替换了它们的文件",
     [UI_MENU_PROMPTS_OFF_PATCHES] = "设置了 NX2NAVI_ROMFS_PATCHES 时关闭",
     [UI_MENU_RESTART] = "立即重启",
@@ -2484,8 +2418,6 @@ static const char *const text_zh_hans[UI_TEXT_COUNT] = {
     [UI_MENU_OV_SCALE_DOWN] = "双线性（FSR 锐度 0）",
     [UI_MENU_SHADOW_SCALE] = "阴影分辨率",
     [UI_MENU_SHADOW_SCALE_DESC] = "让阴影更清晰。越高越吃显卡。",
-    [UI_MENU_SHADOW_RANGE] = "阴影级联范围",
-    [UI_MENU_SHADOW_RANGE_DESC] = "让远处的阴影保持清晰。",
     [UI_MENU_CONTACT_SHADOWS] = "接触阴影",
     [UI_MENU_CONTACT_SHADOWS_DESC] = "阴影贴图遗漏的细小太阳阴影：脚下、石头下、草丛和褶皱中。在光照之后于屏幕空间追踪。下次启动时生效。",
     [UI_MENU_PCSS] = "柔和阴影",
@@ -2612,23 +2544,22 @@ const char *ui_text_lang(const char *code) {
     return code;
 }
 
-// Every game language with the Mals file it reads: EUen/USen, USfr/EUfr, USes/EUes ship in every version; USpt only
-// from 1.4.3; EUpl only in Ocarina (since 999: never by version, ui_text_game_langs_in finds it by its file).
-static const struct { const char *code; UiTextId name; int since; const char *mals; } all_langs[] = {
+// Languages available from RomFS, with a conservative fallback when it is unavailable.
+static const struct { const char *code; UiTextId name; int discovered_only; const char *mals; } all_langs[] = {
     {"en-US", UI_MENU_LANGNAME_EN, 0, "USen"}, {"en-GB", UI_MENU_LANGNAME_EN_GB, 0, "EUen"},
     {"ja", UI_MENU_LANGNAME_JA, 0, "JPja"}, {"fr", UI_MENU_LANGNAME_FR, 0, "EUfr"},
     {"fr-CA", UI_MENU_LANGNAME_FR_CA, 0, "USfr"}, {"de", UI_MENU_LANGNAME_DE, 0, "EUde"},
     {"it", UI_MENU_LANGNAME_IT, 0, "EUit"}, {"es", UI_MENU_LANGNAME_ES, 0, "EUes"},
-    {"es-419", UI_MENU_LANGNAME_ES_419, 0, "USes"}, {"pt-BR", UI_MENU_LANGNAME_PT_BR, 143, "USpt"},
+    {"es-419", UI_MENU_LANGNAME_ES_419, 0, "USes"}, {"pt-BR", UI_MENU_LANGNAME_PT_BR, 1, "USpt"},
     {"nl", UI_MENU_LANGNAME_NL, 0, "EUnl"}, {"ru", UI_MENU_LANGNAME_RU, 0, "EUru"},
     {"zh-Hans", UI_MENU_LANGNAME_ZH_HANS, 0, "CNzh"}, {"zh-Hant", UI_MENU_LANGNAME_ZH_HANT, 0, "TWzh"},
-    {"ko", UI_MENU_LANGNAME_KO, 0, "KRko"}, {"pl", UI_MENU_LANGNAME_PL, 999, "EUpl"},
+    {"ko", UI_MENU_LANGNAME_KO, 0, "KRko"}, {"pl", UI_MENU_LANGNAME_PL, 1, "EUpl"},
 };
 
-int ui_text_game_langs(int game_version, UiGameLang *out, int max) {
+int ui_text_game_langs(UiGameLang *out, int max) {
     int n = 0;
     for (size_t i = 0; i < sizeof all_langs / sizeof *all_langs && n < max; i++)
-        if (game_version >= all_langs[i].since) out[n++] = (UiGameLang){all_langs[i].code, all_langs[i].name};
+        if (!all_langs[i].discovered_only) out[n++] = (UiGameLang){all_langs[i].code, all_langs[i].name};
     return n;
 }
 

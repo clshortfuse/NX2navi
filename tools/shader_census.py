@@ -5,8 +5,8 @@ The inventory, the bnsh, sharcb and sarc readers and the package walk: Copyright
 variants; the module scan reads the NSO files under exefs/ directly;
 a control section must start with CONTROL_MAGIC (sharcb_shaders says why).
 
-Reads build/extracted/<version>/ (RomFS image plus index.json as tools/romfs_index.py reads them, and exefs/). Writes under
-build/<version>/shaders/ only:
+Reads build/v111/ (RomFS image plus index.json as tools/romfs_index.py reads them, and exefs/). Writes under
+build/v111/shaders/:
     code/<key>.code     translator input (graphics: SPH + instructions, compute: instructions)
     jobs.json           key -> job, source path, origin (bnsh|sharcb|ndsr|main)
     spv/<key>.spv       with --translate
@@ -14,7 +14,7 @@ build/<version>/shaders/ only:
 
 The key is sha256(control[:0x880] + code), the shared shader list's key. Needs Python 3.14 (compression.zstd), so run in .venv-py314:
 
-    .venv-py314\\Scripts\\python tools\\shader_census.py --version v121 --translate
+    .venv-py314\\Scripts\\python tools\\shader_census.py --translate
 """
 import argparse
 import zstd_compat as zstd   # compression.zstd on 3.14, the zstandard package before
@@ -32,6 +32,8 @@ from collections import defaultdict
 from pathlib import Path
 
 import lz4.block
+
+from mod_files import require_game_111
 
 ROOT = Path(__file__).resolve().parent.parent
 XLATE = ROOT / 'build' / 'xlate' / ('nx2navi_xlate.exe' if os.name == 'nt' else 'nx2navi_xlate')
@@ -159,14 +161,7 @@ def sharcb_shaders(data, rejected):
     """agl shader packages (.sharcb, magic BAHS): records <u64 code offset in the pool, u32 control size (0x880 or
     0x88c), i32 offset of the control from the record>; a record may reuse an earlier record's control.
 
-    The scan finds records by their size word, so it also meets 16-byte groups that only look like one. Without the
-    magic check, 1.2.1 yields 87 such keys: each has control offset 0 (the "control" starts at the record itself, so its
-    first 8 bytes are the code offset) and no CONTROL_MAGIC. The game hands NVN real control sections and the runtime
-    key hashes those, so no draw can ever produce these keys. Their code is cut from the wrong place: they were all 67
-    translation failures of 1.2.1 (IndexOutOfRange in ShaderHeader.ctor and ArgumentOutOfRange in Decoder.FillBlock,
-    on 0 to 4,718 bytes of code). A scan without the magic check keeps them; the 7 that translate are
-    V rows in the shared shader list only because shader_list.py add_cache() folds the seed's own .variants files back in. A
-    candidate without CONTROL_MAGIC is skipped and counted in rejected[0]."""
+    A candidate without CONTROL_MAGIC is not a shader record; count and skip it."""
     if len(data) < 32 or data[:4] != b'BAHS':
         raise ValueError('expected an agl shader package')
     start, pool_size, pool = struct.unpack_from('<3I', data, 20)
@@ -272,8 +267,7 @@ def startup_package(name):
 
 
 # The RomFS directories that can hold shaders: the agl and gsys packages, the effects, terrain, the UI layout archives
-# and the game's own shader packs. Every shader of 1.1.0 (27,576) comes from these six; they are 1,996 entries and
-# 147 MiB, 0.9% of a RomFS whose every file the walk below used to read and decompress first (65 s against 2.8 s).
+# and the game's own shader packs. Limiting the scan to these directories avoids decompressing the whole image.
 # Ocarina keeps its UI layout shaders (MergeShader) in Layout2Shader/.
 SHADER_DIRS = ('Shader/', 'Effect/', 'Lib/agl/', 'Lib/Terrain/', 'Lib/gsys/', 'UI/LayoutArchive/', 'Layout2Shader/')
 
@@ -433,15 +427,22 @@ def translate(jobs, out):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument('--version', required=True, help='v121 (build/extracted/<version>)')
+    ap.add_argument('--version', choices=('v111',), default='v111', help='supported game version (default: v111)')
+    ap.add_argument('--romfs', type=Path, help='RomFS directory (default build/v111/romfs)')
+    ap.add_argument('--exefs', type=Path, help='ExeFS directory (default build/v111/exefs)')
     ap.add_argument('--all', action='store_true', help='also the layout and effect shaders MNG leaves to bind-state variants')
     ap.add_argument('--translate', action='store_true', help='translate every shader and run spirv-val')
     args = ap.parse_args()
     t0 = time.monotonic()
-    extracted = ROOT / 'build' / 'extracted' / args.version
-    out = ROOT / 'build' / args.version / 'shaders'
+    build = ROOT / 'build' / args.version
+    exefs = args.exefs or build / 'exefs'
+    try:
+        require_game_111(exefs)
+    except ValueError as e:
+        ap.error(str(e))
+    out = build / 'shaders'
+    shaders, rejected = inventory(args.romfs or build / 'romfs', exefs)
     out.mkdir(parents=True, exist_ok=True)
-    shaders, rejected = inventory(extracted / 'romfs', extracted / 'exefs')
     jobs = write_shaders(shaders, out, args.all)
     a, b, n, c = (sum(1 for j in jobs.values() if j['origin'] == o) for o in ('bnsh', 'sharcb', 'ndsr', 'main'))
     print(f'{len(shaders)} unique shaders found in all, {len(jobs)} selected; {rejected} .sharcb record candidates '

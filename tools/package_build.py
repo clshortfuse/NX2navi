@@ -1,16 +1,8 @@
-"""Package a built nx2navi.exe into a folder that runs from anywhere: build/<version>-portable by default.
+"""Copy a built v111 game into a portable folder for your own machines.
 
-The folder holds the exe, its DLLs, the shader translator (NativeAOT: no .NET), the RomFS index and patches, the
-extracted ExeFS (the game code the exe loads), the shared fonts, the prepared shader and pipeline files. There is
-no config file: nx2navi.exe finds the exefs, romfs, profile and shared-fonts folders next to itself. Without --with-romfs
-the 16 GB RomFS image stays out; copy build/extracted/<version>/romfs/romfs.bin to <folder>/romfs/ or set NX2NAVI_ROMFS
-(a path, relative ones to the exe's folder).
-
-The folder contains game code and data derived from the game: for your own machines only, never publish or share it.
-Saves go to <folder>/profile.
-
-    .venv/Scripts/python tools/package_build.py [--version v121] [--build build/v121] [--exe PATH/nx2navi.exe]
-                                                [--out build/v121-portable] [--with-romfs] [--no-shader-cache]
+Only copies existing files; does not compile a second game executable. On Linux, system
+libraries not already beside the executable must be installed on the destination machine.
+By default the RomFS image is omitted: supply it separately or pass --with-romfs. Never share the output.
 """
 import argparse
 import os
@@ -19,12 +11,10 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+from mod_files import require_game_111
+
 ROOT = Path(__file__).resolve().parent.parent
 EXE = '.exe' if os.name == 'nt' else ''
-# A Linux source build links the system's SDL3, Opus and libvpx: the other machine needs them installed
-DLLS = ('SDL3.dll', 'libopus-0.dll', 'libiconv-2.dll') if os.name == 'nt' else ()
-# Prepared state next to the exe: translator answers, programs, the prepared list, pipeline cache and its keys, and the
-# variant lists `nx2navi.exe --prepare-shaders` reads (the driver keys its library cache by exe path, so each copy runs it).
 STATE = ('romfs-index.bin', 'pipeline-cache.bin', 'pipeline-cache-play.bin', 'pipeline-keys.bin', 'shader-answers.bin',
          'shader-programs.bin', 'shader-prepared.bin', 'seed-answers.bin', 'seed-programs.bin')
 
@@ -50,41 +40,45 @@ def size_of(path):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument('--version', default='v121', help='game version (v121 or v143): the defaults below follow it')
-    ap.add_argument('--build', type=Path, help='build dir with the prepared state (default build/<version>)')
-    ap.add_argument('--exe', type=Path, help='nx2navi.exe to package (default: <build>/nx2navi.exe); its DLLs are taken from --build')
-    ap.add_argument('--xlate', type=Path, default=ROOT / 'build' / 'xlate' / f'nx2navi_xlate{EXE}')
-    ap.add_argument('--extracted', type=Path, help='default build/extracted/<version>')
-    ap.add_argument('--out', type=Path, help='default build/<version>-portable')
-    ap.add_argument('--with-romfs', action='store_true', help='also copy romfs.bin (about 16 GB)')
-    ap.add_argument('--no-shader-cache', action='store_true', help='leave out shader-cache (about 2 GB): translates again')
+    ap.add_argument('--version', choices=('v111',), default='v111')
+    ap.add_argument('--build', type=Path, default=ROOT / 'build' / 'v111', help='canonical game folder')
+    ap.add_argument('--out', type=Path, default=ROOT / 'build' / 'v111-portable', help='empty destination folder')
+    ap.add_argument('--with-romfs', action='store_true', help='also copy romfs/romfs.bin')
+    ap.add_argument('--no-shader-cache', action='store_true', help='omit shader-cache')
     a = ap.parse_args()
-    a.build = a.build or ROOT / 'build' / a.version
-    a.extracted = a.extracted or ROOT / 'build' / 'extracted' / a.version
-    a.out = a.out or ROOT / 'build' / f'{a.version}-portable'
 
     build, out = a.build.resolve(), a.out.resolve()
-    exe = (a.exe or build / f'nx2navi{EXE}').resolve()
-    fonts = a.extracted.resolve().parent / 'firmware' / 'shared-fonts'
-    exefs = a.extracted.resolve() / 'exefs'
-    romfs = a.extracted.resolve() / 'romfs' / 'romfs.bin'
-    need = [exe, a.xlate, exefs, fonts, build / 'romfs-patches'] + [build / d for d in DLLS] + [build / 'romfs-index.bin']
+    if not any(out.is_relative_to((ROOT / name).resolve()) and out != (ROOT / name).resolve()
+               for name in ('build', 'generated')):
+        ap.error('--out must be under build or generated; this copy contains game data')
+    if out == build or out.is_relative_to(build) or build.is_relative_to(out):
+        ap.error('--out must not overlap the game folder')
+    if out.exists() and (not out.is_dir() or any(out.iterdir())):
+        ap.error('--out must be empty')
+    exe = build / f'ocarina{EXE}'
+    xlate = build / f'nx2navi_xlate{EXE}'
+    exefs = build / 'exefs'
+    romfs = build / 'romfs' / 'romfs.bin'
+    need = [exe, xlate, build / 'romfs-index.bin', *(exefs / n for n in ('main.npdm', 'sdk', 'subsdk0', 'rtld'))]
     if a.with_romfs:
         need.append(romfs)
-    missing = [str(p) for p in need if not p.exists()]
+    missing = [str(p) for p in need if not p.is_file()]
     if missing:
-        sys.exit('package_build: missing: ' + ', '.join(missing))
-    if out == build:
-        sys.exit('package_build: --out must not be the build dir')
-    if not str(out).startswith(str(ROOT / 'build')) and not str(out).startswith(str(ROOT / 'generated')):
-        print('package_build: warning: the folder holds game code; keep it out of the repository')
+        ap.error('missing: ' + ', '.join(missing))
+    try:
+        require_game_111(exefs)
+    except ValueError as error:
+        ap.error(str(error))
 
     out.mkdir(parents=True, exist_ok=True)
-    copy(exe, out / f'nx2navi{EXE}')
-    for d in DLLS:
-        copy(build / d, out / d)
-    copy(a.xlate, out / f'nx2navi_xlate{EXE}')
-    idf = a.xlate.with_suffix('.id')
+    copy(exe, out / exe.name)
+    for lib in build.iterdir():
+        name = lib.name.lower()
+        if lib.is_file() and (name.endswith('.dll') or '.so.' in name or name.endswith('.so')
+                              or name == 'sl.interposer.json'):
+            copy(lib, out / lib.name)
+    copy(xlate, out / xlate.name)
+    idf = xlate.with_suffix('.id')
     if idf.exists():
         copy(idf, out / 'nx2navi_xlate.id')
     for f in STATE:
@@ -92,18 +86,17 @@ def main():
             copy(build / f, out / f)
         else:
             print(f'package_build: {f} not in {build}, skipped')
-    n = copy_tree(build / 'romfs-patches', out / 'romfs-patches')
-    for name in ('romfs-patches-xbox', 'romfs-patches-xbox-label'):   # prompts = xbox (make_romfs_patches.py --prompts)
-        if (build / name).is_dir():
-            n += copy_tree(build / name, out / name)
-    n += copy_tree(exefs, out / 'exefs')
-    n += copy_tree(fonts, out / 'shared-fonts')
+    n = copy_tree(exefs, out / 'exefs')
+    for folder in sorted(build.iterdir()):
+        if folder.is_dir() and (folder.name == 'shared-fonts' or folder.name == 'shaders'
+                                or folder.name.startswith('romfs-patches')):
+            n += copy_tree(folder, out / folder.name)
     if not a.no_shader_cache and (build / 'shader-cache').is_dir():
         n += copy_tree(build / 'shader-cache', out / 'shader-cache')
     (out / 'profile').mkdir(exist_ok=True)
     if a.with_romfs:
         (out / 'romfs').mkdir(exist_ok=True)
-        print('package_build: copying romfs.bin (16 GB) ...')
+        print('package_build: copying romfs.bin ...')
         shutil.copyfile(romfs, out / 'romfs' / 'romfs.bin')
     print(f'package_build: {out}: {n} files in folders, {size_of(out) / 2**30:.2f} GiB'
           + ('' if a.with_romfs else f'; no RomFS: put romfs.bin into romfs{os.sep} or set NX2NAVI_ROMFS'))

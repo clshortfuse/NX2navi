@@ -31,11 +31,13 @@ from unicorn import arm64_const as A
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'recomp'))
+sys.path.insert(0, str(ROOT / 'tools'))
 
 import jumptables  # noqa: E402
 import layout  # noqa: E402
 from lifter import bits, sext  # noqa: E402
 from module import Module  # noqa: E402
+from mod_files import require_game_111  # noqa: E402
 
 SCRATCH_MEM = 0x7F00000000
 LOG = ROOT / 'build' / 'logs' / 'jumptables-check.log'
@@ -361,7 +363,12 @@ class FunctionCheck:
     @property
     def facts(self):
         if self._facts is None:
-            self._facts = jumptables._facts(self.cfg) or {}
+            # Unlike the resolver's _function entry point, calling _facts directly does not start a budget.
+            jumptables._budget[0] = jumptables.MAX_STEPS
+            try:
+                self._facts = jumptables._facts(self.cfg) or {}
+            except jumptables._Exhausted:
+                self._facts = {}  # Reaching definitions still verify the base independently.
         return self._facts
 
 
@@ -698,11 +705,16 @@ def window(mod, br, entry, n=24):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--exefs', default=str(ROOT / 'build' / 'extracted' / 'v121' / 'exefs'))
+    ap.add_argument('--exefs', type=Path, default=ROOT / 'build' / 'v111' / 'exefs',
+                    help='game 1.1.1 ExeFS (default build/v111/exefs)')
     ap.add_argument('--modules', default='main,sdk,subsdk0')
     ap.add_argument('--samples', type=int, default=8)
     ap.add_argument('--no-oracle', action='store_true')
     args = ap.parse_args()
+    try:
+        require_game_111(args.exefs)
+    except ValueError as e:
+        ap.error(str(e))
     LOG.parent.mkdir(parents=True, exist_ok=True)
     log = open(LOG, 'w', encoding='utf-8')
 
@@ -713,7 +725,7 @@ def main():
     bases = {n: b for n, b, _ in layout.layout(args.exefs)}
     failed = 0
     for name in args.modules.split(','):
-        mod = Module(name, Path(args.exefs) / name, bases[name])
+        mod = Module(name, args.exefs / name, bases[name])
         starts = function_starts(mod)
         brs = (mod.lo + 4 * np.nonzero((mod.words & 0xFFFFFC1F) == 0xD61F0000)[0]).tolist()
         oracle = None if args.no_oracle else Oracle(mod)

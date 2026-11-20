@@ -1,15 +1,4 @@
-"""The installer window: python -m installer.gui
-
-A front end over the CLI (docs/installer.md): it collects the game files, the keys file path, the optional firmware
-folder, the game language and the install folder, runs `python -m installer ...` as a subprocess and shows its JSON
-events. Decisions live in guilogic.py; this file only draws. The window text is in
-installer/text/<en|ru|pt-BR|zh-Hans>.json under "ui.*" and "launcher.*" ids.
-
-    --selftest [--shots DIR]   build every screen in every language and close by itself (PNG per screen with --shots)
-    --lang en|ru|pt-BR|zh-Hans window language (default: the Windows display language)
-    --rebuild DIR              rebuild the install folder DIR for its mods (nx2navi.exe starts this, build-cache/rebuild.txt):
-                               the run starts at once with that folder, and the game starts again when it succeeds
-"""
+"""Preview the legacy installer interface and its translations without installing a game."""
 import argparse
 import json
 import os
@@ -17,6 +6,7 @@ import subprocess
 import sys
 import tkinter as tk
 from pathlib import Path
+from types import SimpleNamespace
 from tkinter import filedialog, messagebox, ttk
 
 try:
@@ -25,7 +15,7 @@ except ImportError:
     ImageGrab = None
 
 from . import ini
-from . import layout as layouts
+from . import main as setup_notice
 from .guilogic import (DONE, FAILED, PENDING, RUNNING, SKIPPED, UI_LANGUAGE_LABELS, UI_LANGUAGES, Catalog, Form, Model,
                        Process, amount, default_game_language, describe_event, parse_line, windows_ui_language)
 
@@ -661,18 +651,12 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument('--selftest', action='store_true')
     ap.add_argument('--shots', type=Path)
-    ap.add_argument('--lang', choices=UI_LANGUAGES)
-    ap.add_argument('--root', type=Path)
-    ap.add_argument('--rebuild', type=Path)
-    args = ap.parse_args(argv)
-    layout = layouts.find(args.root)
-    if args.selftest:
-        return selftest(layout, args.shots)
-    fix_tcl_paths()
-    root = tk.Tk()
-    App(root, args.lang or windows_ui_language(), layout, rebuild=args.rebuild)
-    root.mainloop()
-    return 0
+    args, extra = ap.parse_known_args(argv)
+    if not args.selftest or extra:
+        return setup_notice()
+    root = Path(__file__).resolve().parents[1]
+    layout = SimpleNamespace(runtime=root / 'runtime', release=(root / 'VERSION').read_text().strip())
+    return selftest(layout, args.shots)
 
 
 if __name__ == '__main__':

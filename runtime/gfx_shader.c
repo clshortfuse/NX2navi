@@ -390,7 +390,7 @@ static void init_paths(void *param) {
         }
     }
     const char *xlate_cfg = cfg_get("NX2NAVI_XLATE"), *cache_cfg = cfg_get("NX2NAVI_SHADER_CACHE");
-    char beside[PATH_CAP + 32];   // a packaged folder (tools/package_build.py) keeps the translator next to nx2navi.exe
+    char beside[PATH_CAP + 32];   // the game folder keeps the translator next to the executable
     if (exe_dir[0]) snprintf(beside, sizeof beside, "%s/nx2navi_xlate" PLAT_EXE_SUFFIX, exe_dir);
     if (xlate_cfg && *xlate_cfg && strlen(xlate_cfg) < sizeof xlate_exe) strcpy(xlate_exe, xlate_cfg);
     else if (exe_dir[0] && file_exists(beside)) strcpy(xlate_exe, beside);

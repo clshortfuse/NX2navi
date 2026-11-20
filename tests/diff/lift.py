@@ -156,7 +156,7 @@ def make_case(r, w):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument('--exefs', type=Path, default=ROOT / 'build' / 'extracted' / 'v121' / 'exefs')
+    ap.add_argument('--exefs', type=Path, default=ROOT / 'build' / 'v111' / 'exefs')
     ap.add_argument('--modules', default='main,sdk,subsdk0')
     ap.add_argument('--encodings', type=int, default=20000, help='per module')
     ap.add_argument('--cases', type=int, default=3, help='random states per encoding')

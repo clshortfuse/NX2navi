@@ -48,7 +48,7 @@ int probe_cfg(void) {
         "; another comment\r\n"
         "[frame rate]\r\n"
         "  fps60 = 0  \r\n"
-        "Realtime=0\r\n"
+        "Microphone=0\r\n"
         "[Display]\r\n"
         "GPU_name = \"My GPU 1\"\r\n"
         "NX2NAVI_Locale = de-DE\r\n"
@@ -60,15 +60,16 @@ int probe_cfg(void) {
         "last = no newline at the end";
     cfg_setenv("NX2NAVI_LOCALE", NULL);
     cfg_setenv("NX2NAVI_FPS60", NULL);
+    cfg_setenv("NX2NAVI_MICROPHONE", NULL);
     CHECK(plat_file_write(path, ini, sizeof ini - 1), "write the probe ini");
     CHECK(cfg_load(path) == 1, "load the probe ini");
     CHECK(EQ(cfg_get("NX2NAVI_FPS60"), "0"), "value read, whitespace trimmed, lower-case key");
-    CHECK(EQ(cfg_get("NX2NAVI_REALTIME"), "0"), "key without spaces, mixed case");
+    CHECK(EQ(cfg_get("NX2NAVI_MICROPHONE"), "0"), "key without spaces, mixed case");
     CHECK(EQ(cfg_get("NX2NAVI_GPU_NAME"), "My GPU 1"), "quoted value, section ignored");
     CHECK(EQ(cfg_get("NX2NAVI_LOCALE"), "de-DE"), "NX2NAVI_ prefix accepted in the file");
     CHECK(cfg_get("NX2NAVI_LANG") == NULL, "empty value is unset");
     CHECK(EQ(cfg_get("NX2NAVI_TRACE"), "b"), "later line wins");
-    CHECK(cfg_get("NX2NAVI_CLOTH_REALTIME") == NULL, "absent key is NULL");
+    CHECK(cfg_get("NX2NAVI_MOTION") == NULL, "absent key is NULL");
     CHECK(cfg_get("NX2NAVI_comment") == NULL, "comment is not a key");
     CHECK(EQ(cfg_get("NX2NAVI_NO_SUCH_SETTING"), "1"), "unknown key is still readable");
     {

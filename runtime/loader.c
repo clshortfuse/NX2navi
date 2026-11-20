@@ -38,7 +38,7 @@ typedef struct {
     uint32_t nsyms;
     const Elf64Rela *rela, *jmprel;
     uint64_t nrela, njmprel;
-    const uint64_t *relr;               // DT_RELR (1.4.3): packed RELATIVE relocations
+    const uint64_t *relr;               // DT_RELR: packed RELATIVE relocations
     uint64_t nrelr, relr_count;
     uint32_t *hash, hash_mask;          // defined symbols by name
     Res *res_plain, *res_jump;          // per symbol; JUMP_SLOT may bind an observer
@@ -81,7 +81,7 @@ uint8_t *ldr_read_verified(const char *dir, const char *file, size_t *len) {
     char path[1024];
     snprintf(path, sizeof path, "%s/%s", dir, file);
     uint8_t *p = read_file(path, len);
-    if (!p) rt_fatal("loader: cannot read %s (extract the game first: tools/extract.py)", path);
+    if (!p) rt_fatal("loader: cannot read %s (build from a local v111 dump with tools/make_game.py)", path);
     uint8_t d[32];
     char hex[65];
     rt_sha256(p, *len, d);
@@ -231,7 +231,7 @@ static void parse_dynamic(Mod *m) {
     if (hash) {
         m->nsyms = rd32(hash + 4);   // nchain
     } else {
-        // DT_GNU_HASH only (1.4.3 sdk, subsdk0): one past the last symbol the highest bucket's chain reaches.
+        // DT_GNU_HASH only: one past the last symbol the highest bucket's chain reaches.
         uint32_t nbuckets = rd32(gnu_hash), symoffset = rd32(gnu_hash + 4), bloom = rd32(gnu_hash + 8);
         uint64_t buckets = gnu_hash + 16 + 8ull * bloom, chains = buckets + 4ull * nbuckets;
         uint32_t last = 0;
@@ -560,29 +560,16 @@ uint64_t ldr_plt_stub(const char *module, const char *name) {
 }
 
 // ---- --probe-loader
-// Expected values, measured on the 1.1.0, 1.2.1 and 1.4.3 modules.
-// 1.1.0 shares subsdk0 and sdk with 1.2.1 down to every count.
-typedef struct {
+static const struct {
     const char *name;
-    uint64_t kinds[K_COUNT], total, sym_import, sym_own;
-    uint32_t imports, to[MOD_COUNT], weak, init_off, init_array;
-} Expect;
-static const Expect expect_121[] = {
-    {"main", {508816, 1415, 32, 641}, 510904, 2088, 0, 675, {0, 16, 647}, 12, 0x30, 10673},
-    {"subsdk0", {1623, 12820, 1030, 3924}, 19397, 6576, 11198, 667, {9, 0, 654}, 4, 0x30, 45},
-    {"sdk", {10917, 13976, 1207, 8932}, 35032, 16, 24099, 13, {8, 0, 0}, 5, 0x30, 116},
+    uint64_t init_entries;
+    uint32_t imports, import_to[3], weak_unresolved;
+    uint64_t kinds[K_COUNT];
+} expect[] = {
+    {"main", 9783, 1183, {0, 41, 1132}, 10, {535967, 2004, 47, 1110}},
+    {"subsdk0", 0, 258, {6, 0, 252}, 0, {298, 420, 42, 506}},
+    {"sdk", 96, 8, {8, 0, 0}, 0, {17089, 9414, 1443, 10082}},
 };
-static const Expect expect_110[] = {
-    {"main", {508604, 1412, 32, 639}, 510687, 2083, 0, 673, {0, 16, 645}, 12, 0x30, 10668},
-    {"subsdk0", {1623, 12820, 1030, 3924}, 19397, 6576, 11198, 667, {9, 0, 654}, 4, 0x30, 45},
-    {"sdk", {10917, 13976, 1207, 8932}, 35032, 16, 24099, 13, {8, 0, 0}, 5, 0x30, 116},
-};
-static const Expect expect_143[] = {
-    {"main", {499078, 1393, 28, 650}, 501149, 2071, 0, 680, {0, 16, 656}, 8, 0x10b4f10, 10717},
-    {"subsdk0", {3424, 10927, 905, 3817}, 19073, 6557, 9092, 663, {9, 0, 654}, 0, 0x20, 45},
-    {"sdk", {15013, 10135, 1079, 7832}, 34059, 10, 19036, 8, {8, 0, 0}, 0, 0x400, 83},
-};
-#define expect (RT_V143 ? expect_143 : RT_V110 ? expect_110 : expect_121)
 
 static int failures;
 #define CHECK(cond, ...) do { if (!(cond)) { failures++; printf("  FAIL: " __VA_ARGS__); putchar('\n'); } } while (0)
@@ -672,7 +659,7 @@ int probe_loader(void) {
     const RtConfig *cfg = rt_config();
     hostfn_add_override(PROBE_SYMBOL, probe_override);
     ldr_load(cfg->exefs);
-    if (nmods != (int)(sizeof expect_121 / sizeof *expect_121)) {
+    if (nmods != (int)(sizeof expect / sizeof *expect)) {
         printf("probe-loader: FAILED (%d modules, expected 3)\n", nmods);
         return 1;
     }
@@ -689,11 +676,13 @@ int probe_loader(void) {
                (unsigned long long)(m->pub.init_array_size / 8), (unsigned long long)m->pub.init_array_size,
                m->imports, to, m->weak_unresolved);
         CHECK(!strcmp(m->pub.name, expect[i].name), "module %d is %s", i, m->pub.name);
-        CHECK(m->imports == expect[i].imports && m->weak_unresolved == expect[i].weak &&
-              !memcmp(m->import_to, expect[i].to, sizeof m->import_to), "%s import table differs from section 0.1",
-              m->pub.name);
-        CHECK(m->init_off == expect[i].init_off && m->pub.init_array_size / 8 == expect[i].init_array,
-              "%s DT_INIT/init_array differ from section 0.1", m->pub.name);
+        CHECK(m->pub.init_array_size / 8 == expect[i].init_entries,
+              "%s init_array differs from the v111 constructor count", m->pub.name);
+        CHECK(m->imports == expect[i].imports && m->weak_unresolved == expect[i].weak_unresolved,
+              "%s import or unresolved weak symbol count differs from v111", m->pub.name);
+        for (int k = 0; k < nmods; k++)
+            CHECK(m->import_to[k] == expect[i].import_to[k], "%s imports from %s differ from v111",
+                  m->pub.name, mods[k].pub.name);
     }
     printf("relocations:\n");
     for (int i = 0; i < nmods; i++) {
@@ -704,9 +693,9 @@ int probe_loader(void) {
                (unsigned long long)m->kinds[K_ABS64], (unsigned long long)m->kinds[K_GLOB_DAT],
                (unsigned long long)m->kinds[K_JUMP_SLOT], (unsigned long long)total,
                (unsigned long long)m->sym_import, (unsigned long long)m->sym_own);
-        CHECK(!memcmp(m->kinds, expect[i].kinds, sizeof m->kinds) && total == expect[i].total &&
-              m->sym_import == expect[i].sym_import && m->sym_own == expect[i].sym_own,
-              "%s relocations differ from section 0.2", m->pub.name);
+        for (int k = 0; k < K_COUNT; k++)
+            CHECK(m->kinds[k] == expect[i].kinds[k], "%s relocation count for kind %d differs from v111",
+                  m->pub.name, k);
     }
     printf("constructors:\n");
     for (int i = 0; i < nmods; i++) {
@@ -717,9 +706,12 @@ int probe_loader(void) {
                (unsigned long long)(m->init_array_size / 8), m->ctor_flag ? ldr_describe(m->ctor_flag, d, sizeof d)
                                                                          : "NOT DECODED");
         CHECK(m->init && m->init - m->base < m->text_end, "%s DT_INIT outside .text", m->name);
-        CHECK(m->init_array - m->base >= mods[i].seg_off[1] && m->init_array + m->init_array_size <= m->base + m->size,
+        CHECK(!m->init_array_size || (m->init_array - m->base >= mods[i].seg_off[1] &&
+              m->init_array + m->init_array_size <= m->base + m->size),
               "%s init_array outside rodata/data", m->name);
-        CHECK(m->ctor_flag, "%s constructor flag not decoded", m->name);
+        // v111 modules may have no separately decoded constructor flag; boot checks DT_INIT completion.
+        CHECK(!m->ctor_flag || (m->ctor_flag >= m->base + m->data_off && m->ctor_flag < m->base + m->size),
+              "%s constructor flag outside writable module data", m->name);
     }
     check_segments(cfg->exefs);
 

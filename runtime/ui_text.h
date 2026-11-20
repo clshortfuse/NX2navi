@@ -39,13 +39,9 @@ typedef enum {
     UI_MENU_PERF_OVERLAY, UI_MENU_PERF_OVERLAY_DESC, UI_MENU_PERF_OFF, UI_MENU_PERF_FPS, UI_MENU_PERF_FULL,
     UI_PERF_LINE_FPS,
     UI_MENU_GRAPHICS,         // group heading over the resolution rows
-    UI_MENU_OUTPUT_RES, UI_MENU_OUTPUT_RES_DESC,
-    UI_MENU_RENDER_SCALE, UI_MENU_RENDER_SCALE_DESC, UI_MENU_RENDER_SCALE_GAME,
     UI_MENU_UPSCALER, UI_MENU_UPSCALER_DESC, UI_MENU_UPSCALER_FSR, UI_MENU_UPSCALER_BILINEAR,
     UI_MENU_GAME_ASPECT, UI_MENU_GAME_ASPECT_DESC, UI_MENU_GAME_ASPECT_16_9, UI_MENU_GAME_ASPECT_WINDOW,
     UI_MENU_GAME_ASPECT_21_9, UI_MENU_GAME_ASPECT_32_9,
-    UI_MENU_FOV, UI_MENU_FOV_DESC,
-    UI_MENU_SHADOW_RES, UI_MENU_SHADOW_RES_DESC, UI_MENU_SHADOW_RES_GAME,
     UI_MENU_ANISO, UI_MENU_ANISO_DESC, UI_MENU_ANISO_GAME,
     UI_MENU_TEX_DETAIL, UI_MENU_TEX_DETAIL_DESC,
     UI_MENU_TEX_DETAIL_AUTO,   // "Automatic: %s", %s the level it picks on this card
@@ -68,7 +64,6 @@ typedef enum {
     UI_MENU_HDR_MIDGRAY, UI_MENU_HDR_MIDGRAY_DESC, UI_MENU_HDR_MATCH_SLOPE, UI_MENU_HDR_MATCH_SLOPE_DESC,
     UI_MENU_HDR_TONE_SLOPE, UI_MENU_HDR_TONE_SLOPE_DESC, UI_MENU_HDR_HUE_CLIP, UI_MENU_HDR_HUE_CLIP_DESC,
     UI_MENU_SHADOW_SCALE, UI_MENU_SHADOW_SCALE_DESC,
-    UI_MENU_SHADOW_RANGE, UI_MENU_SHADOW_RANGE_DESC,
     UI_MENU_CONTACT_SHADOWS, UI_MENU_CONTACT_SHADOWS_DESC,
     UI_MENU_PCSS, UI_MENU_PCSS_DESC,
     UI_MENU_DLAA, UI_MENU_DLAA_DESC, UI_MENU_DLSS, UI_MENU_DLSS_DESC, UI_MENU_DLSS_DLAA, UI_MENU_DLSS_QUALITY,
@@ -129,15 +124,13 @@ typedef enum {
     UI_MENU_PROMPTS, UI_MENU_PROMPTS_DESC, UI_MENU_PROMPTS_NINTENDO, UI_MENU_PROMPTS_XBOX, UI_MENU_PROMPTS_PLAYSTATION,
     UI_MENU_PROMPTS_STEAMDECK, UI_MENU_PROMPTS_PC,
     // the notes under the prompts: their files are missing or damaged, they change after restart, or why they are off
-    UI_MENU_PROMPTS_MISSING, UI_MENU_PROMPTS_FAILED, UI_MENU_PROMPTS_RESTART, UI_MENU_PROMPTS_OFF_SHAPE,
-    UI_MENU_PROMPTS_OFF_MODS, UI_MENU_PROMPTS_OFF_PATCHES,
+    UI_MENU_PROMPTS_MISSING, UI_MENU_PROMPTS_FAILED, UI_MENU_PROMPTS_RESTART, UI_MENU_PROMPTS_OFF_MODS, UI_MENU_PROMPTS_OFF_PATCHES,
     // "Restart now" under the prompts while they change after restart, and its confirmation (Cancel: UI_MENU_RESET_NO)
     UI_MENU_RESTART, UI_MENU_RESTART_DESC, UI_MENU_RESTART_CONFIRM, UI_MENU_QUIT_CONFIRM, UI_MENU_RESTART_YES, UI_MENU_RESTART_SAVING, UI_MENU_QUIT_SAVING,
     UI_MENU_RESTART_COUNT,   // the bar's Restart with the count of settings waiting for it (printf: %d)
     UI_MENU_GROUP_STICKS, UI_MENU_LSTICK_DEADZONE, UI_MENU_RSTICK_DEADZONE, UI_MENU_STICK_DEADZONE_DESC,
     UI_MENU_STICK_DEADZONE_NOW, UI_MENU_STICK_SENS, UI_MENU_STICK_SENS_DESC,
     UI_MENU_MOUSE_MODE, UI_MENU_MOUSE_MODE_DESC, UI_MENU_MOUSE_STICK, UI_MENU_MOUSE_DIRECT,
-    UI_MENU_MENU_CURSOR, UI_MENU_MENU_CURSOR_DESC,
     UI_MENU_MOUSE_SENS, UI_MENU_MOUSE_SENS_DESC,
     UI_MENU_WALK_KEY, UI_MENU_WALK_KEY_DESC, UI_MENU_WALK_KEY_TAKEN, UI_MENU_WALK_SCALE, UI_MENU_WALK_SCALE_DESC,
 
@@ -219,7 +212,6 @@ typedef enum {
     UI_MENU_TEX_ALIAS, UI_MENU_TEX_ALIAS_DESC,
     UI_MENU_TEX_VRAM_PRESSURE, UI_MENU_TEX_VRAM_PRESSURE_DESC,
     UI_MENU_ASTC_BC, UI_MENU_ASTC_BC_DESC,
-    UI_MENU_LOD_GUARD, UI_MENU_LOD_GUARD_DESC,
     UI_MENU_FIX_C0, UI_MENU_FIX_C0_DESC,
     UI_MENU_FIX_ZERO, UI_MENU_FIX_ZERO_DESC,
     UI_MENU_BIND_SKIP, UI_MENU_BIND_SKIP_DESC,
@@ -345,14 +337,11 @@ int ui_text_defined(const char *lang, UiTextId id);
 // The catalog language for a Switch language code ("en-GB" -> "en", "zh-CN" -> "zh-Hans", ...).
 const char *ui_text_lang(const char *switch_code);
 
-// The game languages the F1 menu offers for a game build (rt_game_version): one entry per Mals language file the build
-// ships, each with the Switch code NX2NAVI_LANG takes and the id of its name. 1.4.3 adds Brazilian Portuguese (USpt).
-// Fills out (room for max entries) and returns the count.
+// Game languages offered by default when RomFS language discovery is unavailable.
 typedef struct { const char *code; UiTextId name; } UiGameLang;
-int ui_text_game_langs(int game_version, UiGameLang *out, int max);
+int ui_text_game_langs(UiGameLang *out, int max);
 // The same list from the Mals files the RomFS ships (Ocarina: Polish and Brazilian Portuguese, no Portugal Portuguese):
-// regions holds the four-letter prefix of each Mals/<region>.Product... file ("USen", "EUpl"); the version gates are
-// not used. Returns the count.
+// regions holds the four-letter prefix of each Mals/<region>.Product... file ("USen", "EUpl"). Returns the count.
 int ui_text_game_langs_in(const char *const *regions, int nregions, UiGameLang *out, int max);
 
 // Menu text: ui_text_in(menu language, id). The menu language is NX2NAVI_MENU_LANG ("en", "ru", "pt-BR", "zh-Hans");

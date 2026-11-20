@@ -1,9 +1,9 @@
 """The mods folder served as RomFS overlays (runtime/romfs.c, runtime/mods.c): load order, added files, case, Unicode.
 
-    .venv\\Scripts\\python tests\\mods_romfs_check.py --exe build\\v121-<tag>\\nx2navi.exe --version v121
+    .venv\\Scripts\\python tests\\mods_romfs_check.py --exe build\\v111\\ocarina.exe
 
 Builds a mods folder in a temp directory with files of its own bytes at real RomFS paths (from
-build/extracted/<version>/romfs/index.json), runs `nx2navi.exe --probe-fs` on it and reads the `mods:` lines of the log.
+build/v111/romfs/index.json), runs `nx2navi.exe --probe-fs` on it and reads the `mods:` lines of the log.
 --probe-fs compares the bytes it reads through the RomFS with every overlay file, so a wrong winner fails it too.
 A second folder checks the merged resource size table the start writes to the profile (runtime/romfs.c
 restbl_overlay): a grown file's entry, an added file's, a shipped table's and another version's table's.
@@ -26,8 +26,12 @@ UNI = 'Ж мод'
 
 
 def pick_paths(version):
-    index = json.loads((ROOT / 'build/extracted' / version / 'romfs/index.json').read_text())
-    paths = [f['path'] for f in index['files'] if 1024 <= f['size'] <= 65536]
+    index = json.loads((ROOT / 'build' / version / 'romfs/index.json').read_text())
+    # The base-image probe samples these rows before checking every overlay separately.
+    files = index['files']
+    stride = len(files) // 64
+    original_samples = set(range(0, 64 * stride, stride))
+    paths = [f['path'] for i, f in enumerate(files) if i not in original_samples and 1024 <= f['size'] <= 65536]
     have = set(f['path'] for f in index['files'])
     p1 = next(p for p in paths if any(c.isalpha() for c in p.rsplit('/', 1)[-1]))
     p2 = next(p for p in paths if p != p1)
@@ -84,7 +88,7 @@ def key(path):
 
 
 def restbl_case(exe, version, check, tmp):
-    romfs = ROOT / 'build/extracted' / version / 'romfs'
+    romfs = ROOT / 'build' / version / 'romfs'
     index = json.loads((romfs / 'index.json').read_text())
     files = {f['path']: f for f in index['files']}
     table_path = next(p for p in files if p.startswith('System/Resource/ResourceSizeTable.') and
@@ -128,7 +132,7 @@ def restbl_case(exe, version, check, tmp):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument('--exe', type=Path, required=True)
-    ap.add_argument('--version', choices=('v121', 'v143'), required=True)
+    ap.add_argument('--version', choices=('v111',), default='v111')
     args = ap.parse_args()
     p1, p2, p1case = pick_paths(args.version)
     fails = 0
@@ -139,7 +143,7 @@ def main():
         if not ok:
             fails += 1
             if log:
-                print('\n'.join(l for l in log.splitlines() if 'mods' in l or 'overlay' in l.lower())[-3000:])
+                print('\n'.join(l for l in log.splitlines() if 'mods' in l or 'overlay' in l.lower() or 'FAIL' in l)[-3000:])
 
     with tempfile.TemporaryDirectory() as tmp:
         mods = Path(tmp) / 'mods'

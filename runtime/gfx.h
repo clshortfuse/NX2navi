@@ -33,7 +33,6 @@ typedef struct { uint32_t present, present_depth, queue, queue_depth, start; } G
 void gfx_lock_holders(GfxLockHolders *h);
 int gfx_window_in_front(void);   // the window has the focus and is not minimized: the game is expected to present
 int vk_hdr_native(void);   // NX2NAVI_HDR = native: the game's own HDR picture (vk_hdr.c)
-int gfx_picture_rect(float out[4]);   // where the last present put the picture, fractions of the swapchain (x, y, w, h); 0 before one
 
 // ---- shader service client (gfx_shader.c)
 enum { GFX_STAGE_VS, GFX_STAGE_TCS, GFX_STAGE_TES, GFX_STAGE_GS, GFX_STAGE_FS, GFX_STAGE_CS,

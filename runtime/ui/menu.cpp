@@ -66,7 +66,6 @@ void rt_log(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 void vk_queue_lock(void);
 void vk_queue_unlock(void);
 void res_sizes(unsigned out[2], unsigned scene[2]);
-int res_adjustable(void);
 int wide_available(void);
 int wide_scene_settable(void);
 void wide_picture(unsigned *w, unsigned *h);
@@ -95,7 +94,6 @@ int vk_exec_replay_workers_auto(const char **why);   // vk_exec.c: replay_worker
 double frame_step_limit_hz(void);
 int frame_limit_adjustable(void);
 int rtss_limit_state(void);
-int frame_free_running(void);
 extern const int rt_game_version;
 extern const char rt_port_version[];
 void cheats_frame(uint64_t frame);   // cheats.c
@@ -706,50 +704,6 @@ static void row_window_size(void) {
     opt_choice_list("NX2NAVI_WINDOW_SIZE", UI_MENU_WINDOW_SIZE, pv, pn, n, UI_MENU_WINDOW_SIZE_DESC);
 }
 
-// The game resolution (resolution.c): 16:9 sizes from its smallest, 1280x720 (for weak GPUs), up, the common 21:9 and
-// 32:9 monitor sizes, the 16:10 screens of the Steam Deck, handhelds and laptops and the 3:2 screens of laptops and
-// tablets (Surface, Framework; the camera and the HUD follow
-// another shape, resolution.c res_init; the installer lays the HUD out for each, installer/steps.py ASPECT_SIZES), and
-// the current value when it is another size.
-static void row_output_res(void) {
-    static const char *const vals[] = {"1280x720", "1600x900", "1920x1080", "2560x1440", "3200x1800", "3840x2160",
-                                       "2560x1080", "3440x1440", "3840x1600", "5120x2160", "3840x1080", "5120x1440",
-                                       "1280x800", "1680x1050", "1920x1200", "2560x1600",
-                                       "1920x1280", "2160x1440", "2256x1504", "2880x1920", "3000x2000"};
-    enum { N = sizeof vals / sizeof *vals };
-    char shown[N][32];
-    const char *names[N];
-    for (int i = 0; i < N; i++) {
-        int w = 0, h = 0;
-        sscanf(vals[i], "%dx%d", &w, &h);
-        snprintf(shown[i], sizeof shown[i], "%d × %d", w, h);   // U+00D7, the multiplication sign
-        names[i] = shown[i];
-    }
-    opt_choice_list("NX2NAVI_OUTPUT_RES", UI_MENU_OUTPUT_RES, vals, names, N, UI_MENU_OUTPUT_RES_DESC);
-}
-
-static void row_render_scale(void) {
-    static const char *const vals[] = {"game", "50", "67", "75", "100", "125", "150", "200"};
-    enum { N = sizeof vals / sizeof *vals };
-    char shown[N][32];
-    const char *names[N];
-    names[0] = menu_text(UI_MENU_RENDER_SCALE_GAME);
-    for (int i = 1; i < N; i++) {
-        snprintf(shown[i], sizeof shown[i], "%s %%", vals[i]);
-        names[i] = shown[i];
-    }
-    opt_choice_list("NX2NAVI_RENDER_SCALE", UI_MENU_RENDER_SCALE, vals, names, N, UI_MENU_RENDER_SCALE_DESC);
-}
-
-static void row_shadow_res(void) {
-    static const char *const vals[] = {"game", "256", "512", "768", "1024", "1536", "2048"};
-    enum { N = sizeof vals / sizeof *vals };
-    const char *names[N];
-    names[0] = menu_text(UI_MENU_SHADOW_RES_GAME);
-    for (int i = 1; i < N; i++) names[i] = vals[i];
-    opt_choice_list("NX2NAVI_SHADOW_RES", UI_MENU_SHADOW_RES, vals, names, N, UI_MENU_SHADOW_RES_DESC);
-}
-
 // Texture detail (vk_texture.c "texture detail"): large surface textures made without their largest one or two mip
 // levels. Read when the first texture is made, so the row notes the restart. The automatic entry names the level it
 // picks on this card.
@@ -767,12 +721,6 @@ static void row_shadow_scale(void) {
     static const char *const vals[] = {"1", "2", "3", "4"};
     static const char *const names[] = {"960 (1x)", "1920 (2x)", "2880 (3x)", "3840 (4x)"};
     opt_choice_list("NX2NAVI_SHADOW_SCALE", UI_MENU_SHADOW_SCALE, vals, names, 4, UI_MENU_SHADOW_SCALE_DESC);
-}
-
-static void row_shadow_range(void) {
-    static const char *const vals[] = {"100", "150", "200", "300"};
-    static const char *const names[] = {"160 m (1x)", "240 m (1.5x)", "320 m (2x)", "480 m (3x)"};
-    opt_choice_list("NX2NAVI_SHADOW_RANGE", UI_MENU_SHADOW_RANGE, vals, names, 4, UI_MENU_SHADOW_RANGE_DESC);
 }
 
 static void row_gpu(void) {
@@ -817,7 +765,7 @@ static void row_game_lang(void) {
     UiGameLang langs[16];
     const char *regions[24];
     int nr = mals_regions(regions);
-    int n = nr ? ui_text_game_langs_in(regions, nr, langs, 16) : ui_text_game_langs(rt_game_version, langs, 16);
+    int n = nr ? ui_text_game_langs_in(regions, nr, langs, 16) : ui_text_game_langs(langs, 16);
     const char *vals[17], *names[17];
     vals[0] = "";
     names[0] = menu_text(UI_MENU_GAME_LANG_AUTO);
@@ -843,7 +791,7 @@ static void row_fps_limit() {
     static const UiTextId ids[] = {UI_MENU_FPS_30,  UI_MENU_FPS_40,  UI_MENU_FPS_45,  UI_MENU_FPS_60,
                                    UI_MENU_FPS_90,  UI_MENU_FPS_120, UI_MENU_FPS_144, UI_MENU_FPS_144,
                                    UI_MENU_FPS_144, UI_MENU_FPS_DISPLAY, UI_MENU_FPS_UNLIMITED};
-    int n = frame_free_running() ? 11 : 10;
+    int n = sizeof vals / sizeof *vals;
     const char *names[11];
     for (int i = 0; i < n; i++) names[i] = menu_text(ids[i]);
     names[7] = "165 FPS", names[8] = "240 FPS";
@@ -1365,9 +1313,7 @@ static void tab_screen(float scale) {
     static const UiTextId perf[] = {UI_MENU_PERF_OFF, UI_MENU_PERF_FPS, UI_MENU_PERF_FULL};
     opt_choice("NX2NAVI_PERF_OVERLAY", UI_MENU_PERF_OVERLAY, perf, 3, UI_MENU_PERF_OVERLAY_DESC);
     opt_group(UI_MENU_GRAPHICS);
-    // The game resolution needs the output and scene patch sets (resolution.c res_adjustable): Ocarina's build has
-    // none and always draws its own size, so the row would change nothing
-    if (res_adjustable()) row_output_res();
+
     // Widescreen needs the patch sets of recomp/patches-v111.txt (widescreen.c wide_available)
     static const UiTextId wide[] = {UI_MENU_GAME_ASPECT_16_9, UI_MENU_GAME_ASPECT_WINDOW, UI_MENU_GAME_ASPECT_21_9,
                                     UI_MENU_GAME_ASPECT_32_9};
@@ -1617,10 +1563,9 @@ static const char *prompts_note(bool *restart) {
     // A game resolution of another shape needs a folder of its own for the PC prompts (romfs-patches-pc-<w>x<h>), which
     // the setup does not write: the shape is the reason then, not the setup.
     int off = romfs_prompts_off(want);
-    if (want && !romfs_prompts_ready(want) && off != ROMFS_PROMPTS_SHAPE) return menu_text(UI_MENU_PROMPTS_MISSING);
+    if (want && !romfs_prompts_ready(want)) return menu_text(UI_MENU_PROMPTS_MISSING);
     switch (off) {
     case ROMFS_PROMPTS_FAILED: return menu_text(UI_MENU_PROMPTS_FAILED);
-    case ROMFS_PROMPTS_SHAPE: return menu_text(UI_MENU_PROMPTS_OFF_SHAPE);
     case ROMFS_PROMPTS_MODS: return menu_text(UI_MENU_PROMPTS_OFF_MODS);
     case ROMFS_PROMPTS_PATCHES: return menu_text(UI_MENU_PROMPTS_OFF_PATCHES);
     default: *restart = true; return menu_text(UI_MENU_PROMPTS_RESTART);
@@ -2018,10 +1963,8 @@ static void perf_tick(uint64_t now, const MenuTarget *t) {
 static void perf_picture(const MenuTarget *t, PerfPanel *p) {
     unsigned out[2], scene[2];
     res_sizes(out, scene);
-    // Ocarina's build has no output and scene patch sets, so res_sizes holds the other builds' placeholders there: the
-    // picture and the scene are widescreen.c's, the scene at the share it writes for the game (wide_present; in the
-    // first two seconds of a run the game's own dynamic resolution still sizes it)
-    const double share = !res_adjustable() && wide_scene_settable() ? wide_scene_share() : 0;
+    // The widescreen path reports its requested scene share, not the measured dynamic scene size.
+    const double share = wide_scene_settable() ? wide_scene_share() : 0;
     if (share > 0) {
         wide_picture(&out[0], &out[1]);
         scene[0] = (unsigned)lround(out[0] * share), scene[1] = (unsigned)lround(out[1] * share);
@@ -2054,9 +1997,8 @@ static void perf_picture(const MenuTarget *t, PerfPanel *p) {
     if (!strcmp(fg, "dlss") && vk_dlssg_active())   // its multiplier as set, clamped to what this GPU allows
         snprintf(v[10], sizeof v[10], "NVIDIA DLSS %dx",
                  vk_dlssg_multiplier_of(cfg_value("NX2NAVI_FRAMEGEN_MULTIPLIER"), vk_dlssg_multiplier_max(nullptr), nullptr));
-    // The 3D scene's size is known only where resolution.c sets it (the builds with its patch sets); Ocarina sizes its
-    // own scene dynamically and res_sizes would report a fixed 1600x900, so the line is left out
-    p->scene_known = res_adjustable() != 0;
+    // The game may size the 3D scene dynamically.
+    p->scene_known = false;
 }
 
 // The full panel (ui/perf_panel.cpp draws it in the menu's look): the numbers of this frame.

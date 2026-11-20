@@ -80,6 +80,23 @@ def main_build_id(main):
     return head[0x40:0x48].hex().upper() if len(head) == 0x48 and head[:4] == b'NSO0' else ''
 
 
+MAIN_BUILD_ID = "e0f3ccfaf50065ae4ea01eb5aeb13b1a"
+
+
+def require_game_111(exefs):
+    """Check the full build ID of the only supported game's main NSO."""
+    main = Path(exefs) / 'main'
+    try:
+        with main.open('rb') as f:
+            header = f.read(0x50)
+    except OSError as e:
+        raise ValueError(f'cannot read ExeFS main: {e}') from e
+    if len(header) != 0x50 or header[:4] != b'NSO0':
+        raise ValueError(f'{main} is not an NSO module')
+    if header[0x40:0x50].hex() != MAIN_BUILD_ID:
+        raise ValueError(f'{main} is not game version 1.1.1 (build {header[0x40:0x44].hex()})')
+
+
 def code_files(mods, bid):
     """[(mod folder name, path in the mod, file)] of every file of the mods folder that changes the game's code: the
     cheat files for bid, then the ExeFS patch files."""

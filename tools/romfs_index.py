@@ -2,8 +2,8 @@
 
 Copyright (c) 2026 MacNativeGames contributors (MIT; see THIRD_PARTY_NOTICES.md).
 
-Input: <romfs>/index.json ({status, romfs_size, romfs_sha256, files: [{path, offset, size}]}) as tools/extract.py
-writes it, and <romfs>/romfs.bin, whose size must match. Output, both in the build directory (never in the repo):
+Input: <romfs>/index.json written by the game builder and <romfs>/romfs.bin, whose size must match. Both outputs
+stay in the build directory:
 
     romfs-index.bin   NX2NRFS1 layout: header <8sQQ (magic, count, strings offset), count 24-byte rows <QQII (offset,
                       size, name offset, name length including the NUL), then the NUL-terminated names; rows sorted by
@@ -12,7 +12,7 @@ writes it, and <romfs>/romfs.bin, whose size must match. Output, both in the bui
 
 Both are rewritten only when their bytes change, so Ninja does not rebuild romfs.c for nothing.
 
-    .venv\\Scripts\\python tools\\romfs_index.py --romfs build\\extracted\\v121\\romfs --out build\\v121
+    .venv\\Scripts\\python tools\\romfs_index.py --romfs build\\v111\\romfs --out build\\v111
 
 Standard library only.
 """

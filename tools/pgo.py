@@ -1,10 +1,9 @@
 """Merge the raw profiles of an instrumented build into the execution profile a build compiles with.
 
     python tools/pgo.py merge <game folder> --version v111 --toolchain C:\\msys64\\ucrt64
-    python tools/pgo.py merge build/v143-pgogen --version v143 [--out build/pgo/pgo-v143.profdata]
 
-An instrumented build (tools/make_game.py --pgo gen for game 1.1.1, tools/build_game.py --pgo gen for the other
-versions) writes <build>/pgo/default_<id>.profraw while the game runs (every minute and at exit); successive runs of
+An instrumented build (tools/make_game.py --pgo gen) writes <build>/pgo/default_<id>.profraw while the game runs
+(every minute and at exit); successive runs of
 the same exe add to that file. llvm-profdata must come from the toolchain the instrumented build was compiled with
 (--toolchain DIR, its bin/llvm-profdata): the raw format is tied to the compiler's version. The merged file is read
 by the compilers of the builds that use it; one of the same LLVM release reads it, an older one may refuse it, which
@@ -14,8 +13,7 @@ Beside the profile goes <out>.json, the training record: the game version, recom
 (recomp_tree) and by content (recomp_digest, which a kit without git compares: tools/make_game.py pgo_record), and
 the tool that merged. The profile matches the generated C of that generator, since functions are matched by name and
 control-flow hash and a regenerated function silently loses its counts. tools/make_game.py therefore compiles with a
-profile only while recomp/ is the recorded one, and tools/make_launcher.py --pgo and tools/make_release.py say so
-when it is not. Merge right after the training runs, from the commit they were built at: a game folder made by
+profile only while recomp/ is the recorded one, and tools/make_launcher.py --pgo reports mismatches. Merge right after the training runs, from the commit they were built at: a game folder made by
 make_game.py --pgo gen names the recomp/ it was built from (pgo/training.json), and the merge stops when the
 checkout holds another.
 """
@@ -30,7 +28,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 EXE = '.exe' if sys.platform == 'win32' else ''
-DEFAULT_DIR = ROOT / 'build' / 'pgo'   # make_game.py, make_launcher.py and make_release.py look here
+DEFAULT_DIR = ROOT / 'build' / 'pgo'   # make_game.py and make_launcher.py look here
 MSYS_BIN = Path(r'C:\msys64\ucrt64\bin')
 
 
@@ -69,15 +67,14 @@ def recomp_digest(version, root=ROOT):
 
 
 def training(build, version):
-    """What the instrumented game in build was made from (pgo/training.json, tools/make_game.py pgo_gen_record), {}
-    for a build that wrote none (tools/build_game.py). A game built from another recomp/ than this checkout's, or for
-    another game version, stops the merge: the record would name a generator the counts were not gathered on."""
+    """Require the canonical training record before labeling raw counts with a version and generator digest."""
+    record = build / 'pgo' / 'training.json'
     try:
-        made = json.loads((build / 'pgo' / 'training.json').read_text(encoding='utf-8'))
-    except OSError:
-        return {}
-    except ValueError:
-        sys.exit(f'{build / "pgo" / "training.json"} cannot be read')
+        made = json.loads(record.read_text(encoding='utf-8'))
+    except (OSError, ValueError):
+        sys.exit(f'{record} cannot be read; rebuild and train with tools/make_game.py')
+    if not isinstance(made, dict):
+        sys.exit(f'{record} is not a training record')
     if made.get('version') != version:
         sys.exit(f'{build} was built for game version {made.get("version")}, not {version}')
     if made.get('recomp_digest') != recomp_digest(version):
@@ -159,9 +156,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = ap.add_subparsers(dest='cmd', required=True)
     m = sub.add_parser('merge', help='merge <build>/pgo/*.profraw into one .profdata and its training record')
-    m.add_argument('build', type=Path, help='the instrumented build: the game folder of make_game.py --pgo gen, or '
-                                            'the build directory of build_game.py --pgo gen')
-    m.add_argument('--version', required=True, help='game version the build was made for (v111, v143)')
+    m.add_argument('build', type=Path, help='the game folder produced by make_game.py --pgo gen')
+    m.add_argument('--version', choices=('v111',), default='v111', help='game build (default: v111)')
     m.add_argument('--out', type=Path, help=f'default {DEFAULT_DIR.relative_to(ROOT).as_posix()}/pgo-<version>.profdata')
     m.add_argument('--toolchain', type=Path,
                    help='the folder of the compiler that built the instrumented game, with bin/llvm-profdata: an '

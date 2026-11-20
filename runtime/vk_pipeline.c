@@ -197,7 +197,7 @@ static __thread uint64_t mm_hash;   // FNV-1a of the module make_module last cre
 static uint64_t key_hash(const void *k, size_t n) { return nvn_hm_hash(k, (uint32_t)n); }
 
 // The cache file lives next to nx2navi.exe, so every build dir (the main build and each private fork) has its own:
-// forks that shared build\v121's cache broke each other's runs (2026-10-22).
+// build folders that shared a cache broke each other's runs (2026-10-22).
 static void cache_path_init(void) {
     const char *cfg_path = cfg_get("NX2NAVI_PIPELINE_CACHE");
     if (cfg_path && *cfg_path && strlen(cfg_path) < sizeof P.cache_path) {
@@ -8859,7 +8859,7 @@ static int cache_save_one(int which, uint32_t wait_ms, int exiting) {
 // Both caches' saves (cache_save_one): 1 when each is done, 0 when one found no build-free moment, -1 when one failed.
 static int cache_save(uint32_t wait_ms, int exiting) {
     if (!P.ready || !P.cache || !P.cache_path[0]) return 1;
-    // Not under P.lock: holding P.lock through the copy and the file write (about 60 ms on the 1.4.3 fight) stopped
+    // Not under P.lock: holding P.lock through the copy and the file write stopped
     // every pipeline lookup of the replay, a freeze at each 20 s autosave.
     plat_mutex_lock(&save_lock);
     if (!P.cache) {   // vk_pipeline_shutdown destroyed it

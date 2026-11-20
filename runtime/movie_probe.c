@@ -440,7 +440,7 @@ int probe_movie(void) {
     char image[PLAT_PATH_MAX];
     snprintf(image, sizeof image, "%s/romfs.bin", dir);
     if (!plat_file_exists(image)) {
-        printf("probe-movie: skipped: no RomFS image at %s (game data absent; extract it with tools/extract.py)\n", image);
+        printf("probe-movie: skipped: no RomFS image at %s (game data absent; build from your local v111 dump with tools/make_game.py)\n", image);
         return 0;
     }
     fs_init();

@@ -35,9 +35,8 @@ TOOLS = ('make_game.py', 'nup.py', 'romfs_index.py', 'check_content.py', 'hostme
          'build_game.py', 'check_isa.py', 'build_shaders.py', 'make_mvobj_fs.py',
          'pack_shader_cache.py', 'vulkan_pin.py', 'mod_files.py', 'cheats.py', 'exefs_patches.py')
 # make_game.py imports build_game's vma_include and vulkan_include on Linux for the VMA header and for Vulkan headers
-# newer than the system's (which build_game takes from vulkan_pin), and build_game.py imports check_isa and
-# build_shaders, which reads the two make_ scripts' shaders; the lift runs cheats.py and exefs_patches.py for the mods'
-# code, and both import mod_files.py
+# newer than the system's (which build_game takes from vulkan_pin). The lift runs cheats.py and exefs_patches.py
+# for the mods' code, and both import mod_files.py.
 TOP = ('LICENSE', 'LICENSE-ADDITIONS', 'LICENSE-SHORTFUSE.md', 'THIRD_PARTY_NOTICES.md', 'VERSION', 'nx2navi.ini.example')
 SKIP_DIRS = {'__pycache__', '.pytest_cache'}
 SKIP_SUFFIXES = {'.o', '.obj', '.pyc', '.exe', '.dll', '.a', '.lib'}

@@ -1,12 +1,11 @@
 """Check the shader translator guard of the packaging scripts (tools/build_xlate.py source_identity and check_built,
-used by tools/make_launcher.py check_xlate, tools/make_release.py check_translator, tools/make_kit.py and
+used by tools/make_launcher.py check_xlate, tools/make_kit.py and
 tools/make_appimage.py):
 
 - a folder whose nx2navi_xlate.id names this checkout's sources passes; a missing exe or .id is refused;
-- a folder built before a patch changed is refused, although identity() over its own prepared tree (what
-  make_release.py compared before) equals its .id;
+- a folder built before a patch changed is refused, although identity() over its own prepared tree equals its .id;
 - build_xlate.py has no option that writes an .id beside an exe it did not build (--id-only is gone);
-- make_launcher.check_xlate, make_release.check_translator and make_kit stop on a foreign translator, make_kit before
+- make_launcher.check_xlate, and make_kit stop on a foreign translator, make_kit before
   it downloads or deletes anything; make_launcher and make_appimage run the check before their slow steps;
 - tools/xlate_smoke.py pool_check, which make_launcher.check_xlate runs on the exe on Windows: spirv_clamps reads the
   array lengths and the UMin clamps of a module made here, pool_check refuses an exe that does not run, check_xlate
@@ -143,21 +142,11 @@ def main():
         build_xlate.source_identity = lambda: want
         pool_checks(base)
         import make_launcher
-        import make_release
         import make_kit
         xlate_smoke.pool_check = lambda exe: None   # the stand-in exes do not run: pool_checks covers the real one
         assert refused(make_launcher.check_xlate, good) is None
         for bad in (other, stale, no_exe):
             assert refused(make_launcher.check_xlate, bad)
-        main_root = make_release.MAIN_ROOT
-        try:
-            for d, ok in ((good, True), (stale, False), (other, False)):
-                rel = base / f'rel_{d.name}'
-                shutil.copytree(d, rel / 'build' / 'xlate')
-                make_release.MAIN_ROOT = rel
-                assert (refused(make_release.check_translator) is None) == ok, d.name
-        finally:
-            make_release.MAIN_ROOT = main_root
         out = base / 'kit_out'
         argv = sys.argv
         try:
@@ -166,7 +155,7 @@ def main():
         finally:
             sys.argv = argv
         assert why and 'other sources' in why and not out.exists()
-        print('make_launcher, make_release and make_kit stop on a foreign translator (make_kit before any download)')
+        print('make_launcher and make_kit stop on a foreign translator (make_kit before any download)')
 
     # The check comes before the slow steps.
     src = inspect.getsource(make_launcher.main)
@@ -174,8 +163,6 @@ def main():
     import make_appimage
     src = inspect.getsource(make_appimage.main)
     assert src.index('build_xlate.check_built(') < src.index('dlss_pin.resolve(') < src.index('shutil.rmtree(app')
-    src = inspect.getsource(make_release.main)
-    assert src.index('check_translator()') < src.index('shutil.rmtree(out)')
     print('xlate package check: passed')
     return 0
 

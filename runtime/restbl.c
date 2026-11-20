@@ -4,7 +4,7 @@
 //   hashed entries {u32 crc32 of the key, u32 size}, sorted by the hash
 //   named entries {char key[name length], u32 size}: the keys whose hash collides with another key's
 //
-// A key is a RomFS path without .zs or .mc. The estimates come from the 1.4.3 table against its own files: most types
+// A key is a RomFS path without .zs or .mc. The estimates scale with the uncompressed file size: most types
 // need the decompressed size plus at most 8 KiB (headers, alignment); a few need a multiple of it (bfres 1.5, bkres
 // 2.05, bgyml 3.85, asb 1.4, bstar 1.2, bphsc 1.1). A type the table does not list takes 1.5 times its size plus 8 KiB.
 #include <stdlib.h>

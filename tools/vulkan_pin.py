@@ -3,7 +3,7 @@
 The runtime names structures and constants of Vulkan extensions as they come out (runtime/vk_device.c asks for
 VK_KHR_pipeline_binary, VK_KHR_dynamic_rendering_local_read and VK_KHR_shader_maximal_reconvergence when the driver
 has them), so it needs headers at least as new as the ones it was written against. On Windows MSYS2 supplies them and
-the Linux release (tools/make_release_linux.py) carries them in runtime/deps. A build with the system's own compiler
+the Linux kit carries them in runtime/deps. A build with the system's own compiler
 and headers (tools/make_appimage.py's kit, a source checkout) met distributions whose packaged headers are years
 older: every file that names a newer extension then fails to compile. Such a build takes the headers from here
 instead: the release the others use, from Khronos's Vulkan-Headers repository, checked against its SHA-256.

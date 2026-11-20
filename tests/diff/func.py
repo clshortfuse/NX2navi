@@ -336,7 +336,7 @@ class Runner:
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument('--exefs', type=Path, default=ROOT / 'build' / 'extracted' / 'v121' / 'exefs')
+    ap.add_argument('--exefs', type=Path, default=ROOT / 'build' / 'v111' / 'exefs')
     ap.add_argument('--modules', default='main,subsdk0,sdk')
     ap.add_argument('--functions', type=int, default=400, help='per module')
     ap.add_argument('--cases', type=int, default=12, help='random states tried per function')

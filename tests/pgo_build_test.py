@@ -242,6 +242,11 @@ class PgoBuildTest(unittest.TestCase):
         self.assertEqual(made['compiler'], 'clang version 23.1.5')
         self.assertEqual(pgo.training(out, 'v111'), made)
 
+    def test_training_requires_canonical_record(self):
+        out = self.tmp / 'game out'
+        with self.assertRaisesRegex(SystemExit, 'training.json cannot be read'):
+            pgo.training(out, 'v111')
+
     def make_real_recomp(self):
         """The test kit's recomp/ becomes this checkout's, so that what make_game.py records in the kit is what
         tools/pgo.py, which reads the checkout, compares it with."""
@@ -334,6 +339,9 @@ class PgoToolTest(unittest.TestCase):
         self.build = self.tmp / 'game'
         (self.build / 'pgo').mkdir(parents=True)
         (self.build / 'pgo' / 'default_1.profraw').write_bytes(b'raw counts')
+        (self.build / 'pgo' / 'training.json').write_text(json.dumps({
+            'version': 'v111', 'recomp_digest': pgo.recomp_digest('v111'), 'compiler': 'clang version 23.1.5',
+        }))
         self.tool = self.tmp / 'llvm' / 'bin' / ('llvm-profdata' + pgo.EXE)
         self.tool.parent.mkdir(parents=True)
         self.tool.write_bytes(b'')

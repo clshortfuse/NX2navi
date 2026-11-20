@@ -325,16 +325,14 @@ uint8_t *ldr_read_verified(const char *dir, const char *file, size_t *len);   //
 
 // Written by tools/build_game.py into build/<version>/modules.c.
 typedef struct { const char *file, *sha256; } RtFileHash;
-extern const RtFileHash rt_exefs_sha256[];                 // tools/data/expected-<version>.json "exefs_sha256"
+extern const RtFileHash rt_exefs_sha256[];                 // the validated local ExeFS hashes
 extern const int rt_exefs_sha256_count;
 extern const char rt_default_exefs[], rt_default_romfs[], rt_default_profile[];
 extern const unsigned long long rt_app_pool_bytes;        // the title's application memory pool (GetInfo 6)
 extern const int rt_nvn_api_version[2];                   // NVN_DEVICE_INFO_API_{MAJOR,MINOR}_VERSION the title requires
-extern const int rt_game_version;                          // the game build: 111 (1.1.1, make_game.py), 110 (1.1.0), 121 (1.2.1) or 143 (1.4.3)
+extern const int rt_game_version;                          // the v111 game build (1.1.1)
 extern const char rt_port_version[];                       // VERSION at the build's root: 0.1.0, 0.1.0+973c626 in a release
-#define RT_V110 (rt_game_version == 110)                    // 1.1.0: its own boot constants and data slots
 #define RT_V111 (rt_game_version == 111)                    // 1.1.1: its own boot constants (boot.c)
-#define RT_V143 (rt_game_version >= 143)
 
 // ---- kernel (kernel.c)
 typedef struct RtThread RtThread;
@@ -410,7 +408,7 @@ int cam_pack_build(const void *in, size_t n, const void *zsdic, size_t zsdic_n, 
 void cam_pack_opened(void);                                // romfs.c: the game opened the camera's pack
 void cam_speed_tick(void);                                 // every present: a changed setting goes into the game's memory
 void cam_pack_served(void);                                // romfs.c serves the multiplied pack
-// ---- game resolution (resolution.c): NX2NAVI_OUTPUT_RES, NX2NAVI_RENDER_SCALE
+// ---- game resolution and widescreen texture heap
 uint64_t res_heap_extra_bytes(void);                       // added to the application pool (mem_init), 2 MiB steps
 uint64_t res_heap_extra_kib(void);                         // added to the HeapDef texture heap and its parent; 0 = none
 int res_heapdef_build(const void *in, size_t n, void **out, size_t *out_n);   // the HeapDef table (.byml.zs) with
@@ -422,6 +420,7 @@ void wide_present(void);                                    // each present: DLS
 int wide_available(void);                                  // the generated C has the widescreen sets
 void wide_picture(unsigned *w, unsigned *h);               // the picture the game draws (its scene is never larger)
 int wide_scene_settable(void);                             // the generated C has res_fixed: the scene's share can be set
+double wide_dlss_share(void);                              // the requested DLSS share (1 DLAA, 0 off)
 double wide_scene_share(void);                             // the scene's share of the picture now (0: the game's own)
 double wide_scene_wanted(void);                            // ... what the settings ask for, before the heap's limit
 int wide_scene_restart(void);                              // a restart gives the larger scene the settings ask for
@@ -429,20 +428,10 @@ uint64_t wide_heap_extra_kib(void);                        // the texture heap's
 // The most res_heap_extra_kib may be (memory.c): with more the application pool passes the heap region and the
 // game's own SetHeapSize is refused. A whole number of 2 MiB.
 uint64_t mem_heap_extra_max_kib(void);
-void res_init(void);                                       // after rt_patches_init: the patch page and the sets
 float res_dlss_lod_bias(void);                             // NX2NAVI_DLSS upscaling: texture LOD bias (<= 0)
-int res_dlss_mode(const char *mode);                       // NX2NAVI_DLSS changed while running: new scene size
 void dynres_frame(void);                                   // dynamic resolution: one presented frame (vk_backend.c)
 const char *dynres_override(void);                         // the DLSS mode dynamic resolution uses now, NULL: the setting's
-void res_fn_hit(uint64_t addr, uint64_t x0);               // main.c fnprof_hit: catches the renderer at start
-void res_present(Cpu *c);                                  // nvnQueuePresentTexture: applies a pending scene size
-void res_sizes(unsigned out[2], unsigned scene[2]);      // the output and scene sizes in effect (the game's own
-                                                           // until res_init switched the sets on)
-int res_adjustable(void);                                  // the build has the output and scene patch sets
-int res_is_16x9(unsigned w, unsigned h);                   // within 1% of 16:9 (the test res_init and romfs.c share)
-int res_wants_wide_overlay(const unsigned out[2]);         // not 16:9 on a game version with the camera aspect patch
-void res_wanted(unsigned out[2]);                          // the output size NX2NAVI_OUTPUT_RES asks for
-void res_fov_live(void);                                   // NX2NAVI_FOV to the camera (set fov); on a settings change
+void res_sizes(unsigned out[2], unsigned scene[2]);      // nominal output and scene sizes
 // ---- code patches (patches.c) and the frame step (frame_rate.c)
 void rt_patches_init(void);                                // after ldr_load: switches from the environment, the patch
                                                            // page committed; logs the sets
@@ -453,13 +442,11 @@ void rt_patch_switch(int set, int on);                     // at run time (live 
                                                            // the next time it runs
 void *rt_patch_page(void);                                 // the page the patched code reads (NULL without the table)
 void frame_step_init(void);                                // after rt_patches_init: the real-time step's first value
-int frame_step_realtime(void);                             // the real-time step is on: presents ignore the interval
 uint64_t frame_step_cap_ns(void);                          // with the real-time step: the shortest frame in ns
 int frame_step_movie_hz(void);                             // the movie rate frame_step_cap_ns paces at; 0: no movie
 uint64_t frame_step_ceiling_ns(void);                      // the shortest frame the game survives, whoever holds the limit
 int ov_movie_live(void);                                   // ov_movie2.c: a movie plays (frame_rate.c movie_cap_hz)
 int frame_limit_adjustable(void);                         // the frame limit setting changes the rate (always)
-int frame_free_running(void);                             // no fps60/realtime patch set: the game steps by the clock
 double frame_step_limit_hz(void);                         // the frame rate the limit gives (overlay); 0 unknown
 double frame_step_game_hz(void);                          // the rate the game draws at under the limit; 0 unknown
 void frame_rate_day_host(Cpu *c);                         // the time of day's seconds a frame (set ostep, page +0xf60)

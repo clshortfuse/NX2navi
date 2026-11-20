@@ -8,7 +8,7 @@ NativeAOT links with the system's clang (no MSVC); NativeAOT builds for the OS i
 Next to the exe it writes nx2navi_xlate.id: the translator identity, a sha256 over everything the build reads (this script,
 Program.cs, the csproj, the patches, the vendor tree). runtime/gfx_shader.c puts it into every shader cache key, so a
 translator change re-keys the cache without a hand-made KEY_VERSION bump. Only a build writes it: the packaging scripts
-(make_launcher.py, make_release.py, make_appimage.py, make_kit.py) take a translator whose .id names this checkout's
+(make_launcher.py, make_appimage.py, make_kit.py) take a translator whose .id names this checkout's
 sources for one built from them (check_built), so no option writes an .id beside an exe it did not build.
 
   python tools/build_xlate.py [--out DIR]
@@ -243,7 +243,7 @@ def main() -> None:
     parser.add_argument("--out", type=Path, help="build directory instead of build/xlate")
     parser.add_argument("--llvm", type=Path, help="Linux: an LLVM directory whose bin/clang and lld link the exe")
     parser.add_argument("--sysroot", type=Path, help="Linux: link against this sysroot's glibc instead of the host's "
-                                                     "(tools/make_release_linux.py)")
+                                                     "when cross-compiling")
     a = parser.parse_args()
     if a.out:
         global BUILD

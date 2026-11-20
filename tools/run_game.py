@@ -5,8 +5,8 @@ afterwards. It is the game folder's own profile when there is one (<exe dir>/pro
 build/profile. The log records how many other copies of the game and of Ninja ran, because timings taken next to them
 are not comparable.
 
-    python tools/run_game.py build/v143 --save <backup> --seconds 15 --tag idle --env NX2NAVI_TRACE=perf
-    python tools/run_game.py build/v143 --save <backup> --script <input.txt> --seconds 18 --tag fight --quiet \
+    python tools/run_game.py build/v111 --save <backup> --seconds 15 --tag idle --env NX2NAVI_TRACE=perf
+    python tools/run_game.py build/v111 --save <backup> --script <input.txt> --seconds 18 --tag fight --quiet \
         --env NX2NAVI_TRACE=perf,sched
     python3 tools/run_game.py ~/Games/Ocarina --save <report.zip> --seconds 600 --wall 90 \
         --env NX2NAVI_SHOT_DIR=shots --env NX2NAVI_SHOT_AFTER=40 --env NX2NAVI_SHOT_EVERY=10
@@ -37,15 +37,15 @@ else:
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from launcher import saves   # noqa: E402  (Import Saves' search, for a save from elsewhere)
+from tools.mod_files import require_game_111  # noqa: E402
 PROFILE = ROOT / 'build' / 'profile'
 SAVES = ROOT / 'build' / 'save-backup'
 SLOTS = ROOT / 'build' / 'run-slots'
 GPU_LOCK = ROOT / 'build' / '.gpu-run.lock'
 LOCK_OFFSET = 1 << 16   # Windows byte-range lock sits past the holder text, so other processes can still read it
 MAX_RUNS = int(os.environ.get('NX2NAVI_MAX_RUNS', '3'))   # more parallel runs exhaust device memory (16 GB RX 9070)
-# The game's executable as each tool names it: build_game.py, make_game.py on Windows, make_game.py on Linux,
-# build_game.py on Linux
-GAME_EXES = ('nx2navi.exe', 'ocarina.exe', 'ocarina', 'nx2navi')
+# Prefer the canonical executable even if an older build is still in the folder.
+GAME_EXES = ('ocarina.exe', 'ocarina', 'nx2navi.exe', 'nx2navi')
 NINJA = 'ninja.exe' if os.name == 'nt' else 'ninja'
 
 
@@ -218,12 +218,26 @@ def main():
     ap.add_argument('--log', type=Path, help='default: <exe dir>/logs/<tag>.log')
     ap.add_argument('--env', action='append', default=[], metavar='KEY=VALUE', help='extra environment, repeatable')
     ap.add_argument('--quiet', action='store_true', help='wait until no other copy of the game or Ninja runs (benchmarks)')
-    ap.add_argument('--show', action='store_true',
-                    help='Windows: open the window on top; by default it opens behind other windows')
+    window = ap.add_mutually_exclusive_group()
+    window.add_argument('--show', action='store_true', help='open normally (default)')
+    window.add_argument('--background', action='store_true', help='Windows: keep the window behind other windows')
     a = ap.parse_args()
 
     exe_dir = a.exe_dir.resolve()
     exe = game_exe(exe_dir)
+    env = dict(os.environ, NX2NAVI_ASSUME_FOCUS='1', NX2NAVI_INPUT_SCRIPT=str(a.script.resolve()))
+    if a.background and os.name == 'nt':
+        env['NX2NAVI_BACKGROUND_WINDOW'] = '1'
+    for kv in a.env:
+        k, _, v = kv.partition('=')
+        env[k] = v
+    override = env.get('NX2NAVI_EXEFS')
+    # Without an environment override, let the runtime resolve its INI, sibling, and baked-in paths.
+    if override:
+        try:
+            require_game_111(exe_dir / override)
+        except ValueError as e:
+            ap.error(str(e))
     profile = exe_dir / 'profile' if (exe_dir / 'profile').is_dir() else PROFILE
     log = (a.log or exe_dir / 'logs' / f'{a.tag}.log').resolve()
     log.parent.mkdir(parents=True, exist_ok=True)
@@ -238,12 +252,6 @@ def main():
         profile_copy(prof, profile, *(save_source(a.save, profile, scratch) if a.save else ()))
         shutil.rmtree(scratch, ignore_errors=True)
 
-        env = dict(os.environ, NX2NAVI_ASSUME_FOCUS='1', NX2NAVI_INPUT='none', NX2NAVI_INPUT_SCRIPT=str(a.script.resolve()))
-        if not a.show and os.name == 'nt':   # SDL windows open in front either way
-            env['NX2NAVI_BACKGROUND_WINDOW'] = '1'
-        for kv in a.env:
-            k, _, v = kv.partition('=')
-            env[k] = v
         args = [str(exe), '--profile', str(prof), '--seconds', str(a.seconds)]
         if a.shot:
             args += ['--shot', str(a.shot.resolve())]
@@ -253,7 +261,7 @@ def main():
                 f.flush()
                 start = time.time()
                 proc = subprocess.Popen(args, cwd=exe_dir, env=env, stdout=f, stderr=subprocess.STDOUT)
-                if not a.show and os.name == 'nt':
+                if a.background and os.name == 'nt':
                     threading.Thread(target=keep_in_background, args=(proc,), daemon=True).start()
                 try:
                     rc = proc.wait(timeout=a.wall)

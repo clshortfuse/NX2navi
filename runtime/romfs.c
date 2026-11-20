@@ -1,9 +1,9 @@
 // Contains code Copyright (c) 2026 MacNativeGames contributors (MIT; see THIRD_PARTY_NOTICES.md).
 // Read-only game RomFS backed by the player's extracted image.
 //
-// Input: <romfs>/romfs.bin (rt_config()->romfs), whose six IVFC levels and SHA-256 tools/extract.py verified, and
+// Input: <romfs>/romfs.bin (rt_config()->romfs), packed by the v111 builder, and
 // romfs-index.bin next to nx2navi.exe (NX2NAVI_ROMFS_INDEX overrides), which tools/romfs_index.py wrote together with
-// romfs_config.h. fs_init checks the index's SHA-256 and layout and the image size. The full 17 GB hash runs only with
+// romfs_config.h. fs_init checks the index's SHA-256 and layout and the image size. Full image hashing runs only with
 // NX2NAVI_ROMFS_VERIFY=full; a proof file (.romfs-verified-v1 next to the index, or in NX2NAVI_ROMFS_PROOF_DIR) keyed by
 // the file's volume, file id, size and times skips it on later starts, NX2NAVI_ROMFS_VERIFY=force ignores the proof.
 //
@@ -814,8 +814,6 @@ int romfs_action_prompt(void) { return action_prompt_for; }
 // The button prompts' folders (input_prompts_folder) and whether each had a manifest next to romfs-index.bin at start;
 // the one the settings asked for at start, the one overlay_init loaded (NULL: the game's own prompts) and why the first
 // did not load (ROMFS_PROMPTS_*). The menu compares them with the settings in effect (ui/menu.cpp prompts_note).
-// romfs-patches-pc keeps that name, but at a game resolution of another shape than 16:9 its files come from pc_dir,
-// romfs-patches-pc-<w>x<h> (overlay_init).
 #define PROMPTS_PADS 3      // the pad styles: Xbox, PlayStation, Steam Deck
 #define PROMPTS_FOLDERS (PROMPTS_PADS * 2 + 1)   // each pad style by position and by label, then PC
 // A style's name in the log and its NX2NAVI_PROMPTS value.
@@ -830,7 +828,6 @@ static const char *prompts_value(int pick) {
 static struct { const char *name; int ready; } prompts_folders[PROMPTS_FOLDERS];
 static const char *prompts_wanted, *prompts_loaded;
 static int prompts_off;
-static char pc_dir[64];
 
 const char *romfs_prompts(void) { return prompts_loaded; }
 
@@ -865,69 +862,34 @@ static void overlay_drop(size_t a, size_t b) {
 }
 
 static void overlay_init(void) {
-    // NX2NAVI_ROMFS_PATCHES unset: romfs-patches next to romfs-index.bin if it has a manifest (tools/make_romfs_patches.py).
-    // A game resolution that is not 16:9 takes romfs-patches-<w>x<h> instead when it is there: the same overlay with
-    // the UI laid out for that shape (make_romfs_patches.py --aspect), when the game version has the camera aspect patch
-    // the layout goes with (res_wants_wide_overlay).
-    // With prompts = xbox, playstation or steamdeck, that pad's prompts folder for the pad layout in its place
-    // (input_prompts_folder): the game's button font and interface textures with that pad's buttons drawn in
-    // (tools/pad_prompts.py). The game reads the font and the archives once at boot, so
-    // the prompts stay until restart even though the layout itself changes live. Each folder replaces romfs-patches as
-    // a whole and the setup builds no folder of another shape with Xbox prompts, so a game resolution that is not 16:9
-    // keeps the Switch prompts. So does a RomFS mod (the NX2NAVI_ROMFS_MODS manifest or a player mod) that replaces one of
-    // the prompts' fonts: romfs-patches loads in their place, so the mod's file is not served beside prompts files made
-    // for the game's own. A mod's resource size table is no clash: restbl_overlay merges it with the prompts' one.
-    // prompts = pc takes romfs-patches-pc whatever the pad layout, and at a game resolution of another shape
-    // romfs-patches-pc-<w>x<h> (make_romfs_patches.py --prompts pc --aspect): it carries that shape's UI layout too, so
-    // it replaces romfs-patches-<w>x<h> as romfs-patches-pc replaces romfs-patches.
-    char def[2100], path[2100];
+    // Prompt overlays are generated for v111 by tools/pad_prompts.py. Explicit patches take precedence.
+    char path[2100];
     const char *patches = cfg_get("NX2NAVI_ROMFS_PATCHES"), *mods = cfg_get("NX2NAVI_ROMFS_MODS");
-    int wide = 0;
-    unsigned out[2];
-    res_wanted(out);
-    if (!patches && res_wants_wide_overlay(out)) {
-        if (snprintf(def, sizeof def, "%s/romfs-patches-%ux%u/manifest.tsv", index_dir, out[0], out[1]) < (int)sizeof def &&
-            plat_file_exists(def)) {
-            def[strlen(def) - strlen("/manifest.tsv")] = 0;
-            patches = def, wide = 1;
-        } else {
-            rt_log("RomFS overlay: no romfs-patches-%ux%u for this game resolution, the UI keeps its 16:9 layout "
-                   "(tools/make_romfs_patches.py --aspect %ux%u)", out[0], out[1], out[0], out[1]);
-        }
-    }
     static const char *const layouts[2] = {"nintendo", "xbox"};   // each pad's two folders, then the PC one
     static const int pads[PROMPTS_PADS] = {PROMPTS_XBOX, PROMPTS_PLAYSTATION, PROMPTS_STEAMDECK};
     for (int i = 0; i < PROMPTS_FOLDERS; i++) {
         int pc = i == PROMPTS_FOLDERS - 1;
         const char *name = pc ? input_prompts_folder(PROMPTS_PC, 0) : input_prompts_folder(pads[i / 2], layouts[i % 2]);
-        const char *dir = name;
-        if (pc) {
-            if (wide) snprintf(pc_dir, sizeof pc_dir, "%s-%ux%u", name, out[0], out[1]);
-            else snprintf(pc_dir, sizeof pc_dir, "%s", name);
-            dir = pc_dir;
-        }
         prompts_folders[i].name = name;
         prompts_folders[i].ready =
-            snprintf(path, sizeof path, "%s/%s/manifest.tsv", index_dir, dir) < (int)sizeof path && plat_file_exists(path);
+            snprintf(path, sizeof path, "%s/%s/manifest.tsv", index_dir, name) < (int)sizeof path && plat_file_exists(path);
     }
     const char *layout = cfg_value("NX2NAVI_PAD_LAYOUT");
-    int pick = input_prompts_pick(cfg_get("NX2NAVI_PROMPTS"), layout), shaped = wide && pick == PROMPTS_PC;
+    int pick = input_prompts_pick(cfg_get("NX2NAVI_PROMPTS"), layout);
     const char *style = prompts_style(pick);
     prompts_wanted = input_prompts_folder(pick, layout);
     prompts_off = !prompts_wanted                         ? ROMFS_PROMPTS_OK
-                  : wide && !shaped                       ? ROMFS_PROMPTS_SHAPE
-                  : patches && !wide                      ? ROMFS_PROMPTS_PATCHES
-                  : !romfs_prompts_ready(prompts_wanted)  ? (shaped ? ROMFS_PROMPTS_SHAPE : ROMFS_PROMPTS_MISSING)
+                  : patches                      ? ROMFS_PROMPTS_PATCHES
+                  : !romfs_prompts_ready(prompts_wanted)  ? ROMFS_PROMPTS_MISSING
                                                           : ROMFS_PROMPTS_OK;
     restbl_find();
     size_t first = noverlay;
     if (prompts_wanted && prompts_off == ROMFS_PROMPTS_OK) {
         // fits: its manifest path did
-        snprintf(path, sizeof path, "%s/%s", index_dir, shaped ? pc_dir : prompts_wanted);
+        snprintf(path, sizeof path, "%s/%s", index_dir, prompts_wanted);
         if (overlay_load(path, 1, 0)) {
             prompts_loaded = prompts_wanted;
             rt_log("RomFS overlay: %s button prompts (%s)", style, path);
-            if (shaped) patches = NULL;   // in place of romfs-patches-<w>x<h>, whose UI layout it carries
         } else {
             prompts_off = ROMFS_PROMPTS_FAILED;
             rt_log("RomFS overlay: %s failed its check (run the setup again); romfs-patches loads instead", path);
@@ -935,10 +897,7 @@ static void overlay_init(void) {
     } else if (prompts_wanted) {
         rt_log("RomFS overlay: prompts = %s, but %s; Switch prompts stay",
                prompts_value(pick),
-               prompts_off == ROMFS_PROMPTS_SHAPE     ? (shaped ? "the game resolution has no romfs-patches-pc-<w>x<h> "
-                                                                  "(tools/make_romfs_patches.py --prompts pc --aspect)"
-                                                             : "the game resolution takes its own UI layout")
-               : prompts_off == ROMFS_PROMPTS_PATCHES ? "NX2NAVI_ROMFS_PATCHES is set"
+               prompts_off == ROMFS_PROMPTS_PATCHES ? "NX2NAVI_ROMFS_PATCHES is set"
                                                       : "their folder has no manifest.tsv (tools/pad_prompts.py writes it)");
     }
     size_t prompts_end = noverlay;
@@ -958,8 +917,7 @@ static void overlay_init(void) {
         overlay_drop(first, prompts_end);
         prompts_loaded = NULL;
         prompts_off = ROMFS_PROMPTS_MODS;
-        if (shaped) overlay_load(def, 0, 0);
-        else if (plain_ok) overlay_load(plain, 0, 0);
+        if (plain_ok) overlay_load(plain, 0, 0);
     }
     restbl_collect();
     overlay_contest();
@@ -1000,7 +958,7 @@ static void load_index(void) {
     else strcpy(index_dir, ".");
     uint64_t sz = 0;
     index_bytes = plat_file_read(path, &sz);
-    if (!index_bytes) rt_fatal("RomFS index %s missing (tools/build_game.py writes it next to nx2navi.exe)", path);
+    if (!index_bytes) rt_fatal("RomFS index %s missing (tools/make_game.py writes it next to the game executable)", path);
     need(sz >= 24 && sz < (128 << 20), "index size");
     index_size = (size_t)sz;
     uint8_t d[32];
@@ -1008,7 +966,7 @@ static void load_index(void) {
     rt_sha256(index_bytes, index_size, d);
     hex32(d, hex);
     if (strcmp(hex, ROMFS_INDEX_SHA256))
-        rt_fatal("RomFS index %s has SHA-256 %s, this build expects %s (rebuild with tools/build_game.py)", path, hex,
+        rt_fatal("RomFS index %s has SHA-256 %s, this build expects %s (rebuild with tools/make_game.py)", path, hex,
                  ROMFS_INDEX_SHA256);
     need(!memcmp(index_bytes, "NX2NRFS1", 8), "index format");
     memcpy(&file_count, index_bytes + 8, 8);
@@ -1032,7 +990,7 @@ static void load_index(void) {
 static void init_once(void *param) {
     (void)param;
 #ifdef ROMFS_MISSING
-    rt_fatal("this build has no RomFS: tools/build_game.py found no index.json in its --romfs directory");
+    rt_fatal("this build has no RomFS: rebuild with tools/make_game.py using v111 game files");
 #else
     double t0 = now_s();
     load_index();

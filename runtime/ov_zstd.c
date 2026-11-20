@@ -1,8 +1,4 @@
-// The game's zstd decoder on the host's libzstd. Most RomFS files of NX2navi 1.4.3 are zstd frames, many with a
-// dictionary from Pack/ZsDic.pack.zs; the decoder is BSD zstd linked into main. The patch set "zstd"
-// (recomp/patches-v143.txt) sends every call of ZSTD_decompressMultiFrame (main+0x3a1f0) and of ZSTD_decompress_usingDDict
-// (main+0x3a1e0) to the two host functions below, on the patch page. Lifted, the decoder ran its literal and match
-// copies as chains of small functions with the registers in Cpu; here the same frames decode in native code.
+// The host decodes v111 zstd data through libzstd (recomp/patches-v111.txt, set zstd).
 //
 // - Results match the guest's: libzstd decodes the same format, and every result that is an error goes to the guest
 //   decoder again (it writes its own error code; a frame libzstd rejects may still be one the game's version accepts).
@@ -12,8 +8,7 @@
 // NX2NAVI_ZSTD_NATIVE=0 keeps the guest decoder (the patch set switch); NX2NAVI_ZSTD_CHECK=1 decodes each call both ways,
 // keeps the guest's result and logs every call where the two differ.
 //
-// Ocarina of Time 1.1.1 has the same decoder at other addresses (recomp/patches-v111.txt: three calls of
-// ZSTD_decompressMultiFrame, main+0xeb380). Its loading threads decode most data through the game's stream feed
+// Three call sites invoke ZSTD_decompressMultiFrame at main+0xeb380. Loading threads decode most data through the stream feed
 // (main+0xf5c80): host_stream, further down. The host decodes there by default since a check run (zstd_check = 1) over a
 // village and a field: 3,072 streams, 31.7 GiB of output, compared byte for byte with the game decoder's, none
 // different. Until then an unset key sent every call on to the game's decoder, which took about a fifth of the
@@ -37,10 +32,8 @@
 
 #ifdef RT_PATCH_PAGE
 
-#define GUEST_MULTIFRAME (rt_game_version == 111 ? 0x70000eb380ull : 0x700003a1f0ull)   // ZSTD_decompressMultiFrame: 1.1.1, 1.4.3
-#define GUEST_USING_DDICT 0x700003a1e0ull  // 1.4.3 main: ZSTD_decompress_usingDDict (1.1.1 has no site for it)
+#define GUEST_MULTIFRAME 0x70000eb380ull
 #define HOST_MULTIFRAME (RT_PATCH_PAGE + 0xff0)
-#define HOST_USING_DDICT (RT_PATCH_PAGE + 0xfe0)
 #define AWAY_BYTES (64u << 10)
 #define MAX_DICT (64u << 20)
 #define NDICT 32
@@ -599,11 +592,9 @@ static void host_stream(Cpu *c) {
 }
 
 static void host_multiframe(Cpu *c) { decode(c, c->x[5], c->x[6], c->x[7], GUEST_MULTIFRAME, 8); }
-static void host_using_ddict(Cpu *c) { decode(c, 0, 0, c->x[5], GUEST_USING_DDICT, 6); }
 
 __attribute__((constructor)) static void zstd_register(void) {
     rt_register_host(HOST_MULTIFRAME, host_multiframe);
-    rt_register_host(HOST_USING_DDICT, host_using_ddict);
     rt_register_host(HOST_STREAM, host_stream);
 }
 

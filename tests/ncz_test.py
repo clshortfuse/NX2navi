@@ -1,10 +1,9 @@
-"""tools/ncz.py and the installer's unpacking of NSZ input (installer/steps.py, Check.unpack) on small made-up files:
+"""tools/ncz.py on small made-up files:
 an NCA with an AES-CTR section and a plain one, stored as an NCZ with one zstd stream or as NCZBLOCK blocks.
 
 Run: .venv-py314\\Scripts\\python tests/ncz_test.py
 """
 import hashlib
-import io
 import os
 import struct
 import sys
@@ -12,7 +11,6 @@ import tempfile
 import unittest
 from compression import zstd
 from pathlib import Path
-from types import SimpleNamespace
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
@@ -20,8 +18,6 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / 'tools'))
 import ncz  # noqa: E402
-from installer import steps  # noqa: E402
-from installer.events import Reporter  # noqa: E402
 
 KEY, COUNTER = bytes(range(16)), bytes(range(16, 32))
 # (offset, size, crypto type): an AES-CTR section, then a plain one
@@ -119,54 +115,6 @@ class UnpackTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             ncz.unpack(self.nsz(damage=lambda d: d[:-40]), self.dir / 'out.nsp')
         self.assertFalse((self.dir / 'out.nsp').exists())
-
-
-class CheckUnpackTest(unittest.TestCase):
-    """Check.unpack: an NSZ base becomes <temp>/unpacked/base.nsp, a plain NSP update is read in place, a second run
-    reuses the NSP."""
-
-    def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
-        base = Path(self.tmp.name)
-        nca, body = made_up_nca()
-        name = hashlib.sha256(nca).hexdigest()[:32]
-        self.base, self.update = base / 'base.nsz', base / 'update.nsp'
-        self.base.write_bytes(pfs0([(name + '.ncz', ncz_file(nca, body))]))
-        self.update.write_bytes(pfs0([('a.tik', b'x' * 64)]))
-        self.expected = pfs0([(name + '.nca', nca)])
-        self.out = io.StringIO()
-        self.ctx = SimpleNamespace(options=SimpleNamespace(base=str(self.base), update=str(self.update)),
-                                   temp=base / 'temp', reporter=Reporter(out=self.out, log_path=base / 'x.log'))
-
-    def tearDown(self):
-        self.ctx.reporter.close()
-        self.tmp.cleanup()
-
-    def test_unpacks_the_base_and_reuses_it(self):
-        steps.Check().unpack(self.ctx)
-        target = self.ctx.temp / 'unpacked' / 'base.nsp'
-        self.assertEqual(target.read_bytes(), self.expected)
-        self.assertEqual(steps.game_file(self.ctx, 'base'), target)
-        self.assertEqual(steps.game_file(self.ctx, 'update'), self.update)
-        self.assertIn('"phase": "unpack_base"', self.out.getvalue())
-        mtime = target.stat().st_mtime_ns
-        steps.Check().unpack(self.ctx)
-        self.assertEqual(target.stat().st_mtime_ns, mtime)
-
-    def test_content_decides_not_the_name(self):
-        renamed = self.base.with_name('base.nsp')
-        self.base.rename(renamed)
-        self.ctx.options.base = str(renamed)
-        steps.Check().unpack(self.ctx)
-        self.assertEqual((self.ctx.temp / 'unpacked' / 'base.nsp').read_bytes(), self.expected)
-
-    def test_damaged_base_names_the_chosen_file(self):
-        data = bytearray(self.base.read_bytes())
-        data[-100] ^= 0xFF
-        self.base.write_bytes(bytes(data))
-        with self.assertRaises(steps.InstallError) as e:
-            steps.Check().unpack(self.ctx)
-        self.assertIn(e.exception.id, ('check.input_damaged', 'check.unpack_failed'))
 
 
 if __name__ == '__main__':

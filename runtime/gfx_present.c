@@ -385,7 +385,7 @@ static void window_settings_live(void) {
     if (started && vk_fg_active() && !vk_fg_wanted()) plat_xchg32(&g_dirty, 1);
     if (started && v == seen) return;
     seen = v;
-    res_fov_live();
+
     if (started && vk_fg_wanted() != vk_fg_active()) plat_xchg32(&g_dirty, 1);   // frame generation switched: its own swapchain
     const char *e = cfg_value("NX2NAVI_VK_PRESENT");
     if (!started || strncmp(e, present, sizeof present - 1)) {
@@ -838,7 +838,7 @@ int vk_present_captured(const uint8_t **px, int *w, int *h, VkFormat *fmt) {
     return ok;
 }
 
-static float g_pic[4];   // gfx_picture_rect
+static float g_pic[4];   // Last presented picture, as fractions of the swapchain
 static volatile int32_t g_pic_ok;
 
 // ---- vk_present_grab (vk.h): one presented frame's pixels for a bug capture. The request is taken by the next
@@ -948,13 +948,6 @@ static void save_capture(const char *path) {
 // NX2NAVI_ASPECT=stretch, else (fit, the default) the largest one of the picture's own aspect ratio, centred (a 16:9 picture
 // on the Steam Deck's 1280x800 screen gets bars of 40 rows above and below; a 16:9 picture in a 21:9 window, bars at the
 // sides).
-// Where the last present put the picture, as fractions of the swapchain (x, y, w, h; g_pic): menu_cursor.c's pointer
-int gfx_picture_rect(float out[4]) {
-    if (!__atomic_load_n(&g_pic_ok, __ATOMIC_ACQUIRE)) return 0;
-    memcpy(out, g_pic, sizeof g_pic);
-    return 1;
-}
-
 void gfx_fit_rect(int cw, int ch, int dw, int dh, int out[4]) {
     out[0] = out[1] = 0, out[2] = dw, out[3] = dh;
     if (cw <= 0 || ch <= 0 || !strcmp(cfg_value("NX2NAVI_ASPECT"), "stretch")) return;

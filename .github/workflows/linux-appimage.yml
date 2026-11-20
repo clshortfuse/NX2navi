@@ -1,5 +1,5 @@
 # The Linux AppImage of each release (tools/make_appimage.py), built on a Linux runner and attached to the release
-# itself: the release is assembled on Windows (tools/make_release.py), and the AppImage needs Linux (the translator's
+# itself: the release is assembled on Windows (tools/make_launcher.py), and the AppImage needs Linux (the translator's
 # NativeAOT build for linux-x64, appimagetool). It holds the build kit only, no game files, as the setup does.
 name: Linux AppImage
 
@@ -66,7 +66,7 @@ jobs:
           .venv/bin/python -c 'import sys; sys.path.insert(0, "tools"); import build_game; print("VMA:", build_game.vma_include())'
       - name: Button art from the release's app zip
         run: |
-          # make_release.py uploads the zip with the release; wait for it if the release was published first
+          # The Windows launcher app zip is attached to the release; wait for it if the release was published first
           for i in $(seq 1 20); do
             gh release download "$TAG" -p 'NX2navi-app-*.zip' -D "$RUNNER_TEMP/app" && break
             echo "no app zip on $TAG yet ($i)"; sleep 30

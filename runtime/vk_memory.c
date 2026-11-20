@@ -617,8 +617,8 @@ static void destroy_rec(VkCtx *c, PoolRec *r) {
 static int pool_init(pool_t *p) {
     VkCtx *c = vk_ctx();
     if (!c) { rt_log("vk: MemoryPoolInitialize before vk_init"); return 0; }
-    // The GPU never sees a GPU_NO_ACCESS pool, except a physical one (0x189; 1.4.3 also 0x18c, CPU-visible) through the
-    // virtual pools that map it. Either gets device-local memory: 1.4.3's CPU never writes its 0x18c pool's storage
+    // The GPU never sees a GPU_NO_ACCESS pool, except a physical one (0x189 or 0x18c, which is CPU-visible) through the
+    // virtual pools that map it. Either gets device-local memory: the device-local mirror is separate from the CPU-visible backing
     // (unchanged over 3600 frames of the intro), so the guest storage and the GPU copy need no sync.
     if ((p->flags & NVN_MEMORY_POOL_FLAGS_GPU_NO_ACCESS) && !(p->flags & NVN_MEMORY_POOL_FLAGS_PHYSICAL)) return 1;
     // A pool of zero bytes (NX2navi makes some now and then) holds no address the GPU can use: it gets no record. A record

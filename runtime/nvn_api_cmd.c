@@ -76,13 +76,7 @@ static void put_hdr(uint8_t *p, uint32_t op, uint32_t size) {
     memcpy(p, &h, sizeof h);
 }
 
-// 1.4.3 initializes and finalizes command buffers about 2000 times a second while a scene loads and several times a
-// frame in play, and its two largest per-frame recordings take 1-2 MiB. Freeing the recording buffer at Finalize made
-// every new recording grow again from 64 KiB through up to five reallocations and copies, the last ones fresh 1-2 MiB
-// blocks the heap takes from the system: new commit and zero-filled pages twice a frame. Those growths were most of the
-// process's new commit requests, so when the system ran short for a moment (a Depths load at render scale 200 on 16 GB)
-// a 1 MiB growth was the allocation that failed. Finalized buffers therefore wait in a small pool for the next
-// recording, and a failed allocation waits for memory instead of ending the game (realloc_wait).
+// Reuse finalized command buffers instead of repeatedly allocating and copying their recording data.
 #define POOL_SLOTS 16
 #define POOL_MAX_BYTES ((size_t)4 << 20)   // a larger buffer (a recording that inlined a big one) goes back to the heap
 static PlatMutex pool_lock = PLAT_MUTEX_INIT;
@@ -236,9 +230,7 @@ static void copy_view(view_t *dst, uint8_t *has, const NVNtextureView *v) {
 // ---------- texture pins
 // Recordings refer to textures by pointer, but the game may finalize or reuse an NVNtexture after recording and before
 // the submit (NVN itself captured only GPU state). Records therefore point at an immutable host copy per texture
-// initialization (tex_t.serial). The game initializes its transient targets again every frame, about 29 new serials a
-// frame on 1.4.3, so copies kept for the run grew the heap by about 44 MiB per minute of play, standing still too, until
-// the commit limit ended the game after a few hours. A copy is freed once nothing can read it any more:
+// initialization (tex_t.serial). Transient targets can be initialized every frame, so holding these copies for the whole run would grow the heap. A copy is freed once nothing can read it any more:
 // - refs counts the recording copies whose ops name it: live ones, released ones a queued submission still reads, and
 //   per-submission clones (pin_refs, at flatten_recording and wherever such a copy is freed or cloned);
 // - a recording in progress holds pins no copy counts yet, through its own tex_pin calls and through ops inlined from a
@@ -408,9 +400,7 @@ void nvn_pins_stats(uint64_t *live, uint64_t *freed) {
 
 // ---------- recording copies
 // A handle points just past a copy_prefix. Copies are indexed by the 64 KiB block of their control-memory position, so
-// adding control memory again releases the copies recorded there without walking every live copy. 4 KiB pages cost
-// about 500 lookups per AddControlMemory under the exclusive lock (1.4.3 field: 53 calls a frame, 2 MiB ranges, 3.7
-// copies per page), and the recording threads waited on it.
+// adding control memory again releases the copies recorded there without walking every live copy. Smaller blocks require more lookups under the exclusive lock.
 // deferred: 0 unknown, 1 none, 2 some; used_min: the minute of its last use (copy_age); pins: texture pins its ops name,
 // counted in their refs (pin_refs); busy: synchronous submissions of it between their prepare and the end of their
 // replay (nvn_submit_prepare, nvn_submit_done; atomic, see nvn_submit_guard.h).
@@ -535,7 +525,7 @@ static uint64_t copy_touch(uint64_t handle, uint64_t now, const char *what, uint
 
 // The recording [p, p + n), OP_BEGIN to OP_END (the recording buffer is one block: recording emits no OP_JUMP), copied
 // into one host block of its exact size. One allocation and one copy: growing the copy record by record cost the
-// game's main thread about 1 ms a frame in reallocations and small copies (1.4.3, field).
+// game's main thread about 1 ms a frame in reallocations and small copies.
 static uint8_t *flatten_recording(const uint8_t *p, size_t n) {
     uint8_t *out = realloc_wait(NULL, sizeof(copy_prefix) + n, "command copy");
     if (!out) rt_fatal("nvn: command copy allocation");

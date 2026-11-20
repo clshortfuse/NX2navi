@@ -183,7 +183,7 @@ static void ov_focus_mode(Cpu *c) {
 // FocusState GetCurrentFocusState(): 1 in focus, 2 out of focus (nn::oe::FocusState). The game sets focus handling
 // mode 2: on a Switch the system then suspends the whole process while it is out of focus and sends Resume when it
 // returns. Here only the game's main thread stops (it waits in PopNotificationMessage for the next message) while its
-// loader threads, audio and clocks run on, and a load interrupted that way was seen to never finish (Linux, 1.4.3).
+// loader threads, audio and clocks run on, and a load interrupted that way was seen to never finish.
 // So NX2NAVI_ASSUME_FOCUS=1, the default, keeps it at 1; with 0 it follows the window through
 // oe_set_focus. The caller of oe_set_focus also pushes OE_MSG_FOCUS_STATE_CHANGED.
 //
@@ -443,7 +443,7 @@ static void ov_show_error(Cpu *c) {
 // ==== SDK-internal initialisation (services.c)
 static void ov_diag_startup(Cpu *c) { (void)c; rt_log("diag: host diagnostics"); }
 static void ov_aoc_initialize(Cpu *c) { (void)c; rt_log("aoc: no add-on content"); }
-// 1.4.3's main lists add-on content: there is none.
+// No add-on content is exposed.
 // int ListAddOnContent(AddOnContentIndex *out, int offset, int count)
 static void ov_aoc_list(Cpu *c) {
     int offset = (int)arg_x(c, 1), count = (int)arg_x(c, 2);
@@ -905,7 +905,7 @@ const char *ov_shared_font_dir(char *buf, size_t n) {
     const char *e = cfg_get("NX2NAVI_SHARED_FONTS");
     if (e && *e) snprintf(buf, n, "%s", e);
     else {
-        char exe[PLAT_PATH_MAX], probe[PLAT_PATH_MAX + 40];   // shared-fonts next to nx2navi.exe (tools/package_build.py), else the repo's
+        char exe[PLAT_PATH_MAX], probe[PLAT_PATH_MAX + 40];   // shared-fonts next to the game executable, else the repo's
         int len = plat_exe_path(exe, sizeof exe);
         char *cut = len && len < sizeof exe ? plat_last_sep(exe) : NULL;
         if (cut) *cut = 0;

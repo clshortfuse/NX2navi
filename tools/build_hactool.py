@@ -3,7 +3,7 @@
 Fetches the pinned commit into toolchain/src/hactool, resets it (local changes and build output there are discarded),
 applies portable.patch (title keys and BKTR fixes) and unicode.patch (a UTF-8 manifest), and builds a static exe
 with MSYS2 UCRT64 gcc; mbedtls comes with hactool's tree. The exe and hactool's LICENSE go to toolchain/hactool, where
-tools/extract.py and tools/make_release.py take them. Run with .venv. On Linux: the system's cc and make build
+It is a standalone developer tool. Run with .venv. On Linux: the system's cc and make build
 toolchain/hactool/hactool (unicode.patch only adds a Windows manifest, under EXEEXT .exe).
 
   python tools/build_hactool.py [--src DIR] [--out DIR]
@@ -52,7 +52,7 @@ def main():
     ap.add_argument('--src', type=Path, default=ROOT / 'toolchain' / 'src' / 'hactool', help='source checkout')
     ap.add_argument('--out', type=Path, default=ROOT / 'toolchain' / 'hactool', help='where hactool(.exe) goes')
     ap.add_argument('--cc', help='Linux: the C compiler command for hactool and its bundled mbedtls, for example '
-                                 '"clang --sysroot=DIR" (tools/make_release_linux.py); default cc')
+                                 '"clang --sysroot=DIR"; default cc')
     args = ap.parse_args()
     if WIN and not MSYS_BASH.is_file():
         sys.exit(f'{MSYS_BASH} not found: install MSYS2 with the UCRT64 gcc and make (docs/building.md)')

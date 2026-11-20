@@ -3604,7 +3604,7 @@ class FileCheckTest(Tmp):
 PROMPT_LOGIC = ('ad59f2c4533f6ea2630b916ef5f3695f72daffe9b2b7663eea4168a4f08e4249',
                 {'pad_prompts.py': '780c246b5fde7a0e9dbf3f59ad16372e1737592add6f2f2d9825bee6df4e296f',
                  'prompt_art.py': '87edacabcddb4952f5862373815d7d46a05c67f350e0734025ae4d2f83b12038',
-                 'button_icons.py': '3804e371a030965bc9eb4226f333b611651f25efaa67ee523b404edc3257818a'})
+                 'button_icons.py': '1fff31b15a532a6328a0b8af6c34eaf69cdb7caac4b15015e61b9afcf7f40c9b'})
 
 
 def load_pad_prompts():

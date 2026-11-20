@@ -55,87 +55,41 @@ hactool reads `-k <prod.keys>`; MSYS2 shells set `HOME`, which hides its default
 
 Run the commands from the repository root in PowerShell. The Ocarina game builder targets 1.1.1 (`v111`).
 
-1. Python environments (once). `.venv` runs the lifter and the build; `.venv-py314` runs the extraction scripts, which
-   need the stdlib `compression.zstd` of Python 3.14:
+1. Python environments (once). `.venv` runs the lifter and game build. `.venv-py314` runs standalone asset tools that need Python 3.14’s
+   `compression.zstd`:
 
    ```powershell
    uv venv --python 3.12 .venv
    uv pip install --python .venv/Scripts/python.exe -r tools/requirements.txt
+   uv pip install --python .venv/Scripts/python.exe zbic
    uv venv --python 3.14 .venv-py314
    uv pip install --python .venv-py314/Scripts/python.exe -r tools/requirements-py314.txt
    ```
 
-2. Copy `config.example.toml` to `config.local.toml` and set the paths to your base game, the update and your console's
-   keys file. `config.local.toml` is ignored by git. The tools read the keys file themselves.
-
-3. Extract and verify. This writes `build\extracted\v0` (1.0.0) and `build\extracted\<ver>` for each update in
-   `updates`, identified by its hash; a hash mismatch stops the run. With another `[work] dir` in `config.local.toml`,
-   `extracted` goes there instead, and `build_game.py` reads the ExeFS and RomFS from there:
-
-   ```powershell
-   .venv-py314\Scripts\python tools\extract.py
-   ```
-
-4. Shader translator (no game files; again after a change to its sources, and `tools\make_release.py` stops on an older
-   one). This publishes `build\xlate\nx2navi_xlate.exe`:
+2. Build the shader translator (no game files). Repeat after changing its sources:
 
    ```powershell
    .venv\Scripts\python tools\build_xlate.py
    ```
 
-5. Lift the modules to C, write the RomFS overlay (the frame-rate fix), then compile and link
-   `build\<ver>\nx2navi.exe`:
+3. Build from your own Ocarina of Time 1.1.1 dump. The builder checks the main build ID, stages ExeFS and RomFS,
+   lifts the modules with `recomp/patches-v111.txt`, builds the native runtime, and prepares shaders and prompts.
 
    ```powershell
-   .venv\Scripts\python recomp\gen.py --exefs build\extracted\<ver>\exefs --out generated\<ver> --patches recomp\patches-<ver>.txt
-   .venv-py314\Scripts\python tools\make_romfs_patches.py --version <ver>
-   .venv\Scripts\python tools\build_game.py --version <ver>
+   .venv\Scripts\python tools\make_game.py --nup <game.nup> --out build\v111
    ```
 
-   The menu's font comes into `runtime/ui/menu.cpp` with `#embed`; for a compiler without it (before clang 19, which
-   a Linux build with the distribution's compiler can meet) the same step writes the font's bytes as
-   `runtime/ui/roboto_ttf.h` (git ignores it), which `menu.cpp` then includes.
-   The runtime's own shaders (upscaling, HDR, texture decode and the like) are in the repository as source only:
-   GLSL and SPIR-V assembly in `runtime\shaders\`, and one assembled by `tools\make_mvobj_fs.py`. `build_game.py` compiles them into `runtime\<name>_spv.h` (git ignores these) before it
-   compiles the runtime, with `glslc`, `spirv-as` and `spirv-val` from the `shaderc` and `spirv-tools` packages above,
-   and again whenever a source changed. `python tools\build_shaders.py` does that step alone; `--check` only reports
-   the headers that are missing or stale.
+   With unpacked data, replace `--nup` with `--exefs <directory> --romfs <directory>`; the RomFS directory must contain the unpacked files, not a packed
+   `romfs.bin` and `index.json`. To rebuild after changing
+   sources, use `tools\make_game.py --rebuild --out build\v111`. Files derived from the game stay in ignored folders.
+   The runtime's own shader headers are built from `runtime/shaders/` with `glslc`, `spirv-as` and `spirv-val`;
+   `python tools\build_shaders.py --check` reports missing or stale headers without writing them.
 
-   `--cpu v2` targets x86-64-v2 (SSE4.2, no AVX2/FMA) for older CPUs; the default `v3` needs AVX2. The v2 build links
-   `runtime/fma.c`, a correctly rounded software fma the FP lowering needs, and runs slower. Inline assembly,
-   target attributes and intrinsics are not bound by `-march`, so a v2 build runs `tools/check_isa.py` over the runtime
-   objects before it links: any AVX, BMI or other instruction above x86-64-v2 outside a function listed there as
-   dispatched by a runtime CPU check stops the build. `python tests\check_isa_test.py` builds the files with such
-   functions both ways and checks that they pass.
+4. The builder prepares the shader cache. To warm the driver's cache again, run the built game with `--warm-shaders`.
 
-   `gen.py` sizes its emit pool from the CPU count and the free memory; `--jobs N` sets it, and so does the environment variable `NX2NAVI_LIFT_JOBS=N`, which the installer's lift step honours too (it has no `--jobs`). When a worker runs out of memory, the pool restarts with half the workers (`emit: out of memory with N workers, retrying with M`), down to one; only an out-of-memory error with one worker fails the step.
-
-   Lifting takes about 15 s, a clean compile about 200 s on 24 threads; later builds recompile only what changed.
-   A compiler cache in front of clang shortens it further: with `SCCACHE` set to an sccache executable, `build_game.py`
-   writes it into the ninja file ahead of `cc`, and every lift rewrites the generated chunks with the same contents, so
-   a second build of the same version hits all of their objects:
-
-   ```powershell
-   $env:SCCACHE = "path\to\sccache.exe"
-   .venv\Scripts\python tools\build_game.py --version <ver>
-   ```
-   `--patches` builds in the frame-rate, resolution and other patch sets, switchable at run time. The link copies
-   `SDL3.dll`, `libiconv-2.dll` and `libopus-0.dll` next to the exe.
-   For Xbox button prompts, run `make_romfs_patches.py` twice more, with `--prompts xbox` and `--prompts xbox-label`:
-   they write `build\<ver>\romfs-patches-xbox` and `romfs-patches-xbox-label` ([controls.md](controls.md), "Xbox
-   button prompts"), which `build_game.py` copies next to `nx2navi.exe` like `romfs-patches`. `--prompts pc` writes
-   `romfs-patches-pc`, the keyboard and mouse prompts ([controls.md](controls.md), "PC button prompts").
-
-6. Prepare the shaders (once per build folder and translator). It needs `refs\MacNativeGames` (`tools\fetch_refs.sh`)
-   for the shared shader list:
-
-   ```powershell
-   .venv-py314\Scripts\python tools\prepare_shaders.py build\<ver> --version <ver>
-   ```
-
-   Without this step the first launch compiles shaders and pipelines during play and stutters until the caches fill.
+   Without a prepared cache the first launch compiles shaders and pipelines during play and stutters until the caches fill.
    The AMD driver keeps its pipeline cache per exe path and holds a limited amount: preparing another build folder can
-   evict this one's. `nx2navi.exe --warm-shaders` rebuilds it from the shader cache. A driver update empties the
+   evict this one's. `ocarina.exe --warm-shaders` rebuilds it from the shader cache. A driver update empties the
    driver's cache too, and a change to what a stage library is built with gives every library another entry in it.
    So an update that carries the prepared shaders over runs `--warm-shaders` (`tools/make_game.py`
    `warm_driver_cache`: seconds while the libraries are there, minutes when they are not), and the game itself checks
@@ -173,10 +127,9 @@ Run the commands from the repository root in PowerShell. The Ocarina game builde
    `seed_pipelines`; `NX2NAVI_PREPARE_PIPELINES=mesh` builds only the mesh pipelines). Every start then counts the
    list as known pipelines beside the folder's own and builds them before play, from those caches (`keys_open_seed`;
    `pipe_seed = 0` in `nx2navi.ini` leaves the list out). `--warm-shaders` builds them again, and
-   `nx2navi.exe --prepare-pipelines` does that step alone. The list is
+   `ocarina.exe --prepare-pipelines` does that step alone. The list is
    derived from game data: it is not in the repository (`tools/check_content.py` refuses it), and a kit, a launcher
-   release or an installer release takes one with `--pipeline-list` (`tools/make_kit.py`, `make_launcher.py`,
-   `make_release.py`). A list belongs to the record layout of the runtime that wrote it; another runtime says so and
+   release takes one with `--pipeline-list` (`tools/make_kit.py`, `make_launcher.py`). A list belongs to the record layout of the runtime that wrote it; another runtime says so and
    builds nothing from it. `python tests\pipeline_list_test.py` checks the tool on made-up folders.
 
    What a game folder's shader cache holds can be checked without the game:
@@ -185,15 +138,14 @@ Run the commands from the repository root in PowerShell. The Ocarina game builde
    their next use) and runs `spirv-val` on the rest; `--every N` samples, `--out FILE` lists the failed ones. It writes
    nothing to the cache. `python tests\validate_shader_cache_test.py` checks the tool on a made-up cache.
 
-7. Run. The game keeps running when its window loses the focus (`assume_focus = 1` in `nx2navi.ini`, the default; the
+5. Run. The game keeps running when its window loses the focus (`assume_focus = 1` in `nx2navi.ini`, the default; the
    Game tab switches it). With 0 it pauses, as it does on the Switch when Home is pressed.
 
    ```powershell
-   build\<ver>\nx2navi.exe
+   build\v111\ocarina.exe
    ```
 
-Settings live in `nx2navi.ini` next to `nx2navi.exe` ([nx2navi.ini.example](../nx2navi.ini.example) lists them). Saves go to
-`build\profile` for `v121` and `build\profile-<ver>` for other versions (`build_game.py --profile` changes it).
+Settings and saves live in the game folder’s `profile` directory. See [nx2navi.ini.example](../nx2navi.ini.example).
 
 ### NVIDIA DLSS on Windows
 
@@ -209,19 +161,10 @@ Windows DLSS reconstruction unavailable. To use DLSS, select Off or NVIDIA
 DLSS for Frame Generation and restart. Linux
 continues to use direct NGX.
 
-### Portable folder
-
-`.venv\Scripts\python tools\package_build.py --version <ver>` writes `build\<ver>-portable`, which runs on another of
-your machines without MSYS2, Python or .NET. `romfs.bin` stays out unless you pass `--with-romfs`; otherwise put it in
-`romfs\` next to the exe or point `NX2NAVI_ROMFS` at its folder. Run `nx2navi.exe --prepare-shaders` once in the copied
-folder. The folder holds code and data derived from your game: for your own machines only.
-
 ### Profile-guided build
 
 A build with an execution profile compiles the lifted code at -O2 with the counts of a play session, and the runtime
-with them too: hot paths laid out straight, hot calls inlined, functions that never ran compiled for size. On 1.4.3
-the fight bench ran 12-15% faster per frame and a fight outside the training about 6%. Game 1.1.1 has no profile yet
-and no measurement: "Training a profile for 1.1.1" below is the session that makes both.
+with them too: hot paths laid out straight, hot calls inlined, and functions that never ran compiled for size.
 
 Game 1.1.1 is built by `tools/make_game.py`, on the player's PC through the launcher. It compiles with
 `data\pgo-v111.profdata` of its kit (`app\<version>\data\` of a launcher release, which `make_launcher.py --pgo
@@ -254,10 +197,10 @@ there (`pgo_gen_check`). The merge needs `llvm-profdata` of the same LLVM releas
 
 `<game>` is a game folder `make_game.py` built (the launcher's `game\`, or one built from a checkout), `<ucrt64>` the
 UCRT64 folder of the build tools with the profile runtime, `python` a Python with numpy and lz4 (`.venv`). A
-checkout also needs the shader translator in `build\xlate` (step 4 of "Build"). Run every step from one commit with
+checkout also needs the shader translator in `build\xlate` (step 2 of "Build"). Run every step from one commit with
 a clean `recomp/`.
 
-1. Measure the build without a profile (step 6) while the game folder still holds it.
+1. Measure the build without a profile while the game folder still holds it.
 2. Build the instrumented game into the same folder. In a folder this checkout built only the compile step runs: the
    lifted code at -O2, every runtime file (the prebuilt runtime counts nothing), and the link.
 
@@ -314,7 +257,7 @@ a clean `recomp/`.
    At the default 60 frames a second both builds draw the same frames, so the sample counts of `guest (f_*)` (the
    lifted code) and `runtime host (exe)` in the report are processor time for the same work: the profile's gain is
    how far they fall. For the frame time itself set `fps_limit = unlimited` and compare the `interval avg` of the
-   `perf:` lines in a place the processor bounds, such as a town at a low `render_scale`. Measure a place that was
+   `perf:` lines in a place the processor bounds, such as a town at a low scene resolution. Measure a place that was
    in the training and one that was not.
 
 The profile and the raw counts are derived from the game's code: they stay under `build\` and in the game folder,
@@ -322,18 +265,20 @@ The profile and the raw counts are derived from the game's code: they stay under
 puts it there. `python tests\pgo_build_test.py` checks which flags a build takes for a kit with and without a
 profile, for a record of another tree and for a profile the compiler refuses, with a stand-in for the compiler.
 
-The other game versions build with `tools/build_game.py`: `--pgo gen` with an llvm-mingw toolchain makes the
-instrumented `nx2navi.exe`, which writes `<out>\pgo\*.profraw`; `tools\pgo.py merge <out> --version <ver>` merges
-them, and `--pgo build\pgo\pgo-<ver>.profdata` compiles with the result. `make_release.py` ships every profile of
-`build\pgo` in `data\`, where the installer's build takes the one of its update, and warns when a record names
-another `recomp/` tree than the one released.
+### Offline portable folder
+
+Run `.venv\Scripts\python tools\package_build.py --version v111` to copy an existing `build\v111` game
+into an empty `build\v111-portable` folder for your own machines. This does not compile another executable.
+It copies the game, libraries already beside the executable, ExeFS, and any available prompt overlays and prepared
+shader caches. On Linux, install any missing system libraries on the destination machine (for source builds, this
+includes SDL3, Opus, libvpx, dav1d, and zstd). Pass
+`--with-romfs` to copy the RomFS image as well; otherwise supply `romfs\romfs.bin` beside the copied executable
+or point `NX2NAVI_ROMFS` at the folder holding it. Saves and local settings are not copied. Do not share the output.
 
 ## Linux (in progress)
 
 The runtime builds and runs on x86-64 Linux with a window, input and menu on SDL3 (`*_sdl.c`) in place of the Win32
-files (`*_win.c`); `runtime/platform/linux.c` implements `platform.h`. Status: the selftest and the probes pass; 1.2.1
-plays at 60 fps on RADV (RX 7800 XT) and NVIDIA (RTX 3060); 1.4.3 builds, probes and plays on RADV (RX 6600, and the
-Vega 7 of a Ryzen 5 4600G at about 34 fps). Long play sessions and the Steam Deck itself are not verified yet.
+files (`*_win.c`); `runtime/platform/linux.c` implements `platform.h`. The game build is the same v111 as on Windows.
 
 Requirements:
 
@@ -353,9 +298,9 @@ Requirements:
   into `toolchain/vulkan-headers/` on first use, check its hash and put it ahead of the system's (`tools/vulkan_pin.py`,
   `build_game.py` `vulkan_include`).
 
-The steps are the Windows ones with POSIX paths: `.venv/bin/python` in place of `.venv\Scripts\python`, and `nx2navi` in
-place of `nx2navi.exe`. `build_game.py` takes clang, lld and Ninja from PATH (or the ones in `<dir>/bin` with
-`--toolchain <dir>`) and links against the system libraries, with `libstdc++` static and an `$ORIGIN` rpath;
+The steps are the Windows ones with POSIX paths: `.venv/bin/python` in place of `.venv\Scripts\python`, and `ocarina` in
+place of `ocarina.exe`. Use `tools/make_game.py` to compile, link, or build a runtime library (`--make-runtime-lib DIR`).
+The older `tools/build_game.py` entrypoint no longer links supplied generated C.
 `build_hactool.py` builds `hactool` with make. `tools/prepare_shaders.py` reads the shader list from
 `refs/MacNativeGames` at `origin/HEAD`, which must be the pinned commit with its history (the list format changed later).
 
@@ -455,7 +400,7 @@ Before a commit:
 
 - `python tools/check_content.py --staged`: nothing game-derived and no compiled shader is staged. CI runs the same check;
   `git config core.hooksPath .githooks` runs it before each local commit.
-- `build\<ver>\nx2navi.exe --selftest`: layout, dispatch table and host-function registry, without game files.
+- `build\v111\ocarina.exe --selftest`: layout, dispatch table and host-function registry, without game files.
 - `python tools\check_platform.py` after a runtime change outside `runtime/platform/`: no shared file uses Win32 outside
   a branch that only a Windows build compiles (`#ifdef _WIN32`, the `#else` of `#ifndef _WIN32`).
   `python tests\check_platform_test.py` checks the scanner itself on made-up files.
@@ -573,11 +518,9 @@ the sites inside their functions: a regenerate of the game code does, and its ch
 files.
 
 A change to the mouse camera (`runtime/mouse_direct.c`, the mouse path of `runtime/input.c`, the set `mouse_direct` of
-`recomp/patches-v111.txt` or `patches-v143.txt`) passes `python tests\mouse_direct_check.py --cc <clang> --deps
-<ucrt64>\include`, which builds `mouse_direct.c`, and `input.c` with `--deps`, with the rest of the runtime stubbed and
-calls the camera hooks as their patch sites do, for each game version: the registers a site hands over and gets back,
-the same turn for the same mouse distance at every frame rate and stick camera speed, a single count, the idle bit, the
-pause after a camera reset, the capture and the mode, and scripted mouse counts. No game files.
+`recomp/patches-v111.txt`) passes `python tests\mouse_direct_check.py --cc <clang>`. The harness calls the v111
+camera hooks as their patch sites do and checks the registers, turn rate, idle bit, reset pause, capture and mode.
+Add `--deps <ucrt64>\include` to also check scripted mouse counts through `input.c`. No game files are needed.
 
 A change to which waits a signalled event or an ended thread wakes (`runtime/kernel.c` `wake_sync_waiters`, the
 `WaitSynchronization` service) passes `python tests\sync_wake_check.py`, which builds `kernel.c` with the platform
@@ -618,9 +561,8 @@ The test passes on a busy machine too: it waits for the queue to empty instead o
 instead of timing one, leaves out a check its own thread was too late for, and tries the half-full write three times.
 No game files.
 
-A change to the button prompts (`tools/make_romfs_patches.py --prompts`, `tools/button_icons.py`) passes
-`.venv-py314\Scripts\python tests\romfs_prompts_test.py`, which runs the tool on a RomFS it makes itself (no game
-files); a change to the settings passes `nx2navi.exe --probe-cfg`.
+A change to the v111 button prompts (`tools/pad_prompts.py`, `tools/button_icons.py`) runs the prompt tests in
+`tests/launcher_test.py`; a change to the settings passes `ocarina.exe --probe-cfg`.
 
 A change to the action prompt's diamond of face buttons (`runtime/action_prompt.c`) or to the SARC and zstd dictionary
 helpers (`runtime/sarc.c`) passes `python tests\action_prompt_check.py`. It builds them alone, with the
@@ -954,17 +896,16 @@ change passes these, all run with `.venv`:
 | `tests\ds3_check.py` | the DualShock 3 report decoding and output report of `runtime\input_ds3.c` | no |
 | `tests\gpa_check.py` | the device address table of `runtime\vk_gpa.c` as a shader reads it: mapping, mirrors and twins, overlapping imports, and blocks given back and taken again while pool addresses climb (no GPU; any Python) | no |
 | `tests\excl_mt.py` | the exclusive monitor helpers under contention, a changed value, and the change-and-restore case the compare-and-swap monitor does not see, on several threads | no |
-| `tests\jumptables_check.py` | `recomp/jumptables.py` against a Unicorn oracle; must report 0 disagreements, on 1.4.3 too | yes |
+| `tests\jumptables_check.py` | `recomp/jumptables.py` against a Unicorn oracle; must report 0 disagreements on v111 | yes |
 
 A `--cpu v2` build passes the same differential tests with `--cflags=-march=x86-64-v2`; they compile `runtime/fma.c`
 too, so they check the software fma the v2 build links rather than the C runtime's.
 
 On NVIDIA Linux, `NX2NAVI_DLAA=1 ./ocarina --probe-vkdevice` logs NGX initialization and shutdown when available.
 
-Runtime probes, each a mode of `nx2navi.exe` (the list is at the top of `runtime/main.c`): `--probe-kernel`,
+Runtime probes, each a mode of `ocarina.exe` (the list is at the top of `runtime/main.c`): `--probe-kernel`,
 `--probe-vkexec`, `--probe-nvn-tex` and `--probe-shader` cover most runtime changes. `--probe-shader` and the draw
-part of `--probe-vkexec` translate shaders of the census below: they look for `build/<ver>/shaders/jobs.json` of the
-exe's own version first, then of the other one.
+part of `--probe-vkexec` translate shaders of the census below: they look for `build/v111/shaders/jobs.json` above the executable.
 `--probe-vkmem` also checks CPU-backed texture uploads and rewrites, GPU-written texture aliases, and memory write watches.
 `--probe-meshfb` (no game files) draws mesh programs of the runtime's own, with and without a task stage and with
 direct and GPU-written workgroup counts, through `VK_EXT_mesh_shader` and through the mesh fallback, and compares the
@@ -982,8 +923,8 @@ for compute pipelines the boot did not keep, as their first dispatch would, and 
 memory after the compute stage should be what it was before the stage, apart from the kept pipelines. A change to what
 the boot builds or keeps (`runtime/vk_pipeline.c`: `prewarm_run`, `lb_compute`, the `compute-used.bin` record) passes it.
 
-Shaders: `.venv-py314\Scripts\python tools\shader_census.py --version <ver> --translate` extracts every Maxwell shader
-to `build\<ver>\shaders\` and runs it through the translator and `spirv-val`; failure groups go to `failures.txt`.
+Shaders: `.venv-py314\Scripts\python tools\shader_census.py --version v111 --translate` extracts every Maxwell shader
+to `build\v111\shaders\` and runs it through the translator and `spirv-val`; failure groups go to `failures.txt`.
 `tools\xlate_smoke.py` checks the translator alone, without game files.
 
 A change to the SM86 tensor lowering (`tools/xlate/AmpereLowering.cs` Hmma, Ldsm, Movm, Half) passes
@@ -992,7 +933,7 @@ A change to the SM86 tensor lowering (`tools/xlate/AmpereLowering.cs` Hmma, Ldsm
 vector file and what is checked). `tests\maxwell_warp_emu_selftest.py` checks the emulator itself. No game files.
 
 A change to how the packaging scripts check the translator they ship (`tools/build_xlate.py` `source_identity`,
-`check_built`; `make_launcher.py`, `make_release.py`, `make_appimage.py`, `make_kit.py`; `tools/xlate_smoke.py`
+`check_built`; `make_launcher.py`, `make_appimage.py`, `make_kit.py`; `tools/xlate_smoke.py`
 `pool_check`) passes `python tests\xlate_package_check.py`: a folder whose `nx2navi_xlate.id` names this checkout's
 sources passes, a missing file, another identity and a folder built before a patch changed are refused,
 `build_xlate.py` writes no `.id` without a build, each script stops before its slow steps, and on Windows

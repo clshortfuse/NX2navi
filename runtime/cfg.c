@@ -48,34 +48,34 @@ static const char *const known[] = {
     "BIND_PLUS", "BIND_R", "BIND_RCLICK", "BIND_RIGHT", "BIND_RSTICK_DOWN", "BIND_RSTICK_LEFT", "BIND_RSTICK_RIGHT", "BIND_RSTICK_UP",
     "BIND_SHAKE",
     "BIND_SKIP", "BIND_STATS", "BIND_UP", "BIND_X", "BIND_Y",
-    "BIND_ZL", "BIND_ZR", "BLOCK_VIEWS_3D", "CACHE_DIE", "CLOTH_REALTIME", "COLOR_BRIGHTNESS", "COMPUTE_KEEP", "COLOR_CONTRAST", "COLOR_GAMMA",
+    "BIND_ZL", "BIND_ZR", "BLOCK_VIEWS_3D", "CACHE_DIE", "COLOR_BRIGHTNESS", "COMPUTE_KEEP", "COLOR_CONTRAST", "COLOR_GAMMA",
     "COLOR_PRESET", "COLOR_SATURATION", "CONTACT_DEBUG", "CONTACT_SHADOWS", "CORE_DIAG", "CRIT", "CRIT_OUT",
     "DMABUF", "DMABUF_MB", "DRAW_CRUMBS", "GPA_LATE", "DESC_TEMPLATE", "DEVICE_PROFILE", "DISCORD_APP_ID", "DISCORD_IMAGE", "DISCORD_RPC", "DLAA", "DLAA_CAM_KEEP", "DLAA_CUT", "DLSS_IDLE_FREE", "DLAA_EDGE_FILL", "DLAA_AT_UPSCALER", "FFX_DEBUG", "FFX_KEYS", "FSR3_SHARPEN", "DLAA_JITTER", "DLAA_JITTER_TEST", "DLSS_LOD_BIAS_TEST", "DLAA_MV", "DLAA_MVDEBUG", "DLAA_SURVEY", "DLAA_TARGET_KEEP", "DLAA_TIMES", "DLSS", "DLSS_PRESET", "DLSS_PREBLOOM", "DLSS_RANGE", "DUMP", "DUMP_BUF", "DUMP_DIR",
     "UPSCALER_IDLE_WAIT",
     "DUMP_LOG", "DUMP_RAW", "DUMP_SHADERS", "DUMP_FILE", "DS3", "LOG_CS_BINDS", "LOG_TEX_FLAGS", "LOG_MESH", "MESH", "POOL", "NATIVE_TENSOR", "LOG_RCOND", "LOG_RT_SIZES", "DUMP_WHITE", "DUMP_AFTER", "DUMP_MOVIE", "SUBMIT_FINISH", "ACQUIRE_WAIT", "CRASH_FILTER_GUARD", "CS_FALLBACK", "EXEFS", "FEEDBACK", "FIX_C0", "FIX_ZERO", "FLIGHT", "FLIGHT_AT", "FLIGHT_DIR", "FLIGHT_FRAMES", "GPU_TIMELINE",
-    "FFX_PIPE_CACHE", "FLIGHT_SPIKE_MS", "FREEZE_QUIET_MS", "FREEZE_LOAD_HOLD_MS", "STUTTER_MAP", "PAR_JOBS", "PIPE_RELEASE", "FLIGHT_THUMBS", "FLIGHT_EVERY", "FLIGHT_FLASH", "FLIGHT_FLASH_DIFF", "FLIGHT_FLASH_CELLS", "FLUSH_SPAN", "FLUSH_UPLOAD", "FOG_CULL", "FOLIAGE_SHADOW_CULL", "FOLIAGE_SHADOW_VRS", "FOV", "FOV_PATCH", "FG_HUDLESS_SHOW", "FG_MULT", "FPS60", "FPS_LIMIT", "FRAMEGEN", "FRAMEGEN_MULTIPLIER", "FREEZE_IDLE", "FREEZE_ASYNC", "FREEZE_BUDGET_US", "FREE_CORES",
+    "FFX_PIPE_CACHE", "FLIGHT_SPIKE_MS", "FREEZE_QUIET_MS", "FREEZE_LOAD_HOLD_MS", "STUTTER_MAP", "PAR_JOBS", "PIPE_RELEASE", "FLIGHT_THUMBS", "FLIGHT_EVERY", "FLIGHT_FLASH", "FLIGHT_FLASH_DIFF", "FLIGHT_FLASH_CELLS", "FLUSH_SPAN", "FLUSH_UPLOAD", "FOG_CULL", "FOLIAGE_SHADOW_CULL", "FOLIAGE_SHADOW_VRS", "FG_HUDLESS_SHOW", "FG_MULT", "FPS60", "FPS_LIMIT", "FRAMEGEN", "FRAMEGEN_MULTIPLIER", "FREEZE_IDLE", "FREEZE_ASYNC", "FREEZE_BUDGET_US", "FREE_CORES",
     "FULLSCREEN", "FXAA", "GAME_ASPECT", "GAME_RES", "GPA", "GPA_EMPTY", "GPA_TWIN", "GPA_TWIN_MAX_KB", "MIRROR_CAPTURE_KB", "WB_SKIP_MB", "GPL", "GPL_DRAW_BUILD", "GPL_FEEDBACK", "GPL_MESH", "PIPE_AHEAD", "PIPE_FAST_WORKERS", "PIPE_FRAME_WAIT_MS", "PIPE_LINK_DRAW_MS", "PIPE_SKIP_STEADY", "DRAW_WRITERS_WAIT", "PROG_LEAD", "GPU", "GPU_INDEX", "GPU_PASSES", "GPU_NAME", "HDR",
     "HDR_GAME_NITS", "HDR_LIVE", "HEAP_LAZY", "HDR_PEAK_NITS", "HDR_UI_NITS",
     "HDR_BLOWOUT", "HDR_CONTRAST", "HDR_EXPOSURE", "HDR_FLARE", "HDR_GAMMA", "HDR_GRADE", "HDR_HIGHLIGHT_SAT",
     "HDR_HIGHLIGHTS", "HDR_HUE", "HDR_HUE_CLIP", "HDR_MATCH_SLOPE", "HDR_MIDGRAY", "HDR_SATURATION", "HDR_SHADOWS",
     "HDR_TONEMAP", "HDR_TONE_SLOPE", "HIGHFPS_FIX", "INPUT", "INPUT_RECORD", "INPUT_SCRIPT", "LANG", "LIB_PREBUILD",
-    "BIG_BUILD_FREE_MB", "BIG_BUILD_MAX_MB", "BUILD_FREE_MB", "BUILD_RESERVE_MB", "LIB_PREBUILD_BIG", "LIB_PREBUILD_BIG_BG", "COMPUTE_WARM_REUSE", "LIB_PREBUILD_KEEP", "LIB_PREBUILD_THREADS", "LIB_WARM", "LINE_WIDTH", "POOL_SHOWN_FIRST", "POOL_DATA_FIRST", "TEX_REUSE_NAMED", "TEX_OVERWRITTEN_USED", "PIPE_LINK_MS", "FRAME_HOLD_MS", "PACE_SMOOTH", "OQ_BATCH", "OQ_HOLD", "QUAD_INDEX", "CLEAR_SMALL_CPU", "GATE_WAIT_MS", "LOCALE", "LOD_GUARD", "LSTICK_DEADZONE", "MEMORY", "MEM_CENSUS", "MEM_NEED_MB", "MENU_LANG", "MENU_SOUND_VOLUME", "MENU_TEST",
-    "MENU_CURSOR", "MENU_CURSOR_LOG", "MENU_TEST_CLICK", "MENU_TEST_DIR", "MENU_TEST_SET", "MINIMAL_LAYOUT", "MICROPHONE", "MIRROR_GAP", "MODS_DIR", "MODS_DISABLED", "MODS_ORDER", "MODS_REBUILD", "MONITOR", "MOTION", "MOUSE_MODE", "MOUSE_DIRECT_PATCH", "MOUSE_SENS", "MOUSE_TRACE", "MOVIE_HOST", "MOVIE_PACE", "MOVIE_CLOCK", "TEST_HITCH", "SPRINT_BUTTON", "SPRINT_MODE", "SPRINT_BUTTON_PATCH", "TEXT_SPEED", "TEXT_SPEED_PATCH",
+    "BIG_BUILD_FREE_MB", "BIG_BUILD_MAX_MB", "BUILD_FREE_MB", "BUILD_RESERVE_MB", "LIB_PREBUILD_BIG", "LIB_PREBUILD_BIG_BG", "COMPUTE_WARM_REUSE", "LIB_PREBUILD_KEEP", "LIB_PREBUILD_THREADS", "LIB_WARM", "LINE_WIDTH", "POOL_SHOWN_FIRST", "POOL_DATA_FIRST", "TEX_REUSE_NAMED", "TEX_OVERWRITTEN_USED", "PIPE_LINK_MS", "FRAME_HOLD_MS", "PACE_SMOOTH", "OQ_BATCH", "OQ_HOLD", "QUAD_INDEX", "CLEAR_SMALL_CPU", "GATE_WAIT_MS", "LOCALE", "LSTICK_DEADZONE", "MEMORY", "MEM_CENSUS", "MEM_NEED_MB", "MENU_LANG", "MENU_SOUND_VOLUME", "MENU_TEST",
+    "MENU_TEST_CLICK", "MENU_TEST_DIR", "MENU_TEST_SET", "MINIMAL_LAYOUT", "MICROPHONE", "MIRROR_GAP", "MODS_DIR", "MODS_DISABLED", "MODS_ORDER", "MODS_REBUILD", "MONITOR", "MOTION", "MOUSE_MODE", "MOUSE_DIRECT_PATCH", "MOUSE_SENS", "MOUSE_TRACE", "MOVIE_HOST", "MOVIE_PACE", "MOVIE_CLOCK", "TEST_HITCH", "SPRINT_BUTTON", "SPRINT_MODE", "SPRINT_BUTTON_PATCH", "TEXT_SPEED", "TEXT_SPEED_PATCH",
     "MOTION_GUARD_DEGREES",   // vk_skin_motion.inc
     "SKIN_MOTION",   // vk_skin_motion.inc
     "MVOBJ_TIMES",
     "HANDLE_CENSUS",
-    "PIPE_SEED_BOOT", "ONE_PER_CORE", "OPERATION_MODE", "OUTPUT_RES", "PAD_LAYOUT", "PACE_HZ", "PASS_CRUMBS", "PATCH_OUTPUT", "PATCH_RES_FIXED", "PATCH_SCENE", "PATCH_SCENE_PROJECTION", "PATCH_WIDE_ASPECT", "PATCH_WIDE_HUD", "PATCH_WIDE_MOVIE", "PATCH_WIDE_OUT", "PATCH_FREECAM", "PATCH_OCCLUSION_OFF", "PATCH_WIDE_SAVE", "PATCH_WIDE_SCENE", "PCSS", "PCSS_K", "PERF_OVERLAY", "PERF_SLOW_MS", "PIPELINE_CACHE", "PIPELINE_CACHE_MAX_MB", "PIPELINE_CACHE_PLAY", "PIPELINE_CACHE_PLAY_MB", "PIPE_BINARIES", "PIPE_BINARIES_MAX_MB", "PIPE_FEEDBACK", "PIPE_MEMO", "PIPE_PREBUILD", "PIPE_SEED", "PIPE_SKIP", "PIPE_SYNC", "PIPE_WAIT", "POWER_FULL", "TEX_SAME", "TEX_SAME_BIG", "TEX_FLAT3D", "TEX_KEEP_TAKEN", "TEX_RATE_LOW", "TEX_HARD_ORDER", "TEX_STALE_KEPT", "ASTC_SCRATCH_TRIM", "PRESENT_HELD", "HELD_SYNC",
+    "PIPE_SEED_BOOT", "ONE_PER_CORE", "OPERATION_MODE", "PAD_LAYOUT", "PACE_HZ", "PASS_CRUMBS", "PATCH_RES_FIXED", "PATCH_SCENE_PROJECTION", "PATCH_WIDE_ASPECT", "PATCH_WIDE_HUD", "PATCH_WIDE_MOVIE", "PATCH_WIDE_OUT", "PATCH_FREECAM", "PATCH_OCCLUSION_OFF", "PATCH_WIDE_SAVE", "PATCH_WIDE_SCENE", "PCSS", "PCSS_K", "PERF_OVERLAY", "PERF_SLOW_MS", "PIPELINE_CACHE", "PIPELINE_CACHE_MAX_MB", "PIPELINE_CACHE_PLAY", "PIPELINE_CACHE_PLAY_MB", "PIPE_BINARIES", "PIPE_BINARIES_MAX_MB", "PIPE_FEEDBACK", "PIPE_MEMO", "PIPE_PREBUILD", "PIPE_SEED", "PIPE_SKIP", "PIPE_SYNC", "PIPE_WAIT", "POWER_FULL", "TEX_SAME", "TEX_SAME_BIG", "TEX_FLAT3D", "TEX_KEEP_TAKEN", "TEX_RATE_LOW", "TEX_HARD_ORDER", "TEX_STALE_KEPT", "ASTC_SCRATCH_TRIM", "PRESENT_HELD", "HELD_SYNC",
     "PRESENT_ORDER",
     "PREPARE_PIPELINES", "PREWARM_FULL", "PREWARM_FULL_S", "PREWARM_WAIT_MS", "PREWARM_XLATE", "PROBE_MOVIE", "PROBE_MOVIE_SHOT", "PROFILE", "PROFILE_CHAINS", "PROFILE_DIR", "PROFILE_FRAMES", "PROFILE_REPLAY", "PROFILE_SLOW",
     "POOL_FAST", "POOL_GROUP", "POOL_GROUP_CHECK", "POOL_PRESNAP", "POOL_PRESNAP_RUNS",
     "SUBMIT_FINISH_GPU", "SVC_WAITS", "SNAP_WIDEN", "SUBMIT_FINISH_RESULTS", "SUBMIT_FINISH_KINDS", "FOLIAGE", "MIRROR_STAGE", "FLUSH_SKIP_CLEAN", "MIRROR_HOT", "MESH_EMULATION", "MESH_EMU_MB", "MESH_EMU_TASKS", "MESH_EMU_BATCH", "GUEST_OPT", "LOG_TEX_NEW", "DUMP_KEY", "VEC_INDEX_FIX", "PASS_TIMES",
-    "PROFILE_MAIN", "PROFILE_RENDER", "PROMPTS", "PUSH_SKIP", "PUSH_STAGE", "RDOC", "RDOC_DIR", "RDOC_DLL", "REALTIME", "REC_END", "REEXEC",
-    "REFLEX", "REFLEX_LIMIT", "LOW_LATENCY", "RENDER_SCALE", "REPLAY_ASYNC", "REPLAY_PIPE", "REPLAY_RUNS", "REPLAY_SMALL", "TAIL_EARLY", "REPLAY_WORKERS", "RTSS", "RTSS_ENUM", "SCENE_SHARE",
+    "PROFILE_MAIN", "PROFILE_RENDER", "PROMPTS", "PUSH_SKIP", "PUSH_STAGE", "RDOC", "RDOC_DIR", "RDOC_DLL", "REC_END", "REEXEC",
+    "REFLEX", "REFLEX_LIMIT", "LOW_LATENCY", "REPLAY_ASYNC", "REPLAY_PIPE", "REPLAY_RUNS", "REPLAY_SMALL", "TAIL_EARLY", "REPLAY_WORKERS", "RTSS", "RTSS_ENUM", "SCENE_SHARE",
     "PRESNAP_PLACE",
     "REPLAY_CHECK", "RESOLVE_CHECK", "RESTART_WAIT", "ROMFS", "ROMFS_INDEX", "ROMFS_MMAP", "ROMFS_MODS", "ROMFS_PATCHES",
     "ROMFS_PROOF_DIR", "ROMFS_VERIFY", "RSTICK_DEADZONE", "RUMBLE", "RUMBLE_CURVE", "RUMBLE_HD", "RUMBLE_HD_MS", "RUMBLE_STRENGTH", "RUMBLE_TRIGGERS", "SHADER_CACHE",
-    "SHADER_CACHE_FLUSH", "SHADER_CARRY", "SHADER_COMPRESS", "SHADER_COMPRESS_IDLE_S", "SHADER_MEMO", "SHADOW_BULK_WRITE", "SHADOW_CHECK", "SHADOW_COMPARE", "SHADOW_PCF", "SHADOW_RANGE", "SHADOW_RES", "SHADOW_SCALE", "SHADOW_TABLE_STORES", "SHARED_FONTS", "SHARPNESS", "SHOTS", "SHOTS_DIR",
+    "SHADER_CACHE_FLUSH", "SHADER_CARRY", "SHADER_COMPRESS", "SHADER_COMPRESS_IDLE_S", "SHADER_MEMO", "SHADOW_BULK_WRITE", "SHADOW_CHECK", "SHADOW_COMPARE", "SHADOW_PCF", "SHADOW_SCALE", "SHADOW_TABLE_STORES", "SHARED_FONTS", "SHARPNESS", "SHOTS", "SHOTS_DIR",
     "SVC_SLOW_MS",
     "SHOTS_FULL", "SPEED_PROBE", "SPIN", "SPIN_HANDOFF_US", "SPLIT_DRAWS", "SPLIT_IDLE", "SPLIT_IN_PASS", "SPLIT_US", "SPV_MARK_TEST", "SPV_OVERRIDE", "STICK_DEADZONE", "STICK_SENS",
     "SWKBD_ANSWER",
@@ -118,13 +118,13 @@ static const struct { const char *key, *section; } sections[] = {
     {"GUEST_OPT", "performance"}, {"PASS_TIMES", "diagnostics"}, {"DUMP_KEY", "diagnostics"},
     {"FLOOR_PROBE", "diagnostics"}, {"FLOOR_SCAN", "diagnostics"}, {"FLOOR_WATCH", "diagnostics"},
     {"FPS_LIMIT", "frame rate"}, {"FPS60", "frame rate"}, {"RTSS", "frame rate"},
-    {"REALTIME", "frame rate"}, {"CLOTH_REALTIME", "frame rate"}, {"HIGHFPS_FIX", "frame rate"},
+    {"HIGHFPS_FIX", "frame rate"},
     {"PHYSICS_STEPS", "frame rate"}, {"PICKUP_COUNT", "frame rate"}, {"WATER_STEPS", "frame rate"},
     {"SOUND_STEPS", "frame rate"}, {"FLOOR_CARRY", "frame rate"}, {"OCARINA_TIMING", "frame rate"},
     {"MOVIE_PTS", "frame rate"}, {"STEP_STEADY", "frame rate"},
     {"FULLSCREEN", "display"}, {"WINDOW_SIZE", "display"}, {"PERF_OVERLAY", "display"}, {"VK_PRESENT", "display"},
-    {"GPU_INDEX", "display"}, {"MONITOR", "display"}, {"OUTPUT_RES", "display"}, {"GAME_ASPECT", "display"}, {"GAME_RES", "display"}, {"RENDER_SCALE", "display"}, {"UPSCALER", "display"},
-    {"SHARPNESS", "display"}, {"STANDIN_FILTER", "display"}, {"SCENE_SHARE", "display"}, {"ASPECT", "display"}, {"FOV", "display"}, {"ANISO", "display"},
+    {"GPU_INDEX", "display"}, {"MONITOR", "display"}, {"GAME_ASPECT", "display"}, {"GAME_RES", "display"}, {"UPSCALER", "display"},
+    {"SHARPNESS", "display"}, {"STANDIN_FILTER", "display"}, {"SCENE_SHARE", "display"}, {"ASPECT", "display"}, {"ANISO", "display"},
     {"TEXTURE_DETAIL", "display"},
     {"COLOR_PRESET", "display"},
     {"COLOR_BRIGHTNESS", "display"}, {"COLOR_CONTRAST", "display"}, {"COLOR_SATURATION", "display"},
@@ -133,14 +133,14 @@ static const struct { const char *key, *section; } sections[] = {
     {"HDR_HIGHLIGHTS", "display"}, {"HDR_SHADOWS", "display"}, {"HDR_CONTRAST", "display"}, {"HDR_SATURATION", "display"},
     {"HDR_HIGHLIGHT_SAT", "display"}, {"HDR_BLOWOUT", "display"}, {"HDR_FLARE", "display"}, {"HDR_HUE", "display"},
     {"HDR_GRADE", "display"}, {"HDR_MIDGRAY", "display"}, {"HDR_MATCH_SLOPE", "display"}, {"HDR_TONE_SLOPE", "display"},
-    {"HDR_HUE_CLIP", "display"}, {"SHADOW_RES", "display"},
+    {"HDR_HUE_CLIP", "display"},
     {"DLAA", "display"}, {"FSR4", "display"}, {"FSR4_FG", "display"}, {"DLSS", "display"}, {"DLSS_PRESET", "display"}, {"DLSS_IDLE_FREE", "display"}, {"DLSS_RANGE", "display"}, {"DLSS_PREBLOOM", "display"}, {"FXAA", "display"}, {"AA", "display"},
     {"UPSCALER_IDLE_WAIT", "display"},
     {"FRAMEGEN", "display"}, {"FRAMEGEN_MULTIPLIER", "display"}, {"FG_MULT", "display"}, {"SKIN_MOTION", "display"},
     {"LOW_LATENCY", "display"}, {"REFLEX_LIMIT", "display"},
     {"DEVICE_PROFILE", "display"}, {"ASSUME_FOCUS", "display"},
     {"DISCORD_RPC", "discord"}, {"DISCORD_APP_ID", "discord"}, {"DISCORD_IMAGE", "discord"},
-    {"SHADOW_SCALE", "display"}, {"SHADOW_RANGE", "display"}, {"CONTACT_SHADOWS", "display"},
+    {"SHADOW_SCALE", "display"}, {"CONTACT_SHADOWS", "display"},
     {"PCSS", "display"},
     {"SHADOW_PCF", "display"},
     {"MODS_DIR", "mods"}, {"MODS_ORDER", "mods"}, {"MODS_DISABLED", "mods"}, {"MODS_REBUILD", "mods"},
@@ -151,7 +151,7 @@ static const struct { const char *key, *section; } sections[] = {
     {"MOTION", "input"}, {"SPRINT_BUTTON", "input"}, {"SPRINT_MODE", "input"}, {"RUMBLE_STRENGTH", "input"}, {"RUMBLE_CURVE", "input"}, {"RUMBLE_TRIGGERS", "input"}, {"RUMBLE_HD", "input"}, {"DS3", "input"},
     {"PAD_LAYOUT", "input"}, {"PROMPTS", "input"}, {"STICK_DEADZONE", "input"}, {"LSTICK_DEADZONE", "input"}, {"RSTICK_DEADZONE", "input"},
     {"STICK_SENS", "input"}, {"DEBUG_MENU", "input"},
-    {"MENU_CURSOR", "input"}, {"MOUSE_MODE", "input"}, {"MOUSE_SENS", "input"}, {"WALK_KEY", "input"}, {"WALK_SCALE", "input"}, {"INPUT_RECORD", "input"},
+    {"MOUSE_MODE", "input"}, {"MOUSE_SENS", "input"}, {"WALK_KEY", "input"}, {"WALK_SCALE", "input"}, {"INPUT_RECORD", "input"},
     {"BIND_A", "input"}, {"BIND_B", "input"}, {"BIND_X", "input"}, {"BIND_Y", "input"}, {"BIND_LCLICK", "input"},
     {"BIND_RCLICK", "input"}, {"BIND_L", "input"}, {"BIND_R", "input"}, {"BIND_ZL", "input"}, {"BIND_ZR", "input"},
     {"BIND_PLUS", "input"}, {"BIND_MINUS", "input"}, {"BIND_LEFT", "input"}, {"BIND_UP", "input"},
@@ -173,7 +173,7 @@ static const struct { const char *key, *section; } sections[] = {
     {"OQ_HOLD", "performance"}, {"QUAD_INDEX", "performance"},
     {"COMPUTE_KEEP", "performance"},
     {"PREWARM_XLATE", "performance"}, {"GPL", "performance"}, {"ASTC", "performance"}, {"MEMORY", "performance"},
-    {"TEX_ALIAS", "performance"}, {"DEPTH_INIT_INLINE", "performance"}, {"DEPTH_ALIAS_LOG", "diagnostics"}, {"TEX_DISUSE", "performance"}, {"TEX_DISUSE_EVICT", "performance"}, {"TEX_GEN_UNDO", "performance"}, {"TEX_REUSE", "performance"}, {"TEX_SPLIT_FILL", "performance"}, {"TEX_VRAM_PRESSURE", "performance"}, {"TEX_RELEASED_HOLD", "performance"}, {"TEX_PROC_COMMIT_MB", "performance"}, {"ASTC_BC", "performance"}, {"LOD_GUARD", "performance"}, {"FIX_C0", "performance"}, {"FIX_ZERO", "performance"}, {"WATER_PROJECTIVE", "performance"},
+    {"TEX_ALIAS", "performance"}, {"DEPTH_INIT_INLINE", "performance"}, {"DEPTH_ALIAS_LOG", "diagnostics"}, {"TEX_DISUSE", "performance"}, {"TEX_DISUSE_EVICT", "performance"}, {"TEX_GEN_UNDO", "performance"}, {"TEX_REUSE", "performance"}, {"TEX_SPLIT_FILL", "performance"}, {"TEX_VRAM_PRESSURE", "performance"}, {"TEX_RELEASED_HOLD", "performance"}, {"TEX_PROC_COMMIT_MB", "performance"}, {"ASTC_BC", "performance"}, {"FIX_C0", "performance"}, {"FIX_ZERO", "performance"}, {"WATER_PROJECTIVE", "performance"},
     {"SHADER_COMPRESS", "performance"}, {"SHADER_COMPRESS_IDLE_S", "performance"},
     {"BIND_SKIP", "performance"}, {"SHADER_CACHE_FLUSH", "performance"}, {"SHADER_CARRY", "performance"}, {"PIPELINE_CACHE_PLAY", "performance"}, {"PIPELINE_CACHE_PLAY_MB", "performance"}, {"FFX_PIPE_CACHE", "performance"}, {"SHADER_MEMO", "performance"}, {"PIPE_MEMO", "performance"}, {"TEX_MEMO", "performance"}, {"DESC_TEMPLATE", "performance"},
     {"TEX_CLOBBER", "performance"}, {"LOW_END_GPU", "performance"},
@@ -218,7 +218,6 @@ static const CfgMeta metas[] = {
     {"LOW_LATENCY", "0", "0|1|2", LIVE},
     {"MONITOR", "auto", NULL, RESTART},   // auto|primary|<1-based index>|<part of a monitor name> (gfx_window_win.c, gfx_window_sdl.c chosen_monitor)
     {"PERF_OVERLAY", "off", "off|fps|full", LIVE},
-    {"OUTPUT_RES", "1920x1080", NULL, RESTART}, {"RENDER_SCALE", "game", "game|50|67|75|100|125|150|200", RESTART},
     {"UPSCALER", "fsr", "fsr|bilinear", LIVE}, {"SHARPNESS", "80", "0..100", LIVE},
     {"STANDIN_FILTER", "easu", "easu|bilinear", LIVE},   // vk_tonemap.c vk_tonemap_record: how the scene is scaled to the picture
     // widescreen.c plain_share: the scene's share of the picture without DLSS or FSR; 1 is the Upscaling row's Native,
@@ -247,7 +246,7 @@ static const CfgMeta metas[] = {
     {"AA", "game", "game|off|fxaa|smaa|taa", LIVE},   // vk_aa.c: what runs in place of the game's SMAA
     {"GAME_ASPECT", "16:9", "16:9|window|21:9|32:9", RESTART},   // widescreen.c
     {"GAME_RES", "1440", "1080|1440|1800|2160|2880|window", RESTART},   // widescreen.c: the picture's height
-    {"ASPECT", "fit", "fit|stretch", LIVE}, {"FOV", "100", "70..140", LIVE},
+    {"ASPECT", "fit", "fit|stretch", LIVE},
     {"ANISO", "16", "game|2|4|8|16", LIVE},   // vk_texture.c sampler_features, vk_sampler_aniso_live; 16: the game asks 1x or 2x
     {"TEXTURE_DETAIL", "auto", "auto|full|reduced|low", RESTART},   // vk_texture.c "texture detail", read at the first texture
     // colour adjustment (vk_color.c); the preset is the menu's, the four values are what the present uses
@@ -272,20 +271,18 @@ static const CfgMeta metas[] = {
     {"HDR_BLOWOUT", "0", "0..100", LIVE}, {"HDR_FLARE", "0", "0..100", LIVE}, {"HDR_HUE", "100", "0..100", LIVE},
     {"HDR_GRADE", "100", "0..100", LIVE},
     {"DEVICE_PROFILE", "auto", "auto|desktop|deck", RESTART},
-    {"SHADOW_RES", "game", "game|256|512|768|1024|1536|2048", RESTART},
     {"SHADOW_SCALE", "1", "1..4", RESTART}, {"SHADOW_COMPARE", "1", "0|1", RESTART},   // vk_texture.c
     {"SHADOW_BULK_WRITE", "0", "0|1", RESTART},   // vk_memory.c shadow_write_back
     // vk_memory.c "Pages a shader stores into through the device address table"
     {"SHADOW_TABLE_STORES", "0", "0|1", RESTART}, {"SHADOW_CHECK", "0", "0|1", RESTART},
     {"SVC_SLOW_MS", "0", "0..60000", RESTART},   // kernel.c kern_svc: log services slower than this
-    {"SHADOW_RANGE", "100", "50..400", RESTART}, {"CONTACT_SHADOWS", "0", "0..100", RESTART},
+    {"CONTACT_SHADOWS", "0", "0..100", RESTART},
     {"PCSS", "0", "0..200", RESTART},
     // vk_texture.c shadow_pcf: every depth-compare sampler filters linearly (2x2 percentage-closer filtering)
     {"SHADOW_PCF", "0", "0|1", RESTART},
     // Game
     {"FPS_LIMIT", "60", "30|40|45|60|90|120|144|165|240|display|unlimited", LIVE}, {"FPS60", "1", "0|1", LIVE},
     {"RTSS", "1", "0|1", RESTART},   // rtss_limit.c: RivaTuner Statistics Server takes the limit where it runs
-    {"REALTIME", "1", "0|1", RESTART}, {"CLOTH_REALTIME", "1", "0|1", RESTART},
     {"MODS_REBUILD", "auto", "auto|off", RESTART},
     {"HIGHFPS_FIX", "1", "0|1", RESTART},
     // the set owater of patches-v111.txt (frame_rate.c frame_rate_sim_host): water and floor surfaces' fixed steps
@@ -329,7 +326,7 @@ static const CfgMeta metas[] = {
     {"DEBUG_MENU", "0", "0|1", LIVE},   // ui/menu.cpp menu_debug_toggle
     {"LSTICK_DEADZONE", "", "0..50", LIVE}, {"RSTICK_DEADZONE", "", "0..50", LIVE},
     {"MOUSE_MODE", "direct", "stick|direct", LIVE},
-    {"MOUSE_SENS", "1", "0..10", LIVE}, {"MENU_CURSOR", "1", "0|1", LIVE},
+    {"MOUSE_SENS", "1", "0..10", LIVE},
     {"WALK_KEY", "none", NULL, LIVE}, {"WALK_SCALE", "0.51", "0.2..0.9", LIVE},
     {"MENU_LANG", "", "en|ru|pt-BR|zh-Hans", LIVE},
     {"AMIIBO_DIR", "", NULL, LIVE},
@@ -443,7 +440,7 @@ static const CfgMeta metas[] = {
     {"STG_ARENA", "1", "0|1", RESTART}, {"ASTC_GPU_DESWIZZLE", "1", "0|1", RESTART},
     {"ASTC_SCRATCH_KEEP", "1", "0|1", RESTART}, {"ASTC_ARENA", "1", "0|1", RESTART},   // vk_astc.c scratch_get, vk_texture.c astc_arena
     // render fixes
-    {"LOD_GUARD", "1", "0|1", RESTART}, {"FIX_C0", "1", "0|1", RESTART}, {"FIX_ZERO", "1", "0|1", RESTART},
+    {"FIX_C0", "1", "0|1", RESTART}, {"FIX_ZERO", "1", "0|1", RESTART},
     {"WATER_PROJECTIVE", "1", "0|1", RESTART},   // vk_pipeline.c water_projective_pair
     {"BIND_SKIP", "1", "0|1", RESTART}, {"SHADER_CACHE_FLUSH", "0", "0|1", RESTART}, {"SHADER_MEMO", "1", "0|1", RESTART}, {"PIPE_MEMO", "1", "0|1", RESTART}, {"TEX_MEMO", "1", "0|1", RESTART},
     {"BIND_REUSE", "1", "0|1", RESTART}, {"DYN_DELTA", "1", "0|1", RESTART},
@@ -809,7 +806,7 @@ int cfg_load(const char *path) {
 // off after 30 us instead of 50 (kernel.c), with four cores to share.
 // Starting points to replace with measured ones (docs/tester-guide.md, Steam Deck).
 static const struct { const char *key, *value; } DECK[] = {
-    {"FULLSCREEN", "1"}, {"WINDOW_SIZE", "1280x800"}, {"OUTPUT_RES", "1280x800"}, {"RENDER_SCALE", "game"},
+    {"FULLSCREEN", "1"}, {"WINDOW_SIZE", "1280x800"},
     {"VK_PRESENT", "fifo"}, {"FPS_LIMIT", "40"}, {"CORES", "4"}, {"ASTC_BC", "1"}, {"SPIN_HANDOFF_US", "30"},
 };
 static int profile = -1;   // 0 none, 1 Steam Deck

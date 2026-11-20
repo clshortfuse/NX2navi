@@ -184,11 +184,8 @@ Grep-level look on 2026-10-22, statuses updated 2026-10-26; "saw" is what the gr
     pipeline whose blend state uses a SRC1 factor (`uses_src1`, `GKey.dsb`) a fragment module with the second output
     at `Index 1` (`spirv_dual_source`) where the device has `dualSrcBlend`. **Fixed** (checked in the code on
     2026-11-12, not by a capture).
-13. **FMZ / NaN.** Count `FMUL/FFMA/FMUL32I/FFMA32I` words with the `Fmz` field set (`Decoders/InstDecoders.cs:1901`
-    bit positions) in `build/v121/shaders/`; FMin/FMax/FClamp NaN results are undefined (3.1). Census (2026-10-22):
-    FMZ in 1 instruction of 12397 shaders, FTZ in 12241 shaders, FMNMX in 7457. The translator emits GLSL.std.450
-    NMin/NMax/NClamp (patch 0031), which return the other operand for a NaN as FMNMX does. **FMZ: no fix needed. FMNMX: OK**
-    where the driver keeps NaNs (3.13).
+13. **FMZ / NaN.** FMin/FMax/FClamp NaN results are undefined (3.1). The translator emits GLSL.std.450
+    NMin/NMax/NClamp, which return the other operand for a NaN as FMNMX does where the driver keeps NaNs.
 14. **Point size / line width.** Census: `SetLineWidth 4.5` ~1/frame (2 line draws into a 144x144 R8 target),
     `SetPointSize 5` ~14/frame; 4 point VS rely on it. Point size: translator patch 0008 reads it from the support
     buffer, **fixed**. Line width: recorded with the draw state (`nvn_api_cmd.c`, `OP_BIND_STATE` kind 7) and set as

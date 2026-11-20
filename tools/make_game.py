@@ -101,7 +101,7 @@ import prompt_art  # noqa: E402
 from check_content import GENERATED_MARKER  # noqa: E402
 
 TITLE_ID = 0x0400486024DEC000
-MAIN_BUILD_ID = 'e0f3ccfaf50065ae4ea01eb5aeb13b1a'   # main of game 1.1.1
+MAIN_BUILD_ID = mod_files.MAIN_BUILD_ID
 EXEFS_FILES = ('main', 'main.npdm', 'sdk', 'subsdk0', 'rtld')
 MODULES = ('main', 'sdk', 'subsdk0', 'rtld')
 ALIGN = 16
@@ -140,9 +140,8 @@ PROMPT_TOOLS = 'ad59f2c4533f6ea2630b916ef5f3695f72daffe9b2b7663eea4168a4f08e4249
 LIFT_FIXES = [
     # nn::oe::SetupGpuErrorHandler (sdk+0x59a430) registers a system worker the host does not provide: GPU error
     # reporting is not needed, so it returns at once.
-    ('sdk', 'void f_700579a430(Cpu *c) {\n    FN_ENTER(0x700579a430ull);\n',
-     'void f_700579a430(Cpu *c) {\n    c->x[0] = 0; return;   /* bring-up: GpuErrorHandler (make_game.py) */\n'
-     '    FN_ENTER(0x700579a430ull);\n'),
+    ('sdk', 'void f_700579a430(Cpu *c) {\n',
+     'void f_700579a430(Cpu *c) {\n    c->x[0] = 0; return;   /* bring-up: GpuErrorHandler (make_game.py) */\n'),
     # The thread-start path loads TPIDR_EL0 from TLR+0x1F0 before the SDK stored its TLS there for a host-created
     # thread: a zero slot keeps the TLS pointer the host seeded.
     ('sdk', '    { uint64_t ea = c->x[19] + 0x1b8ull; ST64(ea, x8); }\n    x8 = (uint64_t)(c->tpidrro);\n'
@@ -305,6 +304,9 @@ class Source:
             for d in (self.exefs_dir, self.romfs_dir):
                 if not d.is_dir():
                     fail(f'{d} is not a folder')
+            if (self.romfs_dir / 'romfs.bin').is_file() and (self.romfs_dir / 'index.json').is_file():
+                fail(f'{self.romfs_dir} is a packed RomFS from a previous build, not a folder of extracted files. '
+                     'Use --rebuild for a built game, or pass the unpacked RomFS directory to --romfs.')
             self.exefs = {name: self.exefs_dir / name for name in EXEFS_FILES if (self.exefs_dir / name).is_file()}
             self.romfs = [(p.relative_to(self.romfs_dir).as_posix(), p) for p in self.romfs_dir.rglob('*') if p.is_file()]
             # every file's size and modification time, not only their count: a RomFS extracted again (or edited)

@@ -3,12 +3,10 @@
 // The boot driver: the guest main thread runs the game's own nn::init::Start
 // with three host callbacks, the second of which runs DT_INIT of main, subsdk0 and sdk; Start then calls nnMain.
 // --boot checks two checkpoints on the way and ends at the first nvnBootstrapLoader call, at the return address of
-// each in main (1.1.1; 1.1.0, 1.2.1, 1.4.3 in brackets):
-//   SetFocusHandlingMode   main+0x1202d44 (+0xeb8c14, +0xe7a954, +0xbdb48c) in nnMain, every module's constructor
-//                          flag reads 2. 1.1.1's SDK calls it first, from nn::oe::InitializeApplet before DT_INIT; a
-//                          call from outside main is not the checkpoint.
-//   nvnBootstrapLoader     main+0x346bf8c (+0xebcdec, +0xe7eb2c, +0xbe0360) in the graphics bring-up; logs the run
-//                          statistics, exits 0
+// each in v111 main:
+//   SetFocusHandlingMode   main+0x1202d44 in nnMain, after every module's constructor flag reads 2. The SDK calls
+//                          it first from nn::oe::InitializeApplet before DT_INIT; that call is not the checkpoint.
+//   nvnBootstrapLoader     main+0x346bf8c in graphics bring-up; logs the run statistics and exits 0.
 // With --seconds S the run continues past that call; rt_frame_presented ends it once the world clock passed S.
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,20 +27,13 @@
 #include "platform/platform.h"
 
 #define SYM_INIT_START "_ZN2nn4init5StartEmmPFvvES2_S2_"
-// main: return addresses of nnMain's SetFocusHandlingMode call and of the first nvnBootstrapLoader call, per game
-// version (from the analysis of each build's main; 1.1.1's are the x30 both host functions see in a normal start).
-#define CHECKPOINT_RET (RT_V111 ? 0x1202d44ull : RT_V143 ? 0xbdb48cull : RT_V110 ? 0xeb8c14ull : 0xe7a954ull)
-#define NVN_RET (RT_V111 ? 0x346bf8cull : RT_V143 ? 0xbe0360ull : RT_V110 ? 0xebcdecull : 0xe7eb2cull)
+// Return addresses in v111 main, as seen in x30 by the two host calls.
+#define CHECKPOINT_RET 0x1202d44ull
+#define NVN_RET 0x346bf8cull
 #define CTOR_DONE 2                      // a module's constructor flag after its DT_INIT ran the init_array
 
-// The init_array sizes (1.1.0 and 1.2.1: counted in the modules; 1.1.1 and 1.4.3: DT_INIT_ARRAYSZ).
-// The four tables carry the same rows, so cb_module_inits walks them by the size of one.
 typedef struct { const char *name; uint64_t entries; } InitCount;
-static const InitCount inits_110[] = {{"main", 10668}, {"subsdk0", 45}, {"sdk", 116}};
-static const InitCount inits_111[] = {{"main", 9783}, {"subsdk0", 0}, {"sdk", 96}};
-static const InitCount inits_121[] = {{"main", 10673}, {"subsdk0", 45}, {"sdk", 116}};
-static const InitCount inits_143[] = {{"main", 10717}, {"subsdk0", 45}, {"sdk", 83}};
-#define expected_inits (RT_V111 ? inits_111 : RT_V143 ? inits_143 : RT_V110 ? inits_110 : inits_121)
+static const InitCount expected_inits[] = {{"main", 9783}, {"subsdk0", 0}, {"sdk", 96}};
 
 static volatile int32_t inits_done, checkpoint_seen;
 uint64_t rt_guest_start_ns;
@@ -60,7 +51,7 @@ static uint32_t ctor_state(const RtLoaded *m) { return m->ctor_flag ? LD32(m->ct
 static const char *caller(const Cpu *c, char *buf, int n) { return ldr_describe(c->x[30] - 4, buf, n); }
 
 // main.npdm META: the main thread's priority (+0xE), core (+0xF) and stack size (+0x1C). kernel.c builds the main
-// thread with the 1.2.1 values; a different npdm means a different game build.
+// thread with the values expected by v111.
 static void check_npdm(void) {
     size_t n;
     uint8_t *npdm = ldr_read_verified(rt_config()->exefs, "main.npdm", &n);
@@ -92,7 +83,7 @@ static void cb_module_inits(Cpu *c) {
                     *(const unsigned long long *)(const void *)(sdkimg + off[k]));
     }
     if (plat_cas32(&inits_done, 0, 0)) rt_fatal("boot: module constructors requested twice");
-    for (unsigned k = 0; k < sizeof inits_121 / sizeof *inits_121; k++) {
+    for (unsigned k = 0; k < sizeof expected_inits / sizeof *expected_inits; k++) {
         const RtLoaded *m = module_named(expected_inits[k].name);
         uint64_t entries = m->init_array_size / 8;
         if (!m->init) rt_fatal("boot: %s has no DT_INIT", m->name);
@@ -411,7 +402,7 @@ void rt_boot(void) {
     rt_patches_init();
     mods_exefs_switch();   // after the patch sets' settings: an enabled mod's ExeFS patches on
     frame_step_init();
-    res_init();
+
     wide_init();   // Ocarina's widescreen sets (recomp/patches-v111.txt)
     cheats_init();   // after the patch sets: a cheat's set follows its setting
     cb_addr[0] = hostfn_register("<rtld loader_ready>", cb_loader_ready);

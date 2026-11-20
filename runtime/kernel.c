@@ -332,10 +332,7 @@ static uint32_t block_inner(RtThread *t, int kind, int64_t ns) {
 // once; guest code without either keeps the core until it reaches one.
 //
 // free_cores = 1 (NX2NAVI_FREE_CORES) turns the gate off, for experiments only: the game does not run that way. A thread
-// that holds no core reports its ideal core to GetCurrentProcessorNumber, so the game's job workers all report core 0
-// and run its per-core code at once: on 1.2.1 two of them add the same per-core NVN control memory, which retires the
-// command handle the other just recorded, and CallCommands finds no recording at start (#212); 1.4.3 corrupts a heap
-// in main+0x82e00 or hangs at the title menu. The start log and every crash report say so (kern_free_cores_note).
+// that holds no core reports its ideal core to GetCurrentProcessorNumber, so workers can enter the same per-core code concurrently.
 static RtThread *g_core_owner[NCORE], *g_core_wait;
 static int g_cores_on = -1, g_held_max;
 static int g_active_cores = NCORE;   // NX2NAVI_CORES (core_allowed)
@@ -406,7 +403,7 @@ static int core_seen(const RtThread *t, int c) {
 // - Priority inheritance (eff_prio): a thread owning a guest mutex counts at the priority of the best thread blocked on
 //   it, for granting, kicking, preempting and yielding. Without it the game stopped at its first
 //   "Continue" (a better thread took the core of the low-priority owner of a mutex it then waited for).
-// - Horizon's preemption disable: the SDK's spin locks (1.2.1 sdk f_70051242a8, f_7005124360 and siblings) count
+// - Horizon's preemption disable: the SDK's spin locks count
 //   TLR+0x100 (disable_count) while they try or hold the lock, and after clearing it call SVC 0x36 when TLR+0x102
 //   (interrupt_flag) is set. Such an owner is not preempted, at a checkpoint either: interrupt_flag is set and the
 //   switch happens at that SVC. Preempting it anyway hung the game at "Continue" (the lock holder lost its
