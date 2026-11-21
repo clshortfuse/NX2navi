@@ -4,7 +4,9 @@ Static recompilation of *Ocarina of Time* (Switch 2, ARM64, game version 1.1.1) 
 
 ## Game content boundary
 
-The repository's additions are all rights reserved (`LICENSE-ADDITIONS`). It never holds game data: game data lives outside it and every derived file stays in ignored folders.
+This is a fork. Check `LICENSE`, the applicable `LICENSE-*` files, and `THIRD_PARTY_NOTICES.md` to determine which terms cover a contribution. Preserve copyright notices and attribution; do not assume all fork changes have the same license.
+
+The repository never holds game data: game data lives outside it and every derived file stays in ignored folders.
 
 - Use the player’s local v111 dump with the launcher or `tools/make_game.py`. For tools that need a keys file, pass its path; the tools read it themselves. Key values stay out of your output, logs, commands and files.
 - Everything extracted or generated goes under `build/` or `generated/`.

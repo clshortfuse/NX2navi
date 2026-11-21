@@ -85,9 +85,13 @@ and `VK_EXT_mesh_shader`. The setup is not signed, so SmartScreen warns on its f
 
 ## License
 
-The source is public to read. Additions and changes are all rights reserved ([LICENSE-ADDITIONS](LICENSE-ADDITIONS))
-except for the MIT-licensed contributions listed in [LICENSE-SHORTFUSE.md](LICENSE-SHORTFUSE.md). The base import stays under its
-[MIT License](LICENSE), and third-party code keeps its own license ([THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)).
+The source is public to read. Licensing depends on the contribution:
+
+- The tree imported in commit `0478c13e4503a8c1a75155b1e277b8cc53ce149a` retains its [MIT License](LICENSE).
+- [LICENSE-CHRG6.md](LICENSE-CHRG6.md) lists the chrg6 contributions covered by the rights-reserved notice, from `77d0c0b84e8e504aec6fa6b5eba54e167de5cb93` through `62cc3b131264680d5d88957c53640ea31abfaa6a`, inclusive.
+- [LICENSE-SHORTFUSE.md](LICENSE-SHORTFUSE.md) lists the ShortFuse contributions licensed under MIT, starting with `016a78204805ee7b09c99fd46c9c81e8bf809fa1` (Windows Streamline integration).
+- [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) lists the licenses for third-party code.
+
 No license grants anything for Nintendo's game.
 
 NX2navi is an independent, non-commercial fan project, not affiliated with or endorsed by Nintendo. *The Legend

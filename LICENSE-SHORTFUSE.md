@@ -2,6 +2,8 @@ MIT License
 
 Copyright (c) 2026 Carlos Lopez Jr. (ShortFuse)
 
+The first covered commit is `016a78204805ee7b09c99fd46c9c81e8bf809fa1` (“feat: use Streamline for Windows DLSS and live frame generation”), inclusive. This notice covers only the contributions listed below, not every change made since that commit.
+
 Covered contributions:
 
 - Windows Streamline integration: DLSS and DLAA reconstruction, live DLSS

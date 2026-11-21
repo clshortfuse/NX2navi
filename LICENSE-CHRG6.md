@@ -1,0 +1,1060 @@
+Copyright (c) 2026 chrg6. All rights reserved.
+
+This notice records the rights reserved by chrg6 in contributions in the commits listed below, to the extent chrg6 holds copyright in those contributions. Commit authorship does not establish ownership of every change in a commit. The list contains commits authored by chrg6 in the Git range `0478c13e4503a8c1a75155b1e277b8cc53ce149a..62cc3b131264680d5d88957c53640ea31abfaa6a`. The import commit (“Import the base tree (MIT, see LICENSE)”) is excluded. The first covered commit is `77d0c0b84e8e504aec6fa6b5eba54e167de5cb93` (“Port Ocarina of Time (Switch 2) to the recomp host”); the last is `62cc3b131264680d5d88957c53640ea31abfaa6a` (the 0.12.0 handover). Both covered endpoints are included.
+
+Nothing in this notice limits rights granted by other licenses.
+
+For the contributions covered by this notice, no license is granted. Without written permission from the copyright holder you may not copy, modify, distribute, publish, sublicense or sell them, in whole or in part. Access to the repository, whether by invitation or otherwise, does not grant any of those rights.
+
+This notice is not legal advice; where a copy of this repository is shared, the copyright holder's written terms apply.
+
+## Inherited commits authored by chrg6
+
+- `77d0c0b84e8e504aec6fa6b5eba54e167de5cb93` Port Ocarina of Time (Switch 2) to the recomp host
+- `c8738a948c8f6105558b3bfa117d7d5b958e0bb6` Name the settings, files and tools NX2navi
+- `618b9ba4e5b1826e59567d47b10a6c2f679e0dee` Fix Ocarina's white dialogue frames, the fountain floor speckle and the button prompt text
+- `9a5b1163f3a66d03a96468c12387c51db62a25e3` Make every settings menu row work for Ocarina and give the controls Ocarina's actions and keys.
+- `5dfa690d965954c7aec0c5d6059fe463912f0296` Fix Ocarina's garbled UI caption, the mesh pipeline hitches, half the scene-load stall and Kokiri Forest's frame rate.
+- `eed3e6b78625af5f2de97523954533e1bb4ca798` Decode the upscaler stand-in's picture with a square, emit SURED with its real opcode and keep the translator's warnings.
+- `9b4cca39caf64835a3f4207b492205d1b82bc051` Map Ocarina's global memory accesses through pointer tables and summed bases to storage buffers.
+- `12fbb314511924fd44a24e1d026e4aa4edaa7d8c` Stop texture slots registered before an entry was released from reviving it.
+- `85f401669fccded28581f28224b987d9d4ca807e` Translate float atomic adds, signed RED offsets, calls and subgroup operations correctly.
+- `c7257fe65221948a7879ebd3e686226346a37db5` Fix NVN2 compute constants, indirect mesh draws and empty descriptor sets, and cut the texture pool refresh.
+- `f5e3322bf5f3d8cdac7fd0e71779177521c29ce0` Follow the gamepad the player presses and show the project's name.
+- `4943b50ff20be67e9ca5b81e290c835fd0fea348` Unlock the frame rate, shorten cold starts, and describe the Ocarina build in the docs.
+- `cbef6bf7da740693e38df374d283055faa84c297` Remove the colour settings from the menu and show the game's own colours.
+- `18b9ef3cd08d9ba3497d1db11b14dc08da7bdc79` Log who sizes 16:9 textures with NX2NAVI_LOG_RT_SIZES.
+- `29cab01da7d4e78d6b095441d73929fbc3aa66ae` Guard float colour outputs against NaN, start mesh counts at zero, and read XInput pads SDL misses.
+- `91c147a0aaf38babd2c56f7e74dd7b9ad4ac3050` Draw Ocarina in the window's shape: a wider picture and camera, with the HUD, menus and movies kept 16:9 in the middle.
+- `03e31c014be719b9b30810d9c4e98fbe47fadc8e` Resolve storage buffers whose address a shader reads from a constant buffer at a run-time offset.
+- `a1871280a30bc0d3b7f5e24c7590929bbfe1c855` Ocarina issue forms, and docs for the features this port has.
+- `1b39aabd37ba46c83a323884a00dd6af112ac086` Describe what the code does in comments and docs.
+- `99de7b943f1f5cab6640225912e36fecb9e1b409` Give each file of copied code one license line.
+- `f76d896ed5d8cd4a671a0c57266f5ab1d419b07f` Give the translator 64 storage buffer slots and keep it converting a block after a store it cannot place.
+- `fa6f9717fba0efc378ac2b0ce354bf932bbb88b8` Reach buffers through a device address table where the translator finds no storage buffer, and lower MATCH.ALL and ATOMS.POPC.INC.
+- `df2fbe4640aff3a48adf7b4f4d0f8b7626ba978e` Play the game's own interface sounds in the settings menu.
+- `d8ddaeba0f4857a9f1aa87377c3cd183c6a6644b` Add LICENSE-ADDITIONS for the repository's own additions and changes.
+- `897ad1d0ea1e021467fdd8a4bed19b05a4debc6d` Step Ocarina's game by the display interval, not one 60 Hz frame per present, so it keeps its speed above 60 fps.
+- `020fe0eeb8cc0ef7a2569129db5a1044a6542de6` Give Ocarina's own frames-per-update the display interval, so its menus and interface keep their speed above 60 fps.
+- `b8ad63d4f89fafbd15e448420db0216d832ca3d6` Leave comments out of the translator identity, so a comment-only edit no longer re-keys every shader cache entry.
+- `29fe2b4396781f126e239e51936d5150b893d4e1` Restyle the settings menu with the game's own interface fonts and textures, and give the window a gold pointer.
+- `375ecf27e2fd3d1d33e888da6446350f37fbc717` Wait for the whole boot prewarm and show its progress on a boot screen.
+- `a6bc3d837bd418f0eeabe274ce8c0e6c2a817306` Add a build kit that builds the game on the player's PC from their own .nup dump or exefs/romfs folders.
+- `3c0377abf800041b2eeceb05115845aea2e6842b` Run DLSS on Ocarina's frame, which has no G-buffer and tonemaps straight into its 8-bit output.
+- `a4fde2090ab38e2464ab10fe841730f6a5e47b0d` Put DLSS back in the settings menu, and build the kit's runtime at -O2 without strict aliasing.
+- `56a46cadba1d187ffeaa9cc86306f466e336b0b4` Draw the picture above 1440p, and fold scaling, FSR 1 and DLSS into one Upscaling choice.
+- `43a8096f376fa84909825bbea5caaa7c4a9ebc03` Give DLSS Ocarina's camera, so it keeps its history along the camera's motion.
+- `1299b20c1c8ab91056f4cd73be895808acaa5eb4` Note where Ocarina's scene size comes from, as far as it is traced.
+- `edce57ce5daab80a34016db29e886afe86685471` Render DLSS's quality modes at their own scale by fixing the game's dynamic resolution.
+- `1d7bc90848024e087ff0562673cce2bc08aaea02` Fix shadows, colour writes and present pacing on drivers that read Vulkan's undefined cases differently.
+- `b48b05dacfc2d0166e269f23f00c353a7530c63c` Build kit: take each module from the .nup package that holds it whole, and keep the PC awake while it builds.
+- `ee6fbaf0bb960b280bd9c6734a537b1c3be1a2e3` Zero shader locals with DLSS and DLAA on too, which removes the speckled floor tiles there.
+- `fc6d84aa63f506a2ecd2ff046b5af3f5511b64d0` Prepare every one of the game's shaders when the build kit builds the game, so play does not stop to compile them.
+- `ca5e5eb5a45636690b869583a3c9ec064af638ad` Add AMD FSR 3.1 upscaling, and run DLSS's smaller modes on a 16:9 picture too.
+- `7c11ff681687083af16e811b166b95664dcba5df` Add AMD FSR 3.1 frame generation: a generated frame between every two the game draws.
+- `b9a042969ea5c691cd6e669eebcbda5ae1fbc418` Keep the HUD out of frame generation, show the frame generation rate, and start DLSS Frame Generation.
+- `a42648e27aea71afff491f9d266861a031569321` Add the game's native HDR, render at the monitor's real size, and refresh movie frames on the GPU.
+- `ab5450da156994271ccaf01ae194c6769cab768a` Describe DLSS, FSR 3.1, frame generation, HDR and the build kit in the READMEs; name a null call's caller.
+- `8f6bcd367e8cfb6e9bba2a8b4a300c72560876df` Build kit: ship AMD's amd_fidelityfx_vk.dll for FSR 3.1 (make_kit.py --ffx) and let its DLLs past the size check.
+- `cedee5ceff5c0dff77d8d196176019ad9bc8b86a` Menu: sharpness works under FSR 3.1 too, and frame generation asks for a DLSS or FSR 3.1 mode first.
+- `514bb8eaa9a0dd4983393a43d6583dfdbed6ce57` Translate the 8- and 16-bit uniform constant loads whose unused register field is 0, not 63.
+- `501d5bd084ef9d098e583011a4906dd7af5913a6` Release pass: fix crashes, freezes and races, cut VRAM use, and translate more shaders.
+- `37c06e68944f3b38d4a361633357311b88b38f39` Sample terrain with the right mip levels, keep NaNs out of min, max and clamp, and give shadow gathers their own tap offsets.
+- `c327dc07d82d04f418fb3f44462038edee5d2d30` Generate frames inside the picture only, so a window of another shape keeps its black bars clean, and use the Triforce as the icon.
+- `e884abc2269e317a84cfbbf69a11f99e527c112b` Build a waiting draw's shader libraries and fast link on two library workers, so the drawing thread never compiles.
+- `e7f6a004078fdec0e5d83074f5038f719fae7515` Translate every shader, keep atomic loops from spinning on stale values, harden pool teardown, and update the README.
+- `9dcfc5723ba8b41217cfa0958c9adbaed2ea9a43` Profiler: unwind through vendor DLLs only while they are pinned, so slow-frame captures no longer crash at start.
+- `1f016a774e08eb3857eed621e9a04f5586408a0d` Menu and start-up edge cases: a chosen GPU that is gone, held Esc, the boot screen, and upscaler-dependent rows.
+- `8102b6a222a14aa2ccba7117ac6424eba4266f46` Release 0.4.0: the first public release, with its notes.
+- `4cb81884910d6bf81ab05ccb1cf1ea0ec711ee10` Write through the device address table into guest memory too, so the GPU's writes there are no longer lost.
+- `65ad25faaf400a7808916e6e8a41a1b1066b1741` Release notes and README: the tree columns are fixed.
+- `7f50cc5e2970d263b46971bfcbcdf32e24fdfe8f` Third-party notices list only the code the repository copies.
+- `cd7cce89cbccd129faf7cbad8962d5b0ab59ab77` README and AGENTS.md: the source is public to read, its additions still all rights reserved.
+- `d0da862c87d1129e5f7fbf171b4bce6e9036f25e` Release 0.5.0: fix the white haze in fog and the flickering foliage.
+- `fc8a9523a48dc77c7160ffb1298a88a1a91472f5` Prepare shaders under the code hashes play asks for, from every shader package, with better guessed bind states.
+- `96b6e049372d7b851489aa1bad4f009ce2c9a615` Compile the resources with windres when the install folder's path holds a space.
+- `936dd8094a8e18a73ba3e141d53ff029c8615007` Translate 40 more shaders, and build the upscaler's compute shaders five times faster in the driver.
+- `8702ddb3565f375cad5265f36ef0d1b0c1d25c46` Default to the Switch's own button positions on every gamepad, and fix menu edge cases.
+- `8f559ac945d6540ccc52a5e86a02462ee5a6f248` Show the Discord status under an NX2navi application instead of the old one
+- `7cd1b6ee2321d735fc9c59e510597a59dc885064` Leave the NDSR upscaler's slow, unused compute shaders out of the install's shader preparation.
+- `cfc3228cc433e580b733353ad3f51d1bbf85eaa9` Build in the NX2navi Discord application's id
+- `9bb3c6c55ab2abba6f310ca389a5246ee64ed9cc` Hand the frame limit to RivaTuner Statistics Server where it runs, and take it back when RTSS does not hold to it.
+- `5b28da3a065c56914848438503dd767c9a85afcf` Make Enhanced HDR extend the game's tonemap again: its matchers take the NClamp the translator writes.
+- `8daedbd806d68616c9e4d86dc09c198aaf69676d` Redraw the in-game menu with the game's own interface textures, and bring in the launcher's save import and faster builds.
+- `f57a327a8639d929c9560d2eaf89aac2c56761b1` Keep saves safe in Import Saves and Quit, draw no traced game art, and recompile the game for a new processor.
+- `b62ffac7215ed2e07eae96c823cdf7e9b5d6f798` Apply the DLSS mode's render scale every frame, so native DLAA and the other modes take effect when picked.
+- `432cbdffe8b31aac94e3c6d2e854f5ef9859759e` Hold the frame limit on screen while FSR 3.1 frame generation runs.
+- `5aa3bc411918443326ba9a08151b8ab3d782c36f` Render widescreen pictures at the DLSS mode's real share, and size frame generation for the scene it is given.
+- `d9fb0fe1baa7062abf5d70a197a5f04a241be76f` Give characters in Ocarina's frame their own motion for DLSS and frame generation, so a running Link no longer trails.
+- `8f5e2fe76ed09ac1d39432badae7fb88bda5eb46` Make Enhanced HDR's highlights brighter: above 0.67 of the game's white a boost that starts flat and grows to one white per unit of scene light replaces the old tangent, so bright light keeps climbing instead of ending near white, with mid-tones unchanged.
+- `092379def8997dc7eac5c3daea58bd13faf3aba1` Frame dumps keep each shader's guest program, and a test switch runs an edited SPIR-V in place of a compute shader.
+- `ef896bbb026df4852bf31ee2fd20f72876d2391f` README and LICENSE-ADDITIONS: drop the clause about machine learning and AI tools.
+- `1cffc476e984e6eb53d27c77d7954ef106597d87` README: drop the note on how the code is written.
+- `7410e0d2d752068b6b754b10fcd908242df846c4` Frame dumps also keep each shader's translator request, which reproduces its SPIR-V and can write its GLSL.
+- `42ae87bca62d657419c3b7f8e04f4a438e0aff1b` Runtime: power opt-out, faster fence wake-ups, feedback barrier, texture re-upload skip
+- `9a8f74fe53e9df7c7dd4a07831d8b3520e38aeb0` Refresh read-back ranges in the VRAM mirror, guard the boot pipeline prebuild against driver crashes and count out-of-order event waits.
+- `22bbe674beb254e535c48e257d7adfb9e12bc128` Remove the read-back refresh of the VRAM mirror, which brought back the tree columns.
+- `a8f34e48c88cb26f6e681f036980c4606b5f7338` Offer a 1080p game resolution.
+- `82257eec3dcc18f1cf5c8494de1e44bf10b317e9` Send atomics through the device address table to guest memory too, so the trees no longer flicker or stretch into columns.
+- `3aa8ff56a27bd0712c4b81caaaceb2b1e935fd01` Replay the game's queues in the order their events allow, so Link and the other characters are no longer drawn too dark.
+- `1f4839d4a51a8d9bc57611f4e47107088c5cbf70` Look for a mod's Atmosphere folders under this game's title id, 0400486024DEC000.
+- `7f9ace35fb7cded1a5640aecb4dbcaaff4fc1217` Read the mods folder the way the setup's tools do, and keep each mod's start state with it.
+- `b142b7a71a05a78e7492b5ad488719e704cf39c4` Quote a settings value on save when reading it back would change it.
+- `aaea99119100f6407308f3db5c8284ec7f150641` Uninstall only what the launcher put in its folder, so a kept game folder inside it stays.
+- `c9f75ad0b2c7e0cbe1530c06277331cf95016c73` Read launcher.json saved with a BOM, and keep a copy of one that is not valid JSON.
+- `9865542bb9a65332050da449361fa7885032b061` Put a finished save commit back when Import Saves cannot swap the account folder.
+- `4ab121d67e0538b8dc7524f78c35ea61252855d3` Do not take a read-only ocarina.exe for a running game.
+- `1196448719bb6fb7e14d1aa79e22b9d21a5eab1a` Stop a build that Cancel was pressed for before it started.
+- `a24a21bff51f86f0de25572675534d3951c18ae6` Write make_game.py's state.json whole or not at all.
+- `7033d63af134177a117967e05676cbd8a02a75ec` After a rollback, show why the version went back instead of finishing the failed update.
+- `7b467f668663ea67a0569b4439245097cce797a4` Let the setup repair a launcher that updated itself and can no longer start.
+- `d0e9ba6b306ac0161ecd0769b11ef20fa2660847` Propose a game folder only on a fixed drive.
+- `771c4f4fb1312c0dbc03cfb6e286ea46b22eb3d5` Log a mod folder that cannot be listed, and let the game take long paths where Windows allows them.
+- `1795b186a4848fc1ed97e6bf580b20e557d11a42` Say in nx2navi.ini.example how mods_dir and mods_order are read now.
+- `2f7e1806a29de1f0c8be8172660d08a940395697` Keep the audio renderer from going silent or hanging on edge values.
+- `0531ad8a09cc38fdeb1d268e701d5ffbe7f2b73b` Do not mix a menu sound past its end when it restarts during the mix.
+- `c65f21d531ad49592f5eb2ee295e375e2eff289f` Fall back to stick_deadzone when a stick's own dead zone does not read as a number.
+- `2986daf84e7c9a7ebb08d130e9b75ad5eb5ad915` Follow Windows' switched mouse buttons for the mouse bindings.
+- `ccbb02a04bd776fcc31c51fe993521e7078fe244` Empty SDL's event queue after each gamepad update on Windows.
+- `a99234604bec151799a8382427d99da5850c0bdb` Give the keyboard defaults in nx2navi.ini.example as the code has them.
+- `e922b6886664af0133af1f2176329bac47156ceb` Let --probe-fs wait for its commits without marking the process as exiting.
+- `7da472bbb18db154bd949184bb3fe3b0994f13b6` Keep the profile working when it is linked elsewhere or account.uid is lost, and check save write sizes safely.
+- `a1f71328c0cc3ee749fc365f58e743f37f91df2f` Tell the game its own title id, 0400486024DEC000, for GetInfo and its save data checks.
+- `68462a31a3a7882963df90916b0f41140504c2d4` Pace "display" at 30 on a monitor below 30 Hz instead of at 60.
+- `7dd41c4c5a5cd0e06e2099f623d61901cae7b7e8` Close down properly when Windows shuts down, and open the window inside the screen.
+- `ffe13e1d52951ba49988e707a72e086fa27d8077` Reconnect Discord's status only when its app id changes.
+- `b69b613984e6e5895c21ca234851275bb908483a` Fix small settings and overlay edge cases.
+- `b8d7eede0816e0d12e6469398a515d1e13214c53` Keep presenting after a present submit fails, and ignore a crop outside the image.
+- `8647f193707259c0d307a614db615b84100f3fa3` Check that a texture's packaged data fits its memory pool before copying it in.
+- `35ff9999584db4a2db22daa2990a6758292222bd` Rebuild from extracted game folders whose files changed, not only when their count did.
+- `215c423d84a95fce1f269ab1d59857303f2c2dc6` Write make_game.py's reset state at once when the game files changed.
+- `95903c361ae64d8903589a3458262727251aec51` Mark one cheat or ExeFS patch the lifter cannot take as unsupported instead of failing them all.
+- `96b33aefd233ba1b785bc27648b9e5c9e1cb97bf` Report a malformed .nup table of contents as a damaged file instead of hanging or crashing.
+- `f753dd0e333cf0e53332c5b0bc64ee41c31701a7` Check what is staged, not the working copy, in check_content.py --staged.
+- `138b8c8c292257cfb17aa10cf7c318d4c6771f92` Link the differential tests with lld only when the toolchain has it.
+- `dc1afcb54f67e796afcdba51729e62e429c2e226` Unpack the release's Tcl/Tk again when its pinned installer changed or the last unpack stopped.
+- `8bd2d6aa31cc3c37a7e9b0c9a2fed97d3688721f` Run one game per profile at a time.
+- `2cd6f5290b677ceb237830ad6335a165d63bb657` Leave the boot prebuild's huge compute shaders to their first dispatch, so memory no longer climbs to 30 GB at the title screen.
+- `29d8451dd2a6bb9cec4cb9c5e092f50cb3472392` Cap the memory released textures keep for reuse, and free old ones when the system commit runs low.
+- `95ab18fba2fc262c10756fc509258590043cff72` Hold the game at 60 fps while a movie plays, so the intro's narration no longer doubles and the dream shows at high refresh rates.
+- `3731155efc03936312b8ed725af88cf8ace2767d` Run DLAA with native HDR too.
+- `8c4c2f809c59a953137c187d0ecda0ff05f92871` Count the GPU time of copies into VRAM mirrors, so GPU-bound frames are no longer reported as CPU-bound.
+- `ac5c196f3a98801e96d8d568dbbb614a7a9b482b` Pace DLSS Frame Generation with Reflex from the frame's start, so it no longer halves the game's frame rate.
+- `0fab109a7f7679158e595e6d63d71965ca96d9a8` Add diagnostics used to find these fixes, all off by default.
+- `a3246088771ac68006cca4739e8e226552fd0827` List NVIDIA DLSS frame generation in the menu on NVIDIA GPUs.
+- `b6b76b7547075a9f72a7913b299a9e6dc4d14346` Give task and mesh payloads room for the header before the program's data, which stops the white specks in foliage.
+- `3bb2ee71f935116cb0c503141d7b77da695b5c9c` Run guest shaders that use subgroup operations with maximal reconvergence when the driver supports it.
+- `e32fd1595227b64ea76fb4a46e1dbabcac273f2e` Take Ocarina's DLSS camera from the bytes the scene draws read, and log why a frame has none.
+- `c71eeed305990560bbc4b44cf6b33a0a4714ca34` Hold a present until the frame's held work is replayed, and sync held work that runs in an empty submission.
+- `d8c26855eae110cc47fff087d95a9105330dd6a3` Check that ASTC re-encoded to BC3 keeps the cut-outs of alpha-tested foliage at every footprint.
+- `612c02311dfce9d7944ecb5a9edd280bc9386427` Add Xbox and PlayStation button prompts, drawn from button art on the player's machine.
+- `276325d9ff7feee3cbcdce443a093150eb971944` Add a PlayStation choice to the button layout.
+- `3c0a4d732f9fc4232cbffa021b7f13e4d9bab242` Log where texture and pool memory goes with the perf trace.
+- `dffd28f09b33134e3de3a899a0be86d8e7d0b41d` Let NX2NAVI_VRAM_BUDGET_MB lower the VRAM budget the memory decisions use, for testing.
+- `63bcb441c05848913ae2dcdba2ce84d1ca20bb7d` Evict the least recently used idle textures when video memory runs low.
+- `817737adae3013abd1f9d600d4f3b86402146f96` Evict idle VRAM mirrors to make room, and ask again for mirrors the budget refused.
+- `fa8f8dc84d50a8649bf59b166082a7f7de3129ca` Count a texture's idle time in texture pool walks, not in submissions.
+- `073ddc0c95b610cc7181d8b68eea866279861623` Stop the evictions from emptying VRAM, and give VRAM mirrors priority over textures.
+- `86de3320a050c47e7558052e6b884a0cbd1a4290` Evict idle mirrors only when that makes the room, and ask the textures for room once per refusal.
+- `1f7e9c975b707f4ac885946b9a8ee0836203b738` Speed up the replay and fix what the perf pass found, and add a frame capture key for chasing rendering faults.
+- `b0d420db3d5658bedd94d9331896549afac4c80a` Land the shader and pipeline stutter pass, and the fixes it needed.
+- `12b93f81edb9fcb71e6e653711df6c78ab2b4a4b` Keep textures released on the game's loader threads until the submission being recorded has run.
+- `d13ec37ced2b8fb5e3fec8a8b305eb1bbf9f28b0` Drop the old swapchain when a new one cannot be made, instead of acquiring from the retired one every frame.
+- `6eb715dac8881917c4476c5c3ced1fd9dbf467b2` Let the present thread finish before the held work is walked at a present, which it may be replaying and freeing.
+- `02a4b024a607e884dd741777a5eb248447da1dd9` Follow a desktop resolution, layout or HDR change in fullscreen, and make the swapchain again.
+- `9b4f461e6ffa736dc5e3d28a5ecb2281a8478ce0` Add a mod's BYML key offsets in size_t, so an offset near 4 GiB no longer passes the bounds check.
+- `443c4873fe23a0060767a4443dcc43efa284ebd0` Keep the cheat VM's main-module check from wrapping for addresses near the top of memory.
+- `b9479507ed6e54c453cd7ccae6b04134375725a5` Stop walking a mod's folders at 32 levels, where each level cost a stack frame of about 18 KB.
+- `c45d252c3dd6b5a13de631d22cf359fa7f1d8806` Read an exefs.status line only to its own end.
+- `574295ff9555730e1a469911a7d991f3f9a212a1` End the shader translators with the game, through a job that kills them when it closes.
+- `ad7b3ccf514593bd2160a7fa32723376081207a1` Keep the recorded shader programs and answers when only reading them failed, and record nothing to such a file that run.
+- `93a38b5d12c15c2620c92dde016f046688c3a8eb` Check the selftest's physical memory limit against the title's own pool size.
+- `938676d57fe41180f6013da47fb995d10edbc30d` Refuse plain http and manifests without a size and sha256 in the launcher, stop oversize downloads, and keep the token on its host.
+- `41eacb97e882ecf57e52748f65390778714f1b86` Leave paths holding % out of the uninstall command line, which cmd.exe would expand.
+- `984a5f021a01158cf0fc0691fde34e6575d13da0` Check zbic's unpacked paths with is_relative_to, which a sibling folder cannot pass.
+- `7ee5ce195e2e4941f56fc03d160e79fc3eb32668` Check a .nup table of contents against the file size before reading it.
+- `fc747b0ebadd281ea07f34935c872aef0554842f` Check the length of LOCALAPPDATA in the setup before appending to it.
+- `adbbbedf1ec310dda798f77d5082a7d4ad3eb7f7` Draft the 0.6.0 release notes.
+- `ef08fed45f85b9bc30008cf753b11d50946a92c9` Ship NVIDIA's DLSS library in the setup and the build kit, and put it beside the game.
+- `9e56d5a3168d419ba584448f7a3c6ea31c2d40c0` Add keyboard and mouse button prompts, drawn from the art's keys.
+- `fe3cca739beb26060feae94c33aba18f6c43d6e1` Keep compiled pipelines as pipeline binaries under the runtime's own keys, and let the one-shot draw wait be set.
+- `ab703d05ac6c9d88fb56865c515d124f5d9ba01a` Set the version to 0.6.0.
+- `7f25329e72f6aac45ed1711ed8daf5d848b4a555` Stop saying that shader preparation keeps play from ever stopping to compile.
+- `3d25f00cd25e67d085dcd9231df5d6142f9f2814` Estimate the time left from each step's recent pace, so Prepare the Shaders stops saying about 1 minute with 20 to go.
+- `8e30ad7927ab7283af173a1cbe7c809f5d6605ae` Carry the button art in releases and draw the button prompts during the game build.
+- `afb31a56f5b6155b56d2dfb11f3a5947e8f724f3` Keep the write-back snapshot pool to 1/64 of the VRAM budget, between 64 and 256 MiB.
+- `ea1ad3718373b4e5a440903b061ca5201cdfec0d` Load shcore.dll once for the monitors' DPI instead of on every call.
+- `837926d8e18ca93ed487277f4b4ab2d2b9f890aa` Let shader_cache_flush = 1 flush the shader cache files to the disk again.
+- `acdf1711b9ad4eefd3cb91b32aff1ee225a4cf1d` Let microphone = 0 refuse the game's input streams, and give the microphone code a neutral device name.
+- `2d94ede66a2fdb2366390f8a59c30e13d4c6b733` Put the commit census and the per-pool traffic log after the comments they had split from their functions.
+- `7530ca50446579343ef3839cd3bd6bd566056be6` Build on Linux without libunwind, and ship build_game.py in the kit for the Linux build's VMA header.
+- `01deaa95d6bb6b501958c2f4764ea6960772735f` Show the library prebuild's new default of two threads in nx2navi.ini.example.
+- `f58ad1d23ef07594abc3d23c952884de526f0407` Cover the pull requests, the new HDR and the shipped button art in the 0.6.0 release notes, and thank the contributors.
+- `7fc21407c335b7df31729a753b18ca81ac22b7e1` Bring back the switch for Discord Rich Presence, in the game's Game tab and in the launcher's Settings.
+- `f00f464e9f68903c89b56f5beeb8a1a65b1e7f4e` Turn Discord Rich Presence on by default.
+- `6dd88ec578bb226b5e0c16783b7c74244badc17b` Add the Discord status to the 0.6.0 release notes.
+- `097421e63455e3fc9950f8b9a57837e67799474b` Say in the 0.6.0 release notes that the update from 0.5.0 compiles the game again.
+- `43ac4b6b031f99a4cce404cbcb44c00275f6e2e4` Show Navi as the game's icon, and start the game from the launcher without an empty console window.
+- `250a12272af7fb711d285d4d20575f030bc20fbb` Bring the README up to 0.6.0: DLSS Frame Generation, button prompts and the PlayStation layout, Discord status, the monitor, sound and microphone settings, DualShock 3, 1080p, the Linux build, and the current known issues.
+- `dfc5b90b59c0885d52737832dc2ddfeeb4e955fd` Fix what the 0.6.0 review found, and ship DLSS Frame Generation in the launcher release.
+- `d6711ca59bced8df9e02b2b0021c8deb8264ec8c` Credit the button prompt art the releases carry in THIRD_PARTY_NOTICES.md.
+- `69d49706fa4a45b6fe640522c92505904e0c0e16` Evict idle textures when the system's commit runs low, not only under VRAM pressure.
+- `9a1abb9a153bae6f4454a29a27cf335a2bcfe1ae` Take frame dumps when a file appears, and list more of each pass in them.
+- `f1779ec9e4ad09fc55527f30cbffad34f9648c4c` Refresh the translator beside the game before the shader step prepares shaders.
+- `0101a8707904a82f51654df39e7a8eafe221ca4e` Raise the frame rate: fewer copies into the VRAM mirrors, earlier GPU starts, render target images reused.
+- `e3bfa3d40a9d42bcd124d595d5a6aaa32239fb7c` Free a destroyed texture's record only after the GPU is past the submission being recorded, and cache no view of it.
+- `2ce8451fe9d0b2bc75ace347afe58734effc464f` Keep the compiled game across updates: stable compile keys, objects of earlier versions taken over, shaders carried.
+- `0223d88520592ce5869d40173343881087d21acd` Turn NX2NAVI_SPLIT_IDLE off by default: it made the foliage flicker.
+- `cd20bdf09f21e95da3e90254fbcbdf4dc11be435` Download and stage updates in the background, and install them only when the game is not running.
+- `fa1a2250b5a2f84be427b160d773d42058fd98d6` Let Rebuild the Game compile the game's code for this processor's level, and updates keep the compiled level.
+- `3ccc33b3e833e936d743fc1f646f8f2c1ef3c376` Describe in docs/launcher.md how an update now keeps the compiled game and the prepared shaders.
+- `10ea0a2eb2492ae51601c4164efa8fddbc30fe7c` Keep serving the previous translator's shader translations after a translator update, and translate them again in the background.
+- `4223e0aa5cc02a271cbcfca271874028ae6cc485` Name the translator a shader cache was made with before an update replaces it, so the first update carries too.
+- `0f1847d2438ec9a63f9e7188b17c645ab5afd552` Retry a cut connection when the launcher reads a small file, as downloads already do.
+- `d9dacb4ae4b9fb5d37afeb5769a99de3878d2d6b` Register NX2NAVI_PROFILE_SLOW, so the profiler's slow-frame dumps can be asked for in nx2navi.ini without a warning.
+- `7db0c5c75b0bde5521161baf3374a94a0c95bd69` Keep the crash report's exception filter in place, and write the game's exit code into its log from the launcher.
+- `91acff672cf2fd3ee2fa9c19653c1278c437562a` Stop calling RTSS's EnumProfiles, which crashed the game at start where RivaTuner Statistics Server runs.
+- `66927b8f94aedfd9fe615221bfbab7a766f5087c` Ask every driver but NVIDIA's to keep NaN and infinity in the game's shaders, which should bring Navi's orb back on AMD GPUs.
+- `137e03feae775ffa365d3908b7cda1f51df88abf` Say which guest region holds the memory when the process grows.
+- `8a4cb72b61c26cccb024e4332eb2606608b43b8c` Set the version to 0.6.1 and write its release notes.
+- `78ee0ddb1e29206ec730bbcfb8f5105cb4087499` Say in the 0.6.1 notes that an update from 0.5.0 keeps its compiled game too, and that the device-lost fix covers low memory.
+- `c745a9ef2fd47f6d1277999ab43ea737a3593640` Offer DLSS multi frame generation at 2x, 3x and 4x.
+- `5fb384b90602306941276989e32bc8ba69b822a0` Add DLSS multi frame generation, the Intel pipeline cache crash and the pinned Streamline runtime to the 0.6.1 notes.
+- `cb234fade1f9f2b4b7ff2156d76d5ee88559cec5` With frame generation and no frame limit chosen, limit to the display's refresh rate.
+- `a5763d14afa1b938a121ea2bbacdb3409c58daff` Keep FSR 3.1 running when the render scale changes more than a few times.
+- `813f256dbcaf195a67a07f8ac753b3b1b7b3246b` Keep AMD frame generation off while NVIDIA's frame generation holds the device, so switching between them no longer crashes.
+- `c29d1b8dbd191c3db022ca2462b110f420da95e3` Name exit code 70 for what it mostly is: a fatal error the game wrote to its log, often memory that ran out.
+- `a720ca879c9c20a04aa6c534a08c8714efccc52a` Let NX2NAVI_GPA_TWIN_MAX_KB keep the device address table's second writes to small pools, to measure what the twins cost.
+- `b48371ee827d54a211686a7377373cb610b35b6e` Give a new texture over a live one of another size the region both cover, which stops the black frame about once a second.
+- `7a60f4e2a05669273cd82eb62e3bc8a05f1c7d0e` Let a texture taken back at its address keep its content when nothing has written there since, which stops the black frames.
+- `9c10827018383fb388c3c075c4617cce2a5d7ed2` Upload the menu's font atlas through the runtime's upload batch, checked, instead of Dear ImGui's own upload.
+- `9bba578e58e9356b97c0e0380fa4963d627a0184` Hold the game to 240 frames a second when the limit is unlimited or higher, which stops the quick menu's crash.
+- `6910723aed2bb4723730c032bfbce7e8b952ff3f` Let a released texture give its content to a new one at its address, and log only the empty starts that can show.
+- `fbb6783664be511e4cab267f7347a0574aedf328` Hold less device memory that only costs the system's commit: a smaller released-texture cache, no spare blocks while commit is low, large images in memory of their own.
+- `87f51f94a9d2f83b1d98b308dac82a7756dfd8b8` Read shaders from the disk cache off the render thread past a small budget, and pack the cache on carried updates.
+- `d016a6dc865d0fc46256432aafd087c8a8c22121` Mark the texture pool slots that shaders index, for eviction by disuse (work in progress: not built; the runtime side follows).
+- `dc9f164afc9526838db83ae62ab280bd5ae02c45` Evict textures no shader sampled for 30 seconds while video memory or the system's commit runs low.
+- `52cf97685751041d7bc398fd94db700ffa48d9a4` Merge the 0.6.1 fixes from the 0.6.1.x test builds.
+- `853449fd8defe5984f70f7550201d4f24b952ed1` Merge main into the test line: the setup game-file check and the log of game files that keep failing to load.
+- `860bc9cf0b8be5a1cd61c18c59817b71253812ca` Spread the texture pool's entry creation over frames by a per-frame time budget, and stop looking up the slots it left.
+- `8e656b85a44c7c0fc59a40e3f4cc114d2eaca0ee` Hold less video memory in empty space: smaller VMA blocks, spare blocks only where textures grow, a smaller ASTC scratch, and DLSS features freed once unused, with a VRAM breakdown in the perf log.
+- `b1a9e9683cd486510f9937801c312575c5cd93b0` Name the exe's functions in the profile report for a GNU ld map too, take nm output for static functions, and list where running threads are.
+- `06f4aeb6940448823e5a9b65af04b7320e7d2d87` Time what a submission spends on the GPU outside the game's passes and dispatches, with gpu_passes = 1.
+- `0703cfa944ab25147bcda5dc4380f3d200da8450` Mark the texture pool in SPIR-V 1.4 to 1.6 shaders too, and name in the log each shader the marks cannot take.
+- `745d48bc8ccbd2d7ef5ebd3f38dfbcb31b2100de` Free released recording copies outside their lock, skip the yield's lock and scans when nobody waits for a core, and wait instead of spinning before a paced frame.
+- `bab143e1a24ab238b69011153c5abbb2e6e21702` Wake the recorder once per sleep, stop its idle spinning, and skip per-draw work in the replay that repeats.
+- `14969fc67188d01bc2d688f93e3503a176006e74` Keep DLSS Frame Generation's resources while it is suspended, which stops the 100 to 150 ms frames after menus and cutscenes.
+- `c32b9c40a8dd654070435f2381dbdd5029f38d79` Send Ocarina 1.1.1's one-shot zstd decodes to the host decoder, switched on by zstd_native = 1 until a check run.
+- `57cdfa15203461b6a7ebd5e355d50a3b918c6c41` Add wb_probe = 1, which finds out who reads what the GPU wrote back into guest memory.
+- `22103a57bf84d6540c2a6b0e75a44d30ff0a7892` Merge main into the test line: the pull requests taken there and two render target fixes.
+- `b2074499debd099915d0a217bd590379d7f2b35d` Let players export their save into one zip for a bug report and import a save someone shared, in the launcher and in the game's menu.
+- `524cd232661a92c3ec64831fd0259a4c7740759a` Merge the save export and import for bug reports into the test line.
+- `f63b6796ee705c0e7bceaa25647a3bb115d95f63` Decode Ocarina 1.1.1's loading streams on the host decoder, behind the same zstd_native = 1 switch.
+- `f1127f8be976010c84a3c8f83c12cbe987553d18` Retire textures evicted by disuse before freeing them, take them back on any use, and add tex_disuse = 2 to tell the freeing from the marks.
+- `a87f6e1bd64cb064269a74b528cf06e2f35c2616` Merge the test line's texture retirement fix into the combined branch.
+- `49dd6639f173729fb407a53217760c955b267475` Count a texture pool take only when its sync left no slot behind, so a retired texture is not freed while a set still holds its view.
+- `78b3bc5a805b6127adfdeb68d2bcb1d65ebd6339` Clear a texture pool slot's left-this-frame note when it is filled, so a skipped slot only ever holds the stand-ins.
+- `ed3db71485bcbc1518e1a63fd4c5265a64ca4e8f` Keep the processor's level on an update over 0.5.0's leftovers, let Rebuild the Game retune, and lift again after the build cache was dropped.
+- `00f06e669e8266986a7da5c0f0eaa7631182efd0` Fix nine runtime faults a tester's report named: a stack overrun on mesh draws, lost YMM halves on preemption, and seven more.
+- `947d286b40468a98a854755e0e5b29cbf8c87965` Leave the texture table's slots alone when a texture is released and taken straight back.
+- `6994563613da3c65ac0c3f6ff9319974ae8a32b2` Count the texture thresholds in time, not presents, keep the scene's textures through a pause, and make a sampled stand-in at once.
+- `4cbdecb64bcd54ca078af11bf2b4c152cb91220e` Round the physics solver's step count up above 60 fps and give Ocarina a steady step.
+- `04de04bc28d07075bad842cce3dc86180ec57246` Give a texture bucket the generation its state had before, for releases as well as take-backs.
+- `be0a3eda67abfd37801abb05c3abb93e83666ca3` Do not give a texture bucket its old generation for a state that a slot lookup left by changing it.
+- `9728424aec328ad0d15cbe1969ce635e9dba9076` End the wait after a frame's first submission when its passes are through, not its write-backs.
+- `a3e681f4e5b7635502b970c2a4a7ef8460aa63e7` Merge the performance pass's texture generation and write-back changes into the test line.
+- `be8c2620e5e849e24dd73f7f3723e7ef19fe4ada` Run the gamepad update on a thread of its own, so a controller that comes or goes no longer stalls the game.
+- `e190a2015a464161142e22a1d2d2dd6982bb4926` Merge the gamepad update thread into the test line.
+- `11898757d1cf25dee20e88cf1e5eb58ac6464e06` Name the gamepad probe probe_gamepad, so it does not clash with ov_probe.c's own static probe_input.
+- `448be7f6efd895875f90b58776e661d74e769692` Give DLSS the sizes of the feature it evaluates at every evaluation, not those of the feature made last.
+- `25bf3f539d184f6c2f7fa70ba4fe6c30f82fe476` Revert "Give DLSS the sizes of the feature it evaluates at every evaluation, not those of the feature made last."
+- `1cf947fe4b65c1184449ae492c5be0f253e9d38f` Release the DLSS features that stayed before one is made after a release, so the pause screen no longer comes out striped.
+- `6cd80546f2b013b0b18f37e336db30e58baccbde` Read dlss_idle_free as a number, so its value 2 is reachable, and put its description above the function's own.
+- `b40c4e2a9a6a426829154da7d4038addb2985015` End the Windows process without the libraries' detach calls, so a fault in NVIDIA's NGX detach no longer turns a clean exit into a FATAL.
+- `1e767363a7bd0710d9d3f40a604803f3b55681f5` Release the DLSS features with a larger input before a smaller one is made, so a DLSS mode picked in the menu no longer stripes the pause screen.
+- `8e91c95d13a857b1b386fa391716b33d3fe5ef1b` Record what the scripted runs showed about the DLSS release rule, and that the model may matter and not the size.
+- `74d3412736b4041abb60f36b4ff7d8c920a9c864` Release the DLSS features that stayed before one is made after a release, so the pause screen no longer comes out striped.
+- `25ca858215bea7d909130fdcf2f0b6a9d73597af` Read dlss_idle_free as a number, so its value 2 is reachable, and put its description above the function's own.
+- `d726a4fcded2ea5d57099d8a999f1bb19cf8480e` Release the DLSS features with a larger input before a smaller one is made, so a DLSS mode picked in the menu no longer stripes the pause screen.
+- `0b4fd482e9a688dc71198abfcfc760d6967e9bd2` Record what the scripted runs showed about the DLSS release rule, and that the model may matter and not the size.
+- `18be7383f8ed62d86482eda188c16ee5a1072855` End the Windows process without the libraries' detach calls, so a fault in NVIDIA's NGX detach no longer turns a clean exit into a FATAL.
+- `2a9efee4c5554e7b3a3f6a6ab8261097a0ab7710` Merge GitHub main into the test line: the launcher's customisation, the settings and sound changes, and the warm stage-library cache.
+- `202fc247d05f2cea7f7c5b9f92e44d44da2294c9` Name the gamepad probe probe_gamepad, so it does not clash with ov_probe.c's own static probe_input.
+- `f321697aba21b7fac4d98138f98ce76165f09d1f` Give the device address table's empty blocks back, so pool addresses that climb no longer run it out.
+- `7bc7f63a7de9305a0d981e61f2543f0f11982ed3` Let textures give way before VRAM mirrors are refused, and under commit pressure whatever the released list holds.
+- `417fbcf5ff5e0e908f50d7cf0c259f8079419c8b` Merge the memory report branch: the device address table gives empty blocks back, and textures give way before VRAM mirrors are refused.
+- `0cebadcfac2682c36aa654290d1c2750970d11b7` Leave the shader preparation modes on every processor the process was given.
+- `fa29f3fea54d106e0205babccce9e756b320f914` Merge the second PR intake pass: anisotropic filtering in the Screen tab, the X3D die choice, the NVIDIA shader cache limit, the NGX core search and other fixes.
+- `d15d4e2fbd5cc65301b6afa7a157cca96b59a55b` Keep the runtime's shaders in the repository as source only, and compile them when the game is built.
+- `9a22bea0f012f9891c3bb26922bb643cbf5b037c` Merge the shader headers branch: the runtime keeps its shaders as source and builds the SPIR-V headers when the game is built.
+- `61a13c62b9a533bc0ec52d9999a840a4fe1bff5c` Keep only the compute pipelines of recently dispatched shaders from the boot, and build the others into the pipeline cache without keeping them.
+- `1567ff8df4c7f93e4dee8ba47e666639a186eae8` Compile the boot's compute pipelines below normal priority, and raise the thread when a dispatch waits for its shader.
+- `1b9016896a0e2c2180d4a36a7e73f7641aa608bb` Say where the boot's list of compute shaders comes from: mostly the shader preparation, not play.
+- `17c13e49ff05e7624ed28712f9d9a5580291e7ab` Copy what shaders write into the game's memory back only when the CPU touches it, which takes Hyrule Field from 51 to 71 fps.
+- `bd9b48ff0404ca4b51466d663369a103c537102a` Keep a fault from releasing a lazily written range unseen while a part is handed over, merge what a part skipped and must write back after all, and leave the lazy write-back off on Linux unless set.
+- `f9f0505ed1aab7261502cdb6f69a477b9ea52a46` Build a large compute shader ahead only when a run has dispatched it, and release the shaders of pipelines the boot does not keep.
+- `0f334310ec47f1ef593e3abaa6cf4641ed3fdcdd` Write the first-dispatch statistics after the pipeline lock is released, and make the record of dispatched compute shaders safe to write from two threads.
+- `314aea08b333f531817e44642fe7bff966cf95d0` Let the background builder of large compute shaders always keep its pipeline again.
+- `69e7c59bcd1ca3b6a405b78d01687edddfc41435` Merge the cache memory branch: a large compute shader is built ahead only when a run has dispatched it, and the boot releases the shaders of pipelines it does not keep.
+- `e473dd8826ed5c7b0d956440ead5efc1d4d6af3f` Arm a lazily written range only when its mirror holds every CPU write to it, so a fetch no longer copies older mirror bytes over what the CPU wrote.
+- `c5478866cfb036a4a8cde2f9c70f6c3962813e03` Set the version to 0.7.0 and write its release notes.
+- `9ecfdf1543c4e39b0ea69c2cbd00bb54da556e0a` Merge GitHub main into the 0.7.0 release line: frames that lack draws are held back, and the overlay shows the game's own video memory.
+- `b6beb72c8d3fcef815c0a0106075abf0d1b60a9b` Merge release 0.7.0 into the test line: version 0.7.0 and its notes, and GitHub main d1bebd3 (the previous picture kept on screen for a frame that lacks draws, the game's own VRAM in the overlay).
+- `91a8da9eb3dab4134185cb6ebcf40a6c5b8f0a16` Keep the previous picture on screen over the first frames after a DLSS or FSR 3.1 mode change, which came out dark or black.
+- `71eb5fbe26a8f30aee0b3e44e4e5227be2c33b70` Make an area's textures at once after a load instead of over the first seconds, which showed the ground and walls black.
+- `9dbfed207f538e5c8a0f9230399783ab2a11c849` Turn the lazy write-back off by default and offer it in the settings menu as Experimental FPS boost.
+- `c2a51a334a474765b356d2335f0da2148d34cea8` Merge GitHub main into the 0.7.0 release line: uniform blocks copied at the submit call with the replay on its own thread, the overlay's frame times measured where the pictures go out, and early pictures kept back.
+- `32901bb337b183d2a40c3ddc4b2e3b8568e98615` Build the runtime's shader headers before make_game.py compiles, so a source checkout builds again.
+- `c117cd8999a0ec65ec605f5ee3892085d8e45939` Set NVIDIA's shader disk cache on Linux only with NVIDIA's driver, in a folder that could be made and written, before any thread of the game starts.
+- `19eeb29cdab7294d00289b743dd30a0d1d4bb583` Let tools/run_game.py run a Linux game folder and a save from a crash report.
+- `b2c5052ff5bff954e92677743f71800d41e9fa89` Give Linux a memory limit that the low-memory handling can read.
+- `f97358ddc4affbe89dcd35f2a114d4aff51345ec` Give the recording thread a fast core and its sibling on Linux, and pick the thread that does the recording.
+- `f740e95a621fb20bb1918c9bf2852ef61ba73c57` Fix the black 3D world under shadow storage on Linux and Proton, and copy only what each side wrote.
+- `df2427d00a911338078faf734b3a6666aa5580b9` Check that a part's CPU inputs reach the GPU ahead of its own noted writes, and let a frame dump pick shaders and keep raw texels.
+- `3134f5247501e6bcb13352be15810f4bbb774129` Let shaders follow guest pointers into shadow copies, and keep those copies current for the device address table's readers.
+- `4d12238e69c3b61c462923c21759440e991f9bcf` Let a shadow write-back clear the write watch's protection of its range in one call on Linux (shadow_bulk_write = 1).
+- `5b6dc0cfa0b367e314bb4746a2f2b84c60978ee9` Give the Steam Deck profile four virtual cores, BC3 for ASTC textures and a shorter spin hand-off.
+- `d985e0ecb0a3352e0e2cdf36b809d2538dcb6ad7` Offer FSR 3.1 in the Screen tab only where its library can load.
+- `ff4b6772f987c900a056c641d38f36176cd63e50` Build the Linux AppImage on a GitHub Actions Linux runner and attach it to each release.
+- `32ee021905bf355887983fb1dbaea2959671fc5d` Include NVIDIA's pinned DLSS library for Linux in the AppImage, and place it beside the built game.
+- `7d3185fca6bbb5cf57dce047e73013fef9c22b18` Let an AppImage without NVIDIA's DLSS library download it beside the game on machines with NVIDIA's driver.
+- `d01f0d70528ce8334a4e2d4f597cf4a582dc6d61` Give the Linux AppImage a window to install, update and play.
+- `eb2608296b44f163c095875f5c265224bd65e55a` Generate frames with DLSS on Linux through NGX itself: 2x to 6x or dynamic, switched while the game runs.
+- `bc4ea7574f80a5a1df65ef63a776966d136de6a2` Read the processor's level from /proc/cpuinfo on Linux when clang's own detection finds none.
+- `75b0dca907d0e2719a83a908656aba662d1075b5` Add Steam Deck button prompts beside the Xbox and PlayStation ones (prompts = steamdeck).
+- `449b5f73b0d7d8a0a6dadfe3e0a480d9ccc32e89` Merge the Linux pull requests into the 0.7.0 release line.
+- `094573bd26ca94d5a770b4710923186b6d4abdf7` Wake only the threads that wait for the event that was signalled.
+- `a03e059d2bf4981dc0f6c4a49f2f93357a936e41` Write the log from a thread of its own, so a stalled write no longer holds the thread that logged.
+- `d0b15e45785cea3f069b493178248fb424ff72b2` Merge the two performance changes into the 0.7.0 release line: a signalled event wakes only its own waiters, and a thread of its own writes the log.
+- `b9ccc5e7a5176a49a92771e1a08c9eeef55ec951` Wake only the threads that wait for the event that was signalled.
+- `5da5a48a908a382086699a7a54ee3ac8e6e2f84d` Write the log from a thread of its own, so a stalled write no longer holds the thread that logged.
+- `fa2e5026a4d3bafb2610068487ba470c2e570f79` Merge GitHub main into the 0.7.0 release line: main's two newest commits are the event wake and log thread changes this line already holds.
+- `d6b4eab00455ef0575109896b1640ad5734f3631` Describe the Linux changes, the event wakes and the log thread in the 0.7.0 notes, and thank their authors.
+- `f747c4e43d89334acb3a3af8db57c5adbd28a067` Skip the runtime shader step in make_game.py when the release does not carry build_shaders.py, so a player's update compiles again.
+- `bbcce968b06ccb5abb23953edecfa9862f13a947` Run DLAA on the pass the HUD is drawn into, so its picture reaches the screen in gameplay.
+- `87bf554637d32a5794f2dad6ca270546ce54da21` Render the scene of a picture of 1440 lines or fewer at the share its DLSS or FSR mode names.
+- `25e31815fd5fefcd57bb81ae46bc5cbb69ad3d46` Keep a texture's finalization on its registered slots, so a stale slot stays stale after its image was evicted.
+- `a1fcbb0b0764e86f6c5dff0590bdb1a0784128b6` Name NVIDIA's Shader Cache Size limit when the library warm finds the driver's cache cold.
+- `1f2b32073622d3b104a4052326aa47247fc9ae5d` Say "after restart" in the menu only while a restart would change something, and count the waiting settings on Restart.
+- `f16554cb8edae832abbe9b935f71f01e11126d22` Keep the game's buffers mirrored in video memory up to half the budget, even when textures have filled it.
+- `8603b0e1e9f6d2839372a0707bb83cf24bdaf739` Add the texture_detail setting, which makes large ASTC textures without their largest one or two mip levels on cards with little video memory.
+- `364a40ae9b4c7425a6368523715516fcc8e29e07` Add the Texture detail row to the settings menu's Screen tab, in the four menu languages.
+- `e3f623942bae1bb3f33062e76c81a5e5f620894f` Check the texture detail in --probe-vkmem: ASTC textures are uploaded and rewritten, and every level and layer of their images must hold the game's level it stands for.
+- `cdaab8172788334f464b144c6dc22dd4991a6171` Merge the texture detail setting into the combined test line.
+- `07721c0058f44fbd01550ef794454ded39f7202e` Test an event wait against the value the event had when the submission took its copies, so a frame is no longer drawn from data the game had not finished writing.
+- `c1951d2b37b2eb8c9fce79fd70c4a5b94d2d9a74` Keep a thread's log lines in order when the log queue's lock is taken.
+- `381264165aff3976fad327c0400c592a9003f0a7` Turn the lazy write-back on by default on Windows and take its row out of the settings menu.
+- `4467f73ead412a746c6e9c5d9517267f92f8a729` The flight recorder can dump every n-th frame (NX2NAVI_FLIGHT_EVERY), so the dumps of a scripted run hold all of its frames.
+- `eeeeec683ba0bb4942e0b360019225e11365d210` The pipeline statistics say how long a missed pipeline took to become usable and which stage libraries were slow, and a draw counts as skipped for its pipeline only when it was skipped.
+- `1d9b0dc9627339b455c124f1ff871e6317b3ff02` A pipeline whose fragment shader reads a target of its own pass is fast-linked like any other: the feedback loop flags are part of the fragment output library.
+- `b121f90e4162304b9746aa7d68bbf1a9e2571cfe` The library workers link the pipelines of skipped draws, so a burst of new materials is linked on several threads instead of by the one pool worker that is not inside an optimised build.
+- `fdf2fb89d39fa776d0ceeabffd540f0d73f93879` A draw that misses its pipeline has the rest of its submission read ahead, and the stage libraries of the pipelines the later draws need are queued at once.
+- `a38a902702b8960cfae83ac2934787f8bb104be1` The longest wait of one draw for its fast link is a setting (NX2NAVI_PIPE_LINK_DRAW_MS), 3 ms as before.
+- `ca843507e9712fcb490a5aab52f50a586f589049` A diagnostic says how long before its first draw the game made each program (NX2NAVI_PROG_LEAD=1).
+- `22cff8f1f92ccd4e0102e64cc996845bcac2d0d2` The program lead diagnostic covers compute programs too: the time between a compute program's creation and its first dispatch.
+- `0e16e58cf349bfc25e43076b330a39703a8f301e` Merge the shader stutter fixes into the combined test line.
+- `4bac444ad7b4ffe32ddd191ced2fd204c3c956f1` Set the version to 0.7.1 and write its release notes.
+- `005d30a29cffda3f2069dd5659c7b099dc783b46` Give the Kokiri Forest measurement in the 0.7.1 notes as it was recorded: worst frame 434 to 89 ms, frames over 50 ms 5 to 3.
+- `d4cf889a912884d1eb4e495e45a458e38f5689d2` Do not count a stale texture pool slot as left for later.
+- `63c7d3cb741b178ee8deb59e45a99e88b81cc2f6` Make the frame limit count the frames the game draws, with frame generation on top.
+- `0a9bbed34a7069a3aea5c6148b2fbf798eb708e2` Say in the crash report when the crash is in another program's module, and report video memory when the device is lost.
+- `fd22aab8d4726beb20d18ded5b51be160618f8f5` Let the launcher replace a cached font file it has registered.
+- `a6a3944ba0321b845089ca80b162d2b050726bb6` Report a lost device where it is first seen, at the read of the submissions' timeline.
+- `5988871aba5915ab8d43bc9b71a56ecbe0b4875b` Pick texture detail one step lower where ASTC textures stay uncompressed on a card under 20 GB.
+- `0a502ecf65991aba43b35d7401505a0042b30cf0` Let the pick-up window's number count at least one a frame, so the window closes above 60 fps.
+- `df0db643ed2a18a8a93746fc4702d9b76b9ee902` Add a test switch that lets a new depth image take the live one's depth.
+- `be136d8d3b797f5191b014cc3a905dcd33a5ad3d` Credit a sampled texture through the slots that follow it, and take back a retired texture that cannot be destroyed.
+- `86c0fe4199a8676d7eae467b23286dd44aacbaf1` Let a game build on a network share get past a short dropout and a share that refuses private folders.
+- `c98a918a342867ad3b0627231a63fe3726ad5d11` Merge branch 'claude/pr-intake-4-947f9e' into test-all-fixes
+- `bfcefe6fa24bd236fc11c617a4beef7b8cde44f5` A frame no longer stops for the pipelines of an area's first frame: passes the game renders frame after frame stay per-frame through a loading screen, and the waits that remain share 50 ms a frame.
+- `9d257edf5ab4ebcab776799e70b3854fde125f80` The log says which missed pipelines were slow and why, and a slow frame that waited for a pipeline is charged to the pipeline.
+- `e9ec6de6bc70f8ea8c43070be2feade7d1f5bfa4` A render target's frame count follows its storage, not the guest's texture object, and a mesh draw no longer waits for a pipeline that is known to be compiling.
+- `61c4c873d5d583ec541d7039a9d094bab366be5a` Merge branch 'claude/pipeline-stutter-110e1b' into test-all-fixes
+- `61cd4784f8f2431d2c5c5f97a04ba356b6f42a9f` Build the Linux kit against pinned Vulkan headers and without #embed, and try the compiler before the long steps.
+- `0e5e40b6205413d1ff3f2f7827e3f19f619f7f0e` Merge branch 'claude/linux-old-headers' into test-all-fixes
+- `834b36a6d95ea9b2dfd28994069a6a46e2c7a94b` Stamp a retired texture as used when it is taken back.
+- `2db1ce835df7f32bf746b789de6a43cca135a1d2` Merge branch 'post-0.7.1-fixes' into test-all-fixes
+- `e8f5f8e01e009bff16a6e0af8e670ba139c3d590` Merge branch 'main' of https://github.com/tangerineturtle1/NX2navi into test-all-fixes
+- `7b35fe750414ebfa4a9ff4557e0c98299834507b` Let the limit on released textures follow the card's memory as well as the PC's.
+- `006bdfa4b2467c264f1c7272bbc4703491e77462` Let the launcher's bug report export write the game's log and settings when the game has no save yet.
+- `31256a5015f2ca102e79d372bcbb8d9dbff24411` Merge branch 'claude/pr-intake-4-947f9e' into test-all-fixes
+- `682d9c5c50e647ca6a634b3e959b437be089f045` A draw does not wait for the fast link of a mesh pipeline that is known to be compiling.
+- `918d399d55c80f1e88fbd0009c5c05c5baeebf3b` Add the shared pipeline list: mesh pipelines players met are built at the shader preparation, before the first start.
+- `87551c76181cf3b393e6780dd8fba569b3fcbdd6` An update that carries the shaders over builds the kit's current pipeline list, and a GPU without mesh shaders skips the list's mesh pipelines.
+- `5151a64dbc887dfa9bff1c2b72b613d5180b9fc4` Merge branch 'claude/pipeline-list' into test-all-fixes
+- `caf50ecf1c6639974cb452fa66102730b6a9c7ff` Turn the lazy write-back off by default on AMD's driver for RX 5000 and 6000 cards, and say in the log which settings a run had.
+- `11050fb0d399675041ff6172cde341124cdfc3b2` Test that an update leaves a player's nx2navi.ini alone, and keep its bytes when the older installer sets the language.
+- `d83f01acb3285c15502f1cf993602cd1a43248ab` Note the lazy write-back's default on AMD RX 5000 and 6000 cards, the settings-file lines and the fatal summary in the draft release notes, and the new checks in the build guide.
+- `755e56065a12d8c98466c4308c98ef7a9801448f` Let the lazy write-back choice check find its compiler by itself.
+- `62e8578aa2ce0e42d5a5ddf503639b192b1538e2` Turn the lazy write-back off by default on every card of AMD's own Windows driver, and let the device probe print the fatal summary line.
+- `fc71691e912397604db6eac0c552d6b499b5cc13` Merge branch 'claude/amd-fight-crash-ef03a9' into test-all-fixes
+- `f17f4f9bcccf33b41c48b9d423b655221044407c` Decode the game's zstd files on the host by default on 1.1.1 as well.
+- `88495c296cdab94ce6209fc8c68dccd5fa8c7b40` Keep the game installed when an update stops in the compile.
+- `e69a84fe59049cb72a57892bd22e3b8fb99f4e4d` Roll a version that cannot start back without waiting for a click.
+- `6e38458f778c4afc5b32d850b438dcd5c8865a85` Remove a cut RomFS image before measuring the free space.
+- `e732173beaa87aa0864cd7e74c61580c394408f7` Keep the finished objects when the compile is cut short.
+- `d27654ad9bcf79c82f531c0e8f0db96c2d76abc8` Do not lift again because the RomFS step ran.
+- `752c172ccfc0741f4f0c6553b6db8615fe136f15` Say how long an update really takes, and fill the warm-up's bar from zero.
+- `e6fdfde7c6f0ddaa498ce0294714af5115c18c20` Report the build's unexpected errors with their message.
+- `18a86dd652966593a51ee4177ad5c74d327246aa` Show what the check of the game files found.
+- `55c7c0f7f2653bd63daccd3bcac3207d3fe2138c` Show the game's FATAL line when it ends with code 70 or 71.
+- `c02b62826dbafbdeb3970902b42d773c8001ba9d` Cap the default number of compiles by the free memory.
+- `ef30a23969b894b5aa3866fea03461029d58b295` Run the build below normal priority.
+- `61432c32958d0dbe428254f23cfd62b7a319e3f1` Keep reading the build's output when a handler fails.
+- `856944002e2b81a7222524011a8dc9d6ede6b01c` Hold repeated update checks back, and say when GitHub takes them again.
+- `a5e7eddcfd26b8c186c6a5c8442faba67e115bd7` Write the game folder's paths into modules.c as UTF-8.
+- `412f2f27af6a2299c2252e439be1cccd6a0bf8a0` Read the game files in 64 KiB pieces when checking them, and keep the check's key.
+- `e678e1f38e901eb1bd81805a435b7c0049ad26ba` Check the disk space and the build tools before the long steps.
+- `62a02da3813a38a1bc52fdcf68d428deced41ade` Unpack the texture archive in pieces when drawing the button prompts.
+- `e36305d3465b28027805757c1fc3d2190c2c9c6b` List the launcher's new tests in its guide.
+- `918ceab1bbe3d56bacd870dcc2dd052615af66ab` Compile the paths of modules.c with any compiler in their test.
+- `92e3cc0adb7c4ff348743e27fb481b2519f01f55` Merge the launcher fixes: updates that stop keep the game, honest progress and errors, and a faster file check.
+- `4af930d0c2e191e4f2793a15939a935a8784cf38` Ask for the disk space the build really needs, and say how long an install really takes.
+- `1241efa458b8c2d14d5277933d466f4a6f2a6b9a` Give back only the touched piece of a lazily written range, and say in the log why ranges are written back.
+- `892859cad0fb4aa33608d76262edc9b16d2b019b` Fill the records of a run of indirect mesh draws in one gap, so their pass is not cut at each of them.
+- `edcdd6a6f611bc274581721dfccbfab6e436618b` Merge the town performance pass: a touch gives back only its piece of a lazily written range, and runs of indirect mesh draws stay in their pass.
+- `28f78d4045e1c45cfc11327684cea52330c78610` List the mesh draw switch among the settings, and count the given back pieces under the lock.
+- `8bc23ea06e1fbfc11e5217c6ff246632b5570b60` Clear a new depth image where the game makes it, not ahead of the part being recorded, and drop the depth copy switch.
+- `f29e34e7a0b675f417d47a5f434106b9e36f38a2` Make the observer-response scene mapper the default HDR tone mapper, anchored to the game's mid grey and tone slope.
+- `7b009ffc648efa13894ed6dd4b563be3f0d903b0` Let the wait after a frame's first submission cover the write-backs under shadow storage.
+- `2f6ff17651e93feb0e4b0a949f444f4f4ed5e57d` Give each part of the import check in --probe-vkmem its own write-watch epoch.
+- `175c1947deef6bc2faef6c9c59c373fe2fd9bb20` Pass over the pools with nothing written when a part that uses the device address table syncs the shadows.
+- `5b1413d8175c574a510980cc64c1c33e8597ddd3` Count what the shadow copy-ins overwrite and cost, and keep stores through the device address table behind a switch.
+- `b60e490344b52d87232c783ced7dbd651d47c76d` Merge the shadow storage flicker fix: the wait after a frame's first submission covers the write-backs there.
+- `ed1ba735b4373d61cff044bd98c6240699a58a4e` Leave the release folder out of the repository.
+- `6750e0bee12574a53c4bf27e7ad14ecb918d1302` Turn graphics pipeline libraries off by default on AMD's Windows driver for RX 5000 and RX 6000 cards.
+- `093cf949dfb45e9d014cbdeae89a3a1af98870b8` Open the recording device only when the game starts microphone capture.
+- `f017849e2bd6ff1c1aa9ba319aeb6890754b202d` Show 100% for the shader step only when the last shader is built.
+- `ce66223fc7d8a57cd7e6f7506bd9b0ee3f1e98ec` Encode each note button picture once when drawing the button prompts.
+- `3ea3f5baa89a4062b37985ed9a5190fc94d53db9` Leave the video memory in use out of this process's commit bound on Windows with a discrete card.
+- `7145c3f2082263a5313ddabcbb8e2090317b33ec` Say in the log when the system's commit runs low under a page file that Windows sizes itself.
+- `73abd6577f76cbbc4ac869aed2e83ee6a462f085` Try a smaller allocation before giving up on a texture upload when the video memory is used up.
+- `dda12051f59948b651171fd2fa01a14546942c2c` Add heap_lazy (off by default): on Windows the game's heap is committed where it is first used.
+- `10cfbd9ea1542dd7bc38025a596169ebb35d73f7` Stop telling an RTX 50 player that frame generation needs an RTX 40 card, and log why it is unavailable.
+- `9dc5fa8b36be9f9bf63d33aadc9e309876a3233b` Check the size of pipeline-cache.bin before reading it.
+- `4eea3d1c2fdacf072b39ed2ee55b2092c72d9bd4` Wait for the write-backs before returning to the game where pools are shadow copies.
+- `b1d08b06a8c3bdc6533a5bbc29bb3c899ce977c6` Lay out the action prompt's face buttons as the pad layout has them.
+- `8e18097b7bff38314ae3bcdefd7679f74bc85ee8` Pass the link map's path to the linker with -Xlinker, so a comma in the game folder's path no longer fails the link.
+- `7411d318032f05d353b5dac9c6f3dedb4397a8a9` Give a thread on a folded virtual core the number of its own core, so that fewer than six cores no longer crash the game.
+- `097b5e75b46fdcce23cfe15be46e08bcb6502b21` Merge the pull request intake: fewer than six cores, a comma in the game folder's path, the pipeline cache's size check, video memory and commit handling, and smaller fixes.
+- `fb8483cb4c147a7ce3eb3692c207fd433bbed224` Find the game's exposure in every tonemap shape the splice takes.
+- `47f6aef2f60bf3aaf84e63818750463990ebd2f1` Turn the piece release of the lazy write-back off by default: with it on the graphics device was lost after some save loads.
+- `a33135c435355f2c9fefc6b241c63a5fe599068a` Add the audit's Phase 1 map: subsystems, threads and their shared state, the path of one frame, and every allocator, pool and cache.
+- `66aedffcdde7fcecb4cde2062c7f2b72ec73834b` Name the work behind each frame on any thread under the perf trace: RomFS reads, zstd decodes, pipeline creates, guest memory maps, pool initialize and finalize, and device memory allocations.
+- `ecd34fb513a9713e62fe7d0e65e8b49fd0969f0b` Under the perf trace, report frame times per route segment and take a memory snapshot after each area load.
+- `ded13958de53f0f9ec8419dbbeb0d9055c29dfe8` Log the sizes of the caches, pools and tables under the perf trace, every 600 presents and with each memory snapshot.
+- `8a811ddd4123f125b536f08ee9b5d38ee0dec446` Record the audit's Phase 2: the instrumentation map, the test route and its coverage, the baseline per scene, and the sanitizer results.
+- `ab4bd8f8f9dad3d9a3c1933cf5153ae918f16b39` Give a slow frame's line under the perf trace its drain wait and replay time, so a stall inside the replay or behind the present thread is no longer read as unnamed.
+- `78223225f4e54a32727231558ae82eeadb36ec64` Mark DLSS and DLSS frame generation feature creates as work under the perf trace, with the device idle wait of releasing the kept features before them.
+- `d2afdfa0f4280bfeae3bfce69ac29390f2c6a5d5` Under the perf trace, name the guest threads that submit and present on each queue, and log a submit or present that starts while another runs.
+- `6b68516fb1d167030c92b39af696189424b738b4` Count the page generations handed out in the perf trace's size lines, so a run shows how fast a session uses up the 32-bit generation counter.
+- `5c4ddf0382f7879e9523fe8f106ea2954e4dcd97` Record where the audit's Phase 3 stands: 55 findings in the ledger, the outcome of every lead, and what is left.
+- `b933e3d9969856d6dd3c5a8d5db212e1a454ad09` List a texture pool slot without an entry once, so the walk over those slots no longer stalls every 8th frame in the Market.
+- `e887a1d18b7cce34e5fd5233499dc9ffc7a19aca` Delete the boot prebuild's running marker at every orderly exit, so closing the game during boot is not taken for a driver crash.
+- `fb448090745b66224cd933a378d5ff27d652c5d7` Name an area the game asks for and this game version lacks, in the log and in the crash report.
+- `abd2e2c392632d2ddf01cd9130186a27a0af501e` Compute the menu grain's lattice hash in unsigned arithmetic: the signed products overflowed, which is undefined.
+- `4a69a38b48ce303b3a17fd3414e0a4c5fb1f028c` When the jmp_buf table is full, give the new buffer the slot of the one filled longest ago instead of ending the process.
+- `9be72ae9c0ccef34dcd5a0aa8068edb5fa3b4fd2` When the system-event table is full, reuse the slot of an event the guest has destroyed instead of ending the process.
+- `61e1ca8bad73a87324c967eb2b69c5d811ce37a6` Drop a zstd stream's slot by its stream state under one hold of the lock, not by a pointer found earlier.
+- `d15b4c95aa1f72643874c88ccdfdaf5b944f9f2e` Count a frame's submissions atomically: several guest threads submit at once from the pause menu's first frame on.
+- `5ddff078c3ac058f1bce89474102f1181ec3ca93` Count the save Commits under way instead of flagging one, so a second Commit entered beside the first keeps save writes out of its copy.
+- `7ccb958c47f088e000288cc5242dea25c785932c` Let a save Commit that is under way finish before the crash report or a fatal error ends the process, for at most two seconds.
+- `4ffaf6ea9691b922e104665035da4d2a95f71597` Hash a texture's storage only while it is held mapped, at the upload and at the unchanged-bytes check.
+- `ccc31ad562fea954fc59514f65eab2ced0d6dc02` Forget a texture's content hash when what reached its image is not its storage: zeros for storage released mid-upload, or nothing after a failed GPU ASTC decode.
+- `3e67a74cfc7ad42af3c3335567086347773c7d16` Ask again for a VRAM mirror whose device-local allocation failed, as for one refused for the budget, and log refusals four times per reason.
+- `796618111501d1efd57f085f571c4eb208dec4ce` Load the menu's zstd dictionaries once behind a once-guard, so a second thread asking during the load waits instead of finding none.
+- `a96328e967b46c75f1d694f795cd1a2301372d23` Prune the list of the GPU's uniform writes with uniform snapshots switched off too: there it was appended on every write and never shortened.
+- `493c877d595ee2e462039ea369cb9ae0057755ee` Read NX2NAVI_ACQUIRE_WAIT as the number its comment describes, so the value 2 selects the wait for the newest present of any image.
+- `8ce64407f0c6ac6c8e2043a9c5e2efd81f53ed50` Hold the save file system's lock while a directory listing is read or counted, so a CloseDirectory on another guest thread cannot free it underneath.
+- `92178ed511114a514395429d933e6fd192b13c50` Give the unit checks that build one runtime file a stub for the size lines' helper, so they link again.
+- `fdc6040ba9cbc66894f4b3dfcc5933f8ca4ed764` Record the audit's Phase 4 so far: 17 fixes with their commits and what verified each, the repaired unit checks, and what waits for the user.
+- `2892b7b7ddc1eb8ac54a6a11eb002760698cf810` Record the verification of the audit's fixes: the Market stall is gone in three runs of three, and the route runs clean under the fixed exe and under UBSan without an ignore list.
+- `51882114ff1a667c04e968d07e02c8ac288ed932` Enter what the session diagnosing the lost device found: the loss follows the lazy write-back's piece release, and callbacks still run after the device is lost (a new ledger row, F-1-12).
+- `f52b0b397d3efbce5b2e23f59ba474a3307cb86c` Correct the count of save loads in the audit's verification runs: seven, not nine.
+- `fc1a50f0db0b7626afa59e90ca774e898172ecbf` Merge the audit: its map and ledger, the perf-trace markers and size lines, and the fixes of its Phase 4.
+- `420aef041a226c63dcbc0665fd9cddb1f312d7ce` Correct what a review of this intake's commits found.
+- `411dd5fc01fd94296fc69320abff91fadbf90816` Answer the game's csrng requests with random bytes from the host.
+- `8e19b653f577f60aa617b37f9e4a54fa6ebe90ff` Show the walk key's rows on the Controls tab again.
+- `6628cf69f062f6af6ea6567a4030ae6c6943e337` Declare StorageImageReadWithoutFormat when the translator reads an image that has no format.
+- `6cd03fb630cddfa20a2b2b3d8d42f8e909e8f533` Declare a texture whose size query reads its layer count as an array, so the count is the texture's own.
+- `1b89c0227bfb654ad8e4149e80da466c69ba043a` Let --probe-movie test this title's AV1 movies, which it rejected before testing anything.
+- `7e07e13bac99906b926ed5ec4aa09fbd99830b90` Add co-op, off by default: rooms through a relay, progress sync between the players' own saves, and a Co-op tab.
+- `ba9d6bac067fd425a2d9fe5d026283a2f339381a` Keep co-op's private settings out of the log and out of bug reports.
+- `acc1ae25bfb52a88fdb253f98440632a7a130752` Merge co-op, off by default: rooms through a relay, progress sync between the players' own saves, and a Co-op tab.
+- `1e01f90db5c3e525473bb5454c349751b6519bc2` Destroy at shutdown every finalized pool record that waits for a submission that never came.
+- `861357b2a45ecb567d071568f9b18c084672128f` Make the direct mouse camera work on game 1.1.1.
+- `4fbaecb3644609bb58a751090947bbdb1c46c21f` Keep a texture whose address another descriptor shares out of the disuse eviction, and let a sampled stand-in always drop its hold.
+- `84b0672ec248a621cce900b059aae23eb084dbe0` Stop retiring textures no shader sampled for a while, by default: the ground they left flat did not come back.
+- `c2591a8a46f0d57b4a3e8617fd2881f00fcf8ebe` Make the wait after a frame's first submission the fence's wait again.
+- `534591be049f5be339abcda598d2be2c2e181299` End a run whose GPU device is lost in one place: one report, no callbacks of unfinished submissions, and exit code 72.
+- `39fa0be78ca54529bbae4c87cb4183937b1a5977` Make every pipeline built ahead of its first use pass a memory gate that counts the builds already running.
+- `147e8a02e3276ea35fea67b989848cdf23321c30` Warn in the log at the start when the machine has less memory free than the game takes in play.
+- `29eb7cf0a743d1454cc153bbc9c8727fc124b364` Upload a texture again when its ASTC decode had no memory, instead of leaving its image unfilled.
+- `2ccd69ef15208a85388f166377a1441e42fa289c` Merge the crash and memory fixes: a clean stop on a lost device, a commit gate for background pipeline builds, a start-up memory warning, and a retry for a texture whose decode had no scratch memory.
+- `871b06e2e7e8314d3869276b8cd6ed7afd1af40a` Read a pipeline cache larger than 2 GB on Windows, and log every refused file with its size.
+- `cba95f8d0ac475c9bc5d37629fecccda3fe8abba` Record in shader-prepared.bin which seed it was prepared from, and prepare again at an update when the seed changed.
+- `719ee94e6751ab5fa8aadc9d46914be66930316d` Write a pipeline cache only when its data grew, and give what a run compiles a cache file of its own.
+- `70afa1584b53face1d8d7233faaeba4966f6848c` Start a whole pipeline build a draw waits for ahead of the other queued builds.
+- `2e28ba12df9f508aed8714fc3f9b40d3bc63d232` Merge the stutter fixes: a pipeline cache past 2 GB is read, the prepared shader list knows its seed, the pipeline cache is written only when it changed with a small file for what play adds, and a queued build a draw waits for goes first.
+- `ae70219570fdef3d186d4750195750b85e1cebe4` Leave a page alone when a shadow write-back cannot hold the write it reports.
+- `b55d2eb3e19e19a3332b5261fd3fcd3ebf054b9a` Check in --probe-vkmem that writes made before a pool exists are still reported after it is made.
+- `f38428fa4d67e6b736c281cac0df59a79f44cc1d` Make the wait on the GPU's signal the default again after a frame's first submission.
+- `d073d80e70c292d1fbb9af06b82a9f03b9701358` Create FSR 3.1's pipelines through the pipeline caches kept across runs, so a context is not compiled again at every start the driver's own cache does not serve.
+- `f9219180b9964d576e50e35c249de5a608a63f5c` Try a pipeline cache save again when it did not happen, up to six times at the save interval.
+- `0a535ff85355f2631cd356925a1e4fa5fe0036d8` Add a tool that checks the translated shaders of a shader cache offline, with the game's own load checks and spirv-val.
+- `9c2b70957b734579e488c03758a4a61571c8263e` Merge the shader and pipeline batch: FSR 3.1's pipelines through the kept pipeline caches, a pipeline cache save tried again when it did not happen, and a tool that checks a shader cache's translated shaders offline.
+- `15236bf5c2b7901a039f7616cf2d8be049790b62` Say in the perf trace where a texture sampled without content came from.
+- `6c991d628d62a63c313a2de384ff852b8d8941af` Start a texture the CPU does not write, made over storage the CPU writes, with that storage's bytes.
+- `33d605fb13747325c860cb5752b7a88b639d3ada` Merge the texture origin diagnostic and the fill of a second descriptor's image from its storage, and let the play file replace a pipeline cache that is over the limit.
+- `f6aca1f9c7892ddc784d5435561831c1e7d135ed` Add the mesh_fallback setting and decide at device creation whether task and mesh programs are drawn through compute passes.
+- `a3da8569c891a3ccb50ab189908b153c1581b486` Make the mesh fallback's modules from the translations the shader cache holds.
+- `a8c6e992ee010ff8caab8d8336a4d6baea0451eb` Draw task and mesh programs through compute passes when the mesh fallback is on.
+- `b1408ee371037b481b157b366893ce59aaa38e2b` Add --probe-meshfb, which draws mesh programs through the mesh pipeline and through the fallback and compares the pictures.
+- `8bb91892501847ceb04604b20cc9642c269737b9` Describe the mesh fallback in the architecture notes.
+- `31e0a029017adc99361dc665451f59b144ee2089` Merge the mesh shader fallback: task and mesh programs drawn through compute passes and an ordinary draw where the card has no mesh shaders.
+- `295922c22434d0a721c7db9c5adc74ec9022e452` Sync the device address table's shadows once per guest submission that binds the table, and take out the port of pull request #353.
+- `a79ac01a8264f8accdb71ed40161edb079a37515` Merge the shadow sync once per guest submission that binds the device address table.
+- `a3f98ae7d1d169da26a34861e6eb1c78d8927866` Keep the upscaler's history when the game moves its scene to another light target.
+- `a4eae66a8ad0b64e6930d5fe031aed8347ef54a9` Merge keeping the upscaler's history when the game moves its scene to another light target.
+- `83febb43ef052dab8ff43d22a68d47c04e02341d` Keep a released texture the game still looks up when the count of released ones passes its limit.
+- `83faa1daca494046c92a3c79994fcf7bcb8d9d0e` Let a pool's finalize wait for the submissions issued so far instead of the idle queue.
+- `2d48afb052ad14f96ac354152376962979efbb3c` Open the menu when the gamepad in use goes away and no other is connected.
+- `0f1885f9fda05f00e973dd16db3fc2af4f6ed052` Count the game's GPU waits that return while event-ordered work is still held.
+- `3ecede66f744289f2c1e07b1a5b0dc45bea27092` Log write-watch queries, freezes and mirror begins that take over 4 ms.
+- `6a8ebe72411687a8a96b567393d5c6eb91d6a03d` Give the freezing of idle memory regions a time budget and back off when a freeze is slow.
+- `3d394dd84e5d2447f068c5a066c3ace7ae1f97a0` Merge the fixes line: the stutter, memory, flicker and crash fixes, co-op, the mesh shader fallback and the launcher fixes.
+- `bdc67cebfc88ed0104b61d68a8f098bbfb4a4c6a` Take out the GPU address history of a lost device's report.
+- `cd2a13062e6cedae134d6f149bf0856c8c7f28d9` Add the fixes line's changes to the draft release notes.
+- `8159908675f4f2462b919476363c8fa1d1aabaad` Bring four tests in line with the merged code.
+- `ff3bfd1a4a8c2d8b6ae2c88a921876b80c9e4a2c` Let the wait after a frame's first submission write the results the game reads before it returns.
+- `c308ee65100e9057e91390700d48fdc77a5a5417` Past the limit of released textures, drop one that nothing sampled lately, not one that no lookup reached.
+- `08413ab265fc67fccb64d8195df836db24da5afe` Record that the dev folder's prebuild skip file is gone: the user approved deleting it, and it had already been removed.
+- `4f85f3d59a63a866d696f8f6b1d0d656f2a0c1ab` Leave the pools as imports for NVIDIA's own driver on Linux in the game itself.
+- `a51602576008f5180965a25a36ddb9857c1c4f2d` Add the two flicker fixes to the draft release notes.
+- `7f0171108749aa4076e6052525d0691734110493` Make the release 0.8.0, with its notes.
+- `d55f7e763d82c31d5ee1ad13b2ba275fac0e5b1c` Make co-op a hidden beta in 0.8.0: the menu shows its Co-op tab only with coop_beta = 1.
+- `a8fa1a93705a3ae531d3c22f18b06a2491bdbdf3` Point the AppImage runner's package sources at Ubuntu's own archive and try apt three times, since the runner's mirror host stopped resolving.
+- `bdcf07bbf624971d3d8edd27acf92610c571241a` Take the AppImage's shader compilers from LunarG's Vulkan SDK when Ubuntu's archive does not resolve on the runner.
+- `ae0c8140a2f6200cab5c3db26b16d7765ce08540` Finalize only the slots a texture object registered itself, so the next streamed piece of ground keeps its heightmap.
+- `8683d14e304d7b7cb5e1faf642b24913c03e7103` Merge the fix for the see-through ground: a finalize marks only its own texture object's slots, so streamed terrain heightmaps stay current (pull request #535).
+- `4768762213c823ef774f1769f1c5c94b6e631f3e` Record pull request #462 by Gaetarra as merged: its direct mouse camera for game 1.1.1 is on main as 861357b2, which was taken in without their name.
+- `358ad5410523d71cf15329a88120e18abb32ef6f` Log the luminance of HDR10 shots and keep their raw pixels, and show an HDR shot as a 2.2 display would.
+- `309e412f1f823708a8a2ce2c5baf1a7ba8a5ca14` Make HDR one fixed look with true blacks, and keep only its on switch and the three whites as settings.
+- `3529eff9494c808288fdaec53923c58a17f966bb` Offer both kinds of HDR in the menu again: the tone mapped picture and the game's own.
+- `6b73d85d19c95818305c5b862ab832e32aa168a7` Name the game's own HDR Native in the menu, without the note after it.
+- `5d519339690daa48f1cebfb1557c466502d65c34` Arm a written-back range only while its mirror is still the pool's, and give back an armed range of another mirror instead of marking it stale.
+- `e501ded816c918cb262ab3231470e72d53c7eb04` Keep the ASTC decoder's scratch across upload batches and stage its blocks in the staging arena by default.
+- `6a011d2adfd64a07821d7b4bbe222c4e1e931e05` Blit the movie upscaler's stand-in into an image slot its program uses, so the Triforce movie after Gohma plays at 4K.
+- `d3e50328bf44eecb9d591e29a4d0e8b658a2e75b` Keep movies with their sound at any frame rate: one movie frame per update, and the pacer keeps the movie's slots through a late frame.
+- `bfe88e503a7475105090c0563e1236627c9bd278` Add one anti-aliasing setting: the game's SMAA, off, FXAA, SMAA at its Ultra preset, or TAA.
+- `90e41c13d3258d7f0a10f0755ae9f1dc2b9f3e82` Pause the drops for a low commit while most of the textures they drop are made again within seconds.
+- `fa9dcbca5c683f7bf3841b3cf5897efc02ac09f9` Freeze a memory region only after 1,800 submissions without a write, so the game's streaming buffers stop being frozen and thawed while it streams an area.
+- `ebb37689cf9d6d1f1ec1ed995d4ed1acdda090c4` Thaw a frozen region's pages outside the freeze lock, from the runs its freeze kept, so a thaw slowed by the driver's pinning no longer holds the replay and the game's other threads.
+- `15bd64f4b87fa733de79054212cfcdb3d1256534` Hold new pipeline builds back during the save at exit on every driver, instead of copying the cache while NVIDIA's builds run.
+- `27793f2efe493ed2aa60a34829df152009370829` Clear a mesh program's whole stage buffer before it runs, not only its primitive count.
+- `e92f0ae3f129fd1b17cd8b4469799930955186de` Clear the whole stage buffer in the mesh fallback too, before the mesh program runs.
+- `e8b4d29f91704905f1793664db5dd7957b7b8499` Give mesh output components outside the program's output map Maxwell's default of (0, 0, 0, 1).
+- `b5c9a9b38e3bc5c78fb1d7159c8dc0a3c9b9b688` Answer NVN getters asked of no object with 0, and map a buffer with no pool to memory of its own.
+- `d02220f5789f66e869bf01fb2d1a30e8163ea303` Give NVN2 compute programs the local memory their control section asks for, and put spills after it.
+- `ab8734d1f6281aa0d929566f46dc9ca4d758b091` Make the engine's second time step follow the display interval too, so held buttons repeat at the right rate.
+- `4750e1ffa580665d70ee464a42d0a2c9418ce32f` Bound the translator's storage buffer compare-and-swap loops at 4,096 attempts.
+- `276c88614350d3116cb3385c2c0e542911e1998f` Prepare every pipeline of the shared list where the driver has no graphics pipeline library.
+- `01164679d45ba040a873b42f8dc5becc7ff291c7` Give Mesa's shader cache beside the game a limit of 8 GB instead of its default 1 GB.
+- `2cccdb8823992b5febb24932f97fa709614b0921` Keep the game on the largest-L3 die only when that die has 8 cores, and reserve no recorder core there.
+- `f39e5930d16ed3d8c48a507355934426df3c4df8` Count the whole register range of 64- and 128-bit loads and stores when the lowering places its uniform registers.
+- `ec2e05e3a3e247180d03eba93c3efe5cb3e00545` Leave F11 to overlays when Ctrl, Shift or Alt is held with it.
+- `c60abba2e502ca325af245588f455cabba803efb` Count a gamepad axis only once it has been seen at rest.
+- `79b36044b07aa5beeefaa1bfa7f4df7e31f9764c` Compute texture layout sizes in 64 bits, so a garbled descriptor cannot wrap to a small size.
+- `4b23c4da09db8e18d907a1ee22f3c6c439259819` Add a JUMP_SLOT relocation's addend when it binds a guest function, and log one on a host function.
+- `8c353cdf21cda908fdd3d6d796d2151ba914cbac` Build the boot's first recorded pipeline alone before its builder threads start.
+- `4ff4bed43435299c9fb0d902d420d5586aa46ada` Show the post pass's picture when it writes native RGB9E5 texels, in the upscaler stand-in too.
+- `e96a89c31ce74cfb01f03891710e58b3b0719608` Raise anisotropic filtering of the game's tiled surface textures to 16x by default.
+- `1771775e3cb459b961ad69b2274ed498aff585fc` Log a game thread that waits 10 s for a lock or for another thread to end, with what the other thread is doing.
+- `ef64f341a0c4a3d0a50372c3b39cc98194886b56` Retry a graphics pipeline the driver refuses with VK_ERROR_UNKNOWN without its optimiser, and add VK_NOOPT=mesh.
+- `12d81ade9ca89607e7572f4b1e48908348504368` Write a GPU-drawn texture back to its storage before dropping it, when the fence write-back would have.
+- `677a69378f98bdbfe0810d95b9c3e9488e1abfbb` Fill the fragment inputs a mesh program does not write, with the point sprite's coordinate for point meshes.
+- `14fbc6a0eadaf83c6c53c80de1c8a7acf51cd113` Make the mesh fallback's programs on up to four worker threads instead of one.
+- `74b7449518af808b4dee4e7189a89b57714fc901` Give back the kept staging and snapshot buffers and the spare blocks when an allocation is refused, then try once more.
+- `10dd325dbecc30acf5eec6125e887c916184bb39` Copy the pages the CPU wrote into a VRAM mirror when their part is handed to the queue, behind NX2NAVI_MIRROR_CAPTURE_KB.
+- `8a980e4fd57236bc7cced8ba34b9ed0c5b88686f` Add NX2NAVI_WB_SKIP_MB: without the lazy write-back, large written ranges go back to guest memory for their first 64 KiB only.
+- `fe1c2d8b3b9aeb33e0daa0f38a109cdaa11d8150` Give the draw context to the code the replay workers' change did not see: the compute bindings log, the movie stand-in's image count and the anti-aliasing pass's pipeline reset, and look a program's compute stage up directly for its guest hash.
+- `7f5906c121cbef5ff83fcfd42e206fba5f5565b9` Keep the texture events of the recorded frames in the flight recorder and write them with each dump as events.tsv, before the thumbnails.
+- `0c343e04a4b500dc63e13afdff28582b854a680f` Record the game's time step at every present in the flight recorder: the patch page's step, the time manager's and the game's present count.
+- `7dcfb72b7067e2b182b12911c50889b007143c4e` Keep the time of day at the game's pace under the real-time step, its fraction carried from frame to frame.
+- `bd32077e543de6d2d45ffb856fd4adf9851777de` Sample a flat texture that a shader reads as a 3D one through a one-slice 3D copy instead of a stand-in.
+- `7f7416b38b0dbda9cdc42a184c70cec36c639686` Log the voices the game holds in the audio renderer every 10 s with NX2NAVI_AUDIO_STATS.
+- `2ac56ecc6f5eb7b9f87f84efa607684f92f26f57` Add NX2NAVI_VRAM_BALLAST_MB, video memory taken for the session, to test a smaller card on a large one.
+- `c05b2570eb70d7c900f8853779d4f72b768789fd` Make the version 0.9.0, and leave the long-wait watch off by default.
+- `e97c892742d4146e0c5e7f8f2fb097b6877caa42` Write the release notes of 0.9.0: the draft after 0.8.0 with every change since, the install steps, the known issues and the thanks.
+- `d6c8b0631cee10c6876aa7485574a9b57510dc68` Expect the SMAA lookup textures among the files the shader build embeds as headers, beside the menu font.
+- `4b87606f32150a0e7687d0f19b93b5cae0388ecf` Keep released textures the game takes back intact for as long as their longest release, not 120 presents.
+- `4956ef8365c20c1fe725bc62ade4b8743868b819` Let a finalized slot sample its own texture's image while that still holds the texture, not the stand-in.
+- `34cfb1a6e9048356a69f6a10c2f9453def83bc06` Say in the 0.9.0 notes that Kakariko's haze no longer drops out for a frame, and narrow the known flicker to shadows and lighting.
+- `fbd4067460198aaa826fead0b06719ae2b1b1553` Merge main into the 0.9.0 release; its one commit, the opaque ASTC textures as BC1, is already here as 4c5855ce with the settings list merged.
+- `6ccd1e224dccbaae98a0167e4255d8463349eeae` Build the shared pipeline list before play on every start, and build every listed pipeline at install.
+- `2f39b27fb6f4a96dc5810c19520c37c89a419049` Record the draw replay on three replay workers by default, and start the draft notes after 0.9.0.
+- `a13af7a8c27201d9c89c896a4720b70af138b6ae` Replace a water pair's vertex module before the vertex output union's additions, keep pairs with dual-source blending original, and log each replacement.
+- `d2ab9a00bec7b2cf744b9236c2949428681daeaf` Check at startup that the launcher's Python can read zstd files, and say how to fix it when it cannot.
+- `fc0202467c35c51bd5434abc31adb5605c1d3a7b` Make the release 0.9.1, with its notes.
+- `56e142169c1fbdc81521249dcb7aa198bf84fcda` Merge main into the 0.9.1 release: the launcher's animations stopped behind another window, the uniform snapshot's copy split over the replay workers, and the replay workers' default of three with its measurements.
+- `d31c3a10366eaf49417f25a3fced4b9ecd969e50` Make the water corrections in the runtime, on by default, instead of loading replacement modules from a folder.
+- `9f7c8ae810601414db1a667fb29f0c485059d7fa` Wait 8 ms once for a pipeline met for the first time, and carry the compute variants in the pipeline list.
+- `8a61fcacaf80fd9a777bcbdca24972097ed55569` Stop waiting for fast links in a frame that has already left a draw out.
+- `b5aea4808b26ee9f494922cb4b3856c1fa94809a` Say in the 0.9.1 notes which compute variants the preparation cannot read yet.
+- `baad0325009f2834a3dd81fd5d54d6092150b5ef` Keep the fast link's waits at 3 ms a pipeline and 6 ms a frame.
+- `ef3466ce4f8f27b750171d32b5275ba291c43e55` Merge main into the 0.9.1 release: the launcher's Mods screen, the anti-aliasing choices beside FSR and DLSS, and the scene's last row and column filled before an upscaler reads it.
+- `518d55ed078a8a7bf26b77f893a68d7c69a25eba` Draw lines as wide as the game sets them.
+- `99bdecd7250208883fc6919227c9e77b0cc648b1` Bring the graphics notes' checks up to the code: dual-source blend and depth compare in compute are done, and what the timestamp mismatch can change.
+- `fe95c0b60b01b838ed0c71d713002382f666a9da` Count only the making of textures against a frame's texture creation time.
+- `bbaf732b813e61e250c1f344aed71dd4540ae7fd` Record what an upload read, slot registrations and sampled stand-ins in the flight recorder.
+- `95fb707bcb38b42a4ea94ac7ee53aa9ab1f4a6a7` Record a pool slot losing its picture in the flight recorder.
+- `fe468f7ec6a23112eb2276d53669ecbceef2e08f` Make a slot's new texture at once when the slot is showing another one.
+- `a374e778fa54b1ce631f87be54a936e94b596d1d` Keep a released texture's image while a registered slot still names it.
+- `5ec1008709d2a674cd8ef5f3d99ec9a07c46122a` Make a newly registered slot's texture at its first lookup too.
+- `0cc247b513783da31d0202f77969d146cb206aca` Record the flight recorder's thumbnails at 640x360.
+- `277f01375aefaef695f97fc96866903f89c7ff72` Keep an overwritten texture that is still used.
+- `65dacfa7c7ee4a4b7e104097ac547e89d5357dec` Ask the write watch once per run of regions in the texture pool's check, and pass released entries by.
+- `a389f2450f98037597f5c5027e6e1cc966121b47` Add a switch that compares textures over 64 KiB by content before uploading them again, and hash eight chains at once.
+- `dee111f6be4be843e64c89ab2a050ba0a918b701` Bring --probe-vkmem's texture cases up to the rules the runtime has now.
+- `a3109400036a60fd8914f1b43f2d7600671fb9ae` Merge branch 'claude/gfx-layer-perf-test' into ra-perf-test
+- `5f10a0012b6b4e87f539a8d254c4b98d30a09a31` Merge remote-tracking branch 'nx2navi/main' into ra-all-test
+- `8946fc020101e7c83ca8f7b1c9d12ba8ff1acd15` Leave Link's own motion vectors off until they have been played, and take their settings through nx2navi.ini.
+- `b1e8c1427bcfca40799df6ccb38b28f92244e262` Merge branch 'claude/pr-intake-6-43af31' into ra-all-test
+- `f45273bfe580b0845aa7941d5e02aa91f7b54daf` Say in the flight recorder's blank-slot events what the slot resolves to, and whether any shader reads the pool as a volume.
+- `88b74fc8f2846b5305d352b875e031ae032e6612` Merge branch 'claude/pr-intake-6-43af31' into release-0.9.2
+- `a464ffafbcfea64349da9da4fd56cec916fb3852` Merge Tobim6's work for older graphics cards: mesh shaders emulated with compute, video memory kept within the heaps' budgets, staged mirror uploads and the submit wait that goes with them.
+- `0533b3028e220060150a41705481d47c3e6c454f` Keep the asynchronous replay, the hot-pool rule and the -O2 game code off unless a player turns them on.
+- `5e006aec8a5229543db0efdc2d865fabeba4a378` Make the release 0.9.2, with its notes.
+- `bd7d140a5433ab04491c0583ada19a4de23b033e` Draw lines as wide as the game sets them.
+- `daf7298dbad41a2548e2e22e95a2ae229c7a0121` Bring the graphics notes' checks up to the code: dual-source blend and depth compare in compute are done, and what the timestamp mismatch can change.
+- `57a15e288d0a1a180bc16398325fdb5d9df28ebd` Count only the making of textures against a frame's texture creation time.
+- `67a21469484906124b5430d5b6f18c0e811c437b` Record what an upload read, slot registrations and sampled stand-ins in the flight recorder.
+- `76c040d35b320213bf3614fee4a66088f03bf21b` Record a pool slot losing its picture in the flight recorder.
+- `b93219c39425ac56ac52d0d39ce5fd52957c04af` Make a slot's new texture at once when the slot is showing another one.
+- `a654d079e1de0a8a85c57e6b2b4c606d42c4ca95` Keep a released texture's image while a registered slot still names it.
+- `0985e80466473409fb1f5c1801f5faff15fdbe8c` Leave Link's own motion vectors off until they have been played, and take their settings through nx2navi.ini.
+- `13fe1c4e6f681bd39fb86cdb656e38d3eae8457e` Merge main: its fourteen new commits are the pull requests and texture fixes this branch already holds, picked onto main one by one.
+- `81e7da91aac417cc903c3bde304b181f606cd87a` Bring --probe-vkmem's texture cases up to the rules the runtime has now.
+- `a74f7695c8f429af6708d6d570e7b00b9432801b` Merge main: its probe change is the one this branch holds already.
+- `f2b6f39c5f3b8f2b0aeb10d80aa7127ab0631557` Give a natively run network program this frame's input picture: the RGB9E5 words the post pass stored in the scene target are copied into the RGB9E5 texture the network samples.
+- `eccbc9687318d7aad86dd97cd1eb7f37db66ef0c` Add the shadow bias fix to the 0.9.2 notes.
+- `052c60dc0da987e4ef3e7cf15d19e9a8db0d7d68` Merge remote-tracking branch 'nx2navi/main' into release-0.9.2
+- `2324a74602b240423995df6a12a2febe7bdf87d4` Turn the settings for older graphics cards on with one key, low_end_gpu = 1, and leave them off without it.
+- `d2fbaba1c31ed86ded8d7c047bbad2d98cb45348` Put the low-end GPU mode in the settings menu's Game tab, marked experimental.
+- `e3cf0710c54890fc783a40d7f5e9a13f628871b0` Record a draw's own texture binding that got the stand-in, and a sampled pool slot that is not registered.
+- `16b0b4615569849db9c1920ce3ae80028b772873` Keep a released texture that shaders still sample out of the idle drops.
+- `857d22fe4f3b383d2203304c6b0c8954dcbca777` Apply texture and sampler registrations between submissions, in the order the game made them.
+- `26f3dc47ec9b76f3f54a9b08638a8f66f429b1c7` Show the low-end GPU mode's settings under its switch in the Game tab, and read them only while the mode is on.
+- `3123d40017cf35bb1979bb66ddb44e20e3a946de` Offer the low-end GPU mode only on the cards it was written for.
+- `e6392f381fc19c5fa8d2e6feedb54ec3dfc17e06` Turn Link's own motion vectors on by default.
+- `ac3c43ba4d740b94817882df6742324817659127` Make a small plain-format texture at its lookup, beside the creation budget.
+- `91dd6de969f8bab03cef9f8b79ac0811c5f47808` Make a draw whose shaders write memory wait for its pipeline like a one-shot draw.
+- `1c975316a3a643c162699805b7c77cb0be34cc43` Skip the index-buffer bind of a draw that repeats the one before.
+- `cc0b467a2c913ad5b90caf0cc023c603305e399c` Gather the log lines of a quarter of a second and write them at once.
+- `6d049c244fee8614a8df7b97dba29f3768428694` Keep the water's ripples moving above 60 fps by carrying the step's fraction for each water object.
+- `2818857d1b6993b976cb0daae84f2c32448d3f83` Show the middle 16:9 of a wider picture in the picture a save file keeps.
+- `495d118e9e75e48235ada5a9ab55a23c391623fc` Add an experiment that turns the game's occlusion queries off, off by default.
+- `95dc476ee7fc0f5148c682a0765c6c67a9d1e5e5` Scale the scene with the edge-adaptive filter where the game's own upscaler ran.
+- `202fd47cebd2c6460a9a5f42a39bf127d123e117` Let the flight recorder dump on its own when one frame flashes.
+- `42d16e7f0b8478c1488ee30d656fb065938a93d8` Ramp a changed volume across the audio frame instead of applying it at once.
+- `641c866e8aaba33dbe6db0b09e6a916a5fd9607f` Catch up after a stall of the audio renderer by rendering the owed frames without queueing them.
+- `20ab8d0d2d9e69d64a3a87c60dfff986d08818a1` Count what a move of the texture slot generation alone costs the draws' kept bindings.
+- `8273d881a41522ae2c6dd394262ac15caa109f33` Run the smaller render sizes of a DLSS mode on that mode's feature, with the history kept.
+- `433cc62ccebe890ee94f439c3e914386c3998a22` Leave the shared DLSS feature off until it has run on a card.
+- `97c3bac3bd860924971f40bdb68ea888c2387309` Keep a small buffer clear and the counter reports of the same record in the order of the stream.
+- `0b0920c54a11e4edafc12d854de2240f822d420f` Find the matrix palette a skinned vertex shader reads, from its translation.
+- `6e9d9fca5fdc06b8692bc08fb6c2f4a2f173fd0a` Add the rule that pairs a skinned draw with last frame's draw of the same mesh, and its check.
+- `1f5ee67f7e743043bf22ac71b83b1e4c7c6a0ef8` Give every skinned character motion vectors of its own, not the player alone.
+- `c4268779fc3125438e3ca020ade6680645750ce4` Write a V register with one 16-byte store.
+- `d48a3d59f8b6b74211b4f4261e749444e7b9e32a` End a helper run with its own exit code when a library faults while the process is ending.
+- `cacf458b0809fe82c4efcebab2ee31dd6cf822ba` Say in a lost device's report what the GPU was about to do when it stopped between two marks, and add draw marks.
+- `afe44e0e5488e27d17743ff7db785656d0a1d096` Let the device address table read a new VRAM mirror only once the mirror's first copy has run.
+- `823e0cdcd423749e426169b83a0ef001aa9e03f8` Raise the pipeline cache's size limit to 1024 MB, and leave never-drawn list pipelines to their first draw on a machine short of memory.
+- `222a025c521cba72a13516a1a41ea8ba41dc4f44` Give back what a host thread keeps for itself when it ends.
+- `18aa16f2df5691ddd7efbaa31170cc432ee520be` Skip the menu's draw for a frame when its vertex or index buffer cannot be allocated, instead of copying through a null pointer.
+- `e1b1691e2801b10b35e9fc8f4a1b1b7631b3a7e8` Make a refused upload submission again once the batches in flight have finished and the kept buffers are given back.
+- `e3e4b2d6507c3a5371c64dc7f768ff382a9984bb` Log what keeps the released textures above their size bound.
+- `724a9d98cea9c53f0002c589aa121879bb9fea84` Size the game's render-target heap for the scene's share of the picture, so a scene at the picture's full size fits it.
+- `07557fe06caf889ce6d86f3388454943eab799b0` Give an empty slot's handle for a texture id out of range instead of ending the game.
+- `bc256496cb4291983dbcb3da0d3b5d6596c4492c` Build task and mesh shader pipelines without the driver's optimiser on AMD's driver for RDNA 1 and 2, unless vk_noopt says otherwise.
+- `016c90fafbb78a56dab6711b7c7eaa4327d4dad5` Wait at the start for every recorded pipeline when the pipeline cache was written by another device or driver.
+- `cd0b1a387d06bbce5d7896e20a4da25d2a34b77d` Do the whole warm on the boot screen at the first start after a driver change.
+- `264dbe42ccf18719c471bbd2fa112de7bcf62628` Merge the stability and memory pass into the 0.10.0 line.
+- `85089408f0dc71d02c7aa1af65522af722cde00a` Merge main's replay workers default and menu row into the 0.10.0 line.
+- `a79b0a51258b87452b69ce40659fb165e1ec3631` Remove the counters of what a moved texture slot generation costs the draws' kept bindings.
+- `59e3c6c35ae6b86a59af492d1e84d37908df1de8` Add the encoding and the report schedule for HD rumble on Switch controllers, with their check.
+- `df8431da7ba7dacfcfcd2af60ee159d157239363` Send the game's vibration values as they are to a Switch Pro Controller or Joy-Con, behind rumble_hd.
+- `aeb6c0d5c1386a8ae1d985658b06de88e15c8cc9` Add the HD vibration row to the Controls tab and describe HD rumble in the controls guide.
+- `d9bc002d9aab508a735fb911d1fd061a0054e7b8` Play the game's own amplitude at the default vibration strength on the HD rumble path.
+- `2f30f1a2e57fa8b0fc3fedac3f07f63e2b92dcf7` Add the low latency setting and the module that drives the drivers' own modes.
+- `c37fb7dc408e5b3a44cb227c6289d9213b7d0471` Hold each frame's start in the driver while low latency is on, and let that keep the frame limit.
+- `191a439fe4249503cad300e3f9c31b528cf18c52` Add a Low latency row to the menu's Screen tab.
+- `a84a555128936617f4dcf2c4af1d79031cda115d` Describe the low latency mode in the architecture document.
+- `2ede7101fa2937ad98de1969c9deb445b56cee9b` Build game 1.1.1 with the kit's execution profile, and make its instrumented build.
+- `0b974d04f1cbf8fe61e805f8f7ef3010e00c1f7e` Carry an execution profile in a launcher release.
+- `b197136f56486c05532128adc9f9d6fd670eec6d` Describe the profile-guided build of game 1.1.1 and the session that trains and measures a profile.
+- `9100509b008895c5dab7f18864f64d1c6a0344f2` Enable the drivers' low-latency extensions only in a run that starts with the setting on.
+- `17aee6ea73f22f7ab5fe415b4a07f395d24adb03` Link mesh pipelines from stage libraries like the vertex pipelines.
+- `89ed3ffd17b116ddf4a89778e1b9424cf475c471` Read ahead for mesh draws too, and let a mesh draw wait for its fast link like a vertex draw.
+- `1a206434e002f58ae7e0d310c56af6714b76c65e` Build the mesh pipelines' stage libraries ahead of their draws, at the preparation and at boot.
+- `7ff1a21ef2981647cec60e977b374bb5ad991a2f` Grow the render-target heap for the scene's share only where the start's mode needs it, and never past the pool.
+- `a8639f1cb6f42f982609c3d99a890ec23972f04c` Keep the scene and the picture inside the shipped render-target heap when the grown heap table is not served.
+- `e548180da22dfa756c555a73b018ada759b0f0dd` Hand a pool's device address record to its new mirror by a store the GPU runs after the mirror's first copy.
+- `4a6ba66115a3c2071a725b8d2ed958c81be51475` Tell a start that was closed or stopped during the boot's builds from a driver crash, and limit the whole warm.
+- `345b393acc5d732c6b07535c036ff7d0080e658f` Give a texture handle asked for with an id out of range the reserved slot 0, inside the pool arrays.
+- `96d656ba1ddda5d3479737c0bd79a5b9a2f2b952` Time the staging allocation's wait for an upload batch, and say what the batch limit and the staging pool do now.
+- `3572a4d433556a196c27755c476eeda0a41c9b50` Number draw marks atomically, since the replay's workers record them too.
+- `b1f1ee3d48c175c14d338021777ae38c7c8e4ffa` Say in the log that the whole warm waits for the recorded pipelines only as long as it may take.
+- `f2a5800c1e44484d3bce28c91cb11c3267b43e9e` Merge the stability pass's fixes for the points its review found.
+- `d668a6285498e5bcfa040a9fe46c1812d8b5edb3` Log how much of the allocator's blocks is holes, and how much of that a texture compaction could give back.
+- `ec9dd522b1961bdd7b2f646637a8946d0e50f947` Add texture compaction behind NX2NAVI_TEX_COMPACT, off by default.
+- `3ca1541e0e2a9fe2266cca67885925c285b4907e` Let one process work in a launcher folder at a time, and one job on the same thing.
+- `2a7fda95065e723631a6012d725d6105e57e20b9` Put a picked mod together beside the mods folder and move it in once it is complete.
+- `cc0e2c4bf4fc6bc3ff6d104a09865e80aeda383f` Say at the next start which job the launcher was stopped in.
+- `c5cb67645ed9979fe99533b347a55a888785a5a6` Write the flight dump and the memory map through a temporary file and a rename.
+- `c5aee5160100a4c14fe37032b0dc04723b365324` Leave the game's settings file alone while the game runs.
+- `fe041188f5d7d5f7eb3881ffbfcfa68d2dd6d2ab` Give a resumed download's progress the whole file's size as its total.
+- `d0e6cd695eb3cf4c303f20e4a5c32a63cd7a4789` Ask the disk for room before a download or an unpack starts.
+- `0a85e33e0f5471dc17641e3b39852bb2108ba917` Hold the game's profile lock while an import replaces the save.
+- `8c32aedabbb3571db7649ad0532d718ed3578409` Refuse a game folder whose path leaves no room for the game's files.
+- `9dcd73eebc84ec7901974d25c92112b08b3bd917` Refuse a mod archive that holds a name Windows cannot keep.
+- `e0870b87b48ce1870066064b6d1de3a47715f5e0` Resume a part file only for the file it was begun for.
+- `3e323d1f945fb29f9e8884cada27ffe3f9ab0c35` Change and read a job's steps under one lock.
+- `2571e180c8b67d4e957ee46674d6264b664c6dfc` Check the texture pool's set against the device's descriptor limits, and name the slot a carried translation reads.
+- `70c9935789adb794f0cdb4e4ac95e132615f7b71` Give the movie timestamp sites a switch of their own, say what changes in a decoder stall, and keep the movie cap's reasons.
+- `de3f10fe825f947f707028b800c2690f59189a66` Keep the pipeline cache limit at 1024 MB at least, and fold the play file only with room left for the fold's save.
+- `6590f68f6ec9e2a60edad269e1c91977a965ccb0` Check the driver's cache of stage libraries at normal priority, into the driver's cache only, and go on with a warm from where it stopped.
+- `f3856c8dcafdb4b53af7627652a26e9762115df5` Ask for a reused compute request before its shader module is made, and report the reuse with the prebuild.
+- `d64a9b689cd1d168cd7dc921abf5dbb7da9c9a80` Move the sprint button's stance host off the water ripples' patch page slot, and fix how presses and timings reach it.
+- `de02ced98911bfcde37117d4b09223822faf5d41` Leave asynchronous replay off in the low-end GPU mode.
+- `4f80dbcbc25b3ad4279d4663be68eabed23791b4` Bring the 0.10.0 line's low-end replay default into the pull request intake.
+- `bc28416fc098af1dd22ba140a09915d086e77c97` Destroy a fast-linked pipeline once its optimised build has replaced it and the GPU is done with it.
+- `6e3dcf67d6e6f999cb555e3f9788f2174a2d8720` Finalize a memory pool that the game initializes again without finalizing it.
+- `4882623ce7bc2a293498668119664330caa5f28e` Look the pool up again when its new mirror joins the mirror list, and count the table hand-over under the pool lock.
+- `ad58dfcddb68b17629bc661e2147ea4c5c97e8a0` Keep the fallback blit's scratch images for the sizes in use, and let the tonemap pass's views go with their image.
+- `c7de484a7278659f3ae1927e163c453ab6110f71` Free what DLSS and FSR hold some presents after the upscaler is switched off, and the HUD-less picture once frame generation is off.
+- `fdaa3e2a01f84b69983cc61b15da136e0fa88850` Take a failed frame generator's swapchain and contexts down at the next present.
+- `691d41a026b62b3ace723bbc5fb56210b7c6a65c` Free the images of HDR, FSR 1 and SMAA once they are no longer used, instead of keeping them for the process.
+- `2820781fb702d1231224b4688b9e4de80d7d11b5` Log the memory by owner every 3600 frames, and how often released textures come back.
+- `d77572c69ccd63dd8d235c921b00f4fb3802eb76` Free what the upscalers and SMAA hold once they are switched off.
+- `a4310491dea336ca4b788088c6c7e1d6ef23229e` Let the upscaler stand-in's scratch images make room for a new size instead of refusing it.
+- `ef6efba7db562f49f93d54e6db5243c05f31f1a9` Add a Video memory use row: Low, Balanced or High.
+- `08ad7402f72dee9fbabd368059c81aff10a666a1` Keep released textures by how long they went unused instead of by a small size bound.
+- `7a952c0bdf5296d5f841cd7028a6a5401312972b` Make the Video memory use row Low or High, and describe the new Low in the menu, the ini example and the docs.
+- `ff8435ce3465b2925bc6337df4715c394655ec36` Count the released textures' hold in seconds of play, not of the wall.
+- `f2849c8b262d30f67800ebaaf28563a841270394` Merge main's tail_early, replay_small and Testing rows into the 0.10.0 line.
+- `f37d7fed6da5e60686a669c2b06206862ffc818f` Make replay_workers default to auto, which picks the count from the CPU's cores.
+- `9e1d5962c40cdf2be3b3fb85c2f382164747879f` Merge main's helper rows as number sliders into the 0.10.0 line.
+- `c6f2484ef9057444be09b84c2e485a372f0326a4` Add Native (100%) to the Upscaling row: the scene drawn at the picture's own size with no upscaler.
+- `839afa32aca2ea1504e2ab96de58dd925b4bd9ac` Add a test setting that runs DLSS or FSR 3.1 before the bloom instead of after the tonemap.
+- `e0f69489af23b08ee5b0f33d2882a9b12d494651` Bring the 0.10.0 line into the VRAM pass, keeping the line's own releases where the two overlap.
+- `e89cc4d4302b75beb43cf486662c00dc0c9cc70e` Let frame generation run without a temporal upscaler, from inputs made for it alone.
+- `58c7baaa9e83e67b1ba76965f21675a10dced564` Bring frame generation without an upscaler from the 0.10.0 line into the VRAM pass.
+- `2bbdb25de7339966a6609b97cc0b70bdd9a927b4` Add a text speed setting for the game's message windows on 1.1.1.
+- `a8332948f2ebd00b255f447116f6e40621b013ed` Bring the text speed setting from the 0.10.0 line into the VRAM pass.
+- `13e6563236a2cdccc67f860317954a84263a4f96` Build the prepared shaders into the driver's cache at an update only when a sample says the driver lost them.
+- `6a3c4d6ca2c05e04bc7b9f07847b8932b348c28b` Give replay_pipe its own row in the settings table again.
+- `8b5e34476503bdb56c716ff0cca1900f43c050bf` Bring the 0.10.0 line's newest commits into the shader warm check.
+- `750034b7fdab8e20ca2f18f68c42f3b04b0d42cb` Run the water and floor surface simulations at their own 60 steps a second above 60 fps on 1.1.1.
+- `a9f161579bbb0527176a55845ce1234356945320` Add a floor probe that logs Link on a moving floor each frame on 1.1.1.
+- `fa17076ea60d0e9778e22bc293c66d8560fd6d5f` Keep the floor probe cheap: walk the ground groups only with a player, at most 512 of them, one read each.
+- `0d7289af1156303d5aa9738abc9d98b076ce0fab` Let the floor probe read all of the Deku Tree's ground groups cheaply in two batched copies a present.
+- `791ab8638e7668a44e3ac646d61cb0a9fd05c189` Let the floor probe name the four ground groups nearest to Link each present, moved or not.
+- `cdb3c59304bea609e9aa7fd7803437088ae879d8` Let the floor probe give the time manager's step and first two time categories on each line.
+- `652ed4dcceafa06b8306e29436326ff85f181e90` Let the floor probe list moving ground groups first, within 12 m of Link.
+- `da65aa609978706723a75838c969e44e57da1642` Bring public main's Steam co-op, the removal of the old co-op and the launcher's Steam library file into the 0.10.0 line.
+- `2970b0c7d633f03a17c3a8c08b609a108c96ed51` Add a floor scan that finds the floor carrying Link in guest memory on 1.1.1.
+- `27dae195ab9c9e48f2c8ed5e99a74641f213eb51` Arm the floor scan only on a sideways drift and keep what lies below Link, logged once a second.
+- `a7e79b346021b397c5f6082a9c7315658787afb5` Bring the line's floor scan into the co-op branch.
+- `2f7ddc884be5732f9389a91b495c11339a4ab916` Let the floor scan dump the owner of the platform's position and the objects that refer to it.
+- `f512a989882f0d11d1f3e7e8add698bb384b9f74` Give the water and floor surfaces' fixed-step remainders as many slots as the waters' ripples.
+- `328554e7c64eb8cb6f5c93aeb0154ef8fa8c00d2` Run the sound manager's job at 60 Hz with whole steps above 60 fps.
+- `97f1caa9b4d673eb414253c45a63e2acf7e53a0a` Of one GPU listed by two installed drivers, take the newer driver's listing.
+- `175033d49a01914267aab488c8c8b58ca0f91e70` Merge main's co-op switch name into the 0.10.0 line.
+- `e682934bd0b691773c65fd87898d441d85657fd8` Write the log file before stderr, and keep a blocked console from stopping the log and the exit.
+- `5c5b1914d50be65adf64d81938d6bd62e4d975f5` Keep the sizes frame generation still uses when the upscaler's idle sizes are freed.
+- `c656532cd357afe5b1447bf092800a0eb84fe793` Warn in the log when replay workers are set by number on AMD's driver for RX 6000 and older.
+- `e7dead8663e26f97208a193e05342cfe92bbc166` Take the low-latency lock around AMD's anti-lag calls, so the switch-off is the driver's last word.
+- `0e76baad3600d4b7ae09db2be53d4376adf7bd5d` Limit replay_small to 0..63, where it can match a group.
+- `721da648665fb74736e13a1409a3d2363d245d4e` Put Steam's library file beside the game only with co-op on, and look for it off the window's thread.
+- `d59488d30823cd10beca05ed0f269185aad107ac` Claim the anti-aliasing setting's frame with a compare-and-swap, so SMAA's idle images are freed once.
+- `b399d8f15c8fd24010a48d5dd02d69000b30a861` Keep a late HD rumble report from opening a Joy-Con pair again after the stop.
+- `75ae5b02217f64c1526f2bfabef2db6c8b2c1231` Read co-op's switch by its new name, coop_steam, in the launcher too.
+- `b912d72b87c1ab9716e925d536f2887db6adeec3` Remove the Video memory use row; its low behaviour is the only one now.
+- `a74503cd864f766d62257809ac147cbc55dab264` Add physics_steps = 2: at least a 60 fps frame's solver steps in every update on 1.1.1.
+- `d9429b0c0090d9bda4c2e48f3bf54cf83efdc1fd` Break the memory report down past VMA, by owner in system memory, and by growth over a session.
+- `c84724da2cd1a5650ba6cf15ec0d7eaa19498a53` Make a moving floor carry Link above 100 fps as it does at 60 (set ofollow, floor_carry = 1).
+- `cae09a2bcd67fe8239337b3c024dcbfe94fd6347` Add floor_watch: hardware watchpoints on the floor the scan finds log which game code reads and writes it, at 60 fps and again at 120 fps or more.
+- `97671e8ea7a88a503bd8b16a1c486c34855d085f` Add the stutter map: each hitch of a play session with its area, what the frame waited for and the pipelines and shaders its draws met missing, and every 10 minutes and at exit the areas ranked by their hitches and the pipelines that cost the most (stutter_map = 1, off by default). tools/stutter_map.py turns a log into a report and counts what a game folder recorded that a pipeline list lacks.
+- `71e52159f9b99ffeff719a210ad94eaa278206f7` Add spv_store.h, which keeps a shader's SPIR-V zstd-compressed while nobody reads it, and its check.
+- `3573a96f46319608d8c29c5180ffff767e15e0a3` Keep the SPIR-V of shaders nobody read for 30 seconds compressed in memory.
+- `0c153c124efefe0a3c443626e797caeb400923d1` Add mem_budget: one place that says how much room the card and the system have.
+- `d499a828b7b546c13ded6caf617ef5f55d29b303` Compress idle shader SPIR-V after 5 seconds while the system memory is tight, and after 1 second while it is critical.
+- `e7c2fc6a6b6dc590e566082ca16bc160f55522f8` Make the stutter map name the areas without the perf trace, and count a hitch only when the frames after it are shorter: a hitch is now measured against the median of the last 32 frames, so a steady change of pace (the game drawing at 60 fps after 200) is no longer counted as a run of hitches.
+- `fadd4a6d5e915627d32e4665d1b7ba0df9713dc2` Copy large textures out of the game's memory on several threads at once: a level of 1 MiB or more goes to a small worker pool as bands of rows (par_jobs.c, tex_deswizzle.c tex_bl_copy_mt), and so does a large block copy for the GPU's ASTC decoder, so the upload's storage copy no longer runs on the drawing thread alone. The bytes are those of the one-thread copy; par_jobs = 0 turns it off.
+- `cc5c8f87ad9d10a406daa6413a1d847ff660afbb` Add shadow_pcf, which makes every depth-compare sampler filter linearly so each shadow test blends the 2x2 shadow map texels around it, and log the filters of the compare samplers made.
+- `9d5f16bda45cfdc559fc8422627328e7d3cc6f53` Add oq_hold, which makes a samples-passed report whose draws the full occlusion query ring left uncounted repeat its record's last complete count, and log how often such reports happen.
+- `5faa1687f4c1fc98151b2927740257b96bf8a424` Add quad_index, which draws an indexed quad list as two triangles per quad and closes an indexed line loop, from the game's own indices, and log the first such draw either way.
+- `482f7fdfb5e936e6e0d47f08b142a0062ec4b0df` Stop logging a replay worker's deferred render target lookup as a target left out, and say why a target that is left out could not be rendered.
+- `e4df49404858ee9ae3952b6a0a9915dc4b477855` Turn the early tail on by default (tail_early = 1): the game starts its next frame while the graphics card runs the last one's upscaler and interface, and a frame whose end hands the game anything else runs as before; tail_early = 0 turns it off.
+- `8a99af1080e8607a114abecd56bd459db5fd63a6` Give back the graphics pipelines no draw has used in this run while video memory is short: over tex_vram_pressure percent of the budget, the autosave thread takes up to 256 of them out of the table every 5 seconds and destroys them once the GPU is past the submission being recorded; a draw that needs one later builds it again from the pipeline cache. Mesh pipelines, entries building or linking and compute pipelines stay, and the next pass logs the video memory in use before and after. pipe_release = 0 keeps them all.
+- `26d26babe5598c4646b1c31becb324e330274c0a` Bring public main's bug capture on F8 and its removal of the Steam co-op into the 0.10.0 line.
+- `5190f8e932b92cf694d9f8b5a7ef6e52c141de2a` Make the release 0.10.0, with its notes; the notes of the unreleased 0.9.3 are folded into them.
+- `a84a3ab12d775642ea83a816d083a60df2cf0430` Make the release 0.10.1: every setting under the Game tab's Testing heading is off by default again, CPU helper threads (replay_workers = 0) and Start next frame early (tail_early = 0) among them.
+- `8df4311723d98330539b4635d8d6f358157be9f7` End the run as a lost device when a timeline reads above every value its signals carry, and log the submissions' state with the first occlusion query left unwritten.
+- `1f4818fb6b5c9e30f71a44a6a86d92ac7127493f` Name in a lost device's report the mesh draws of each marked pass, a group of draws the replay workers recorded between two marks, and in the fatal line how mesh draws are drawn.
+- `46d71da8aa0bae89d4290caa7c7c9c99358a1199` Draw task and mesh programs through the mesh fallback by default on AMD's Windows driver for RDNA 1 and 2, where native mesh pipelines lost the device in play; mesh_fallback = 0 draws them natively again.
+- `edd5d04e8c1d513c8680f3e6c5515d8969f69d03` Cut a mesh fallback draw's workgroup count that the GPU wrote to what the fallback's buffers hold before a dispatch reads it.
+- `bac47d2edbf1576c3139cefd3b7c745c8e761ea1` Order the write-back merge's writes after earlier writes of the imported buffers it writes.
+- `c99e9a94f86c942dfd0e6dd5ae09bd22fac0bed7` Start every pass and dispatch mark with no mesh draws counted, where the mark is made.
+- `7e74c9efd985331e68bd2acdf01888057968470e` Say in the architecture notes when mesh_fallback = auto takes the fallback, and that a count the GPU wrote is cut to the fallback's buffers.
+- `f1a2a64e837b359a1f9b8d1be69aeb2c8fb0e02b` Refuse to package a shader translator that was not built from the checkout's own sources: make_launcher prepares the translator's sources in a temporary folder, hashes them as tools/build_xlate.py does, and stops when the --xlate folder's nx2navi_xlate.id differs. 0.10.0 and 0.10.1 shipped the 0.9.2 translator, whose translations still clamp texture pool handles to slot 32767, so the ground could go see-through (issues #569 and #824).
+- `f7487ceee5ed728f081d742472397c15c2b5ae57` Make the memory census walk once and fire on the process's own commit, not on its private bytes.
+- `0e0cfe0827bb2ecd27cdb4667e2f034b46116580` Keep the freezes of idle regions back after slow ones and around area loads.
+- `7aa29ff12a7b36c35f568b49a887420b2a8051e2` Record a pipeline in pipeline-keys.bin at its fast link, not only when its optimised build ends.
+- `2969005edc4aaa54f87b318f3268b0512097cdf7` Past the hard count of released textures, drop the cheapest ones first, in one walk per batch.
+- `00081be563fc8dd0fa386c0ae1d0aaa49d0ab4f1` Split the released textures' take-backs and remakes by kind and size, and say what keeps them past their bound with room.
+- `7b0dbeb18d65b7bde19864f9b922daa336651af1` Write the session's reports when the window loses the focus in play, more often in play, and log every end of the game in the launcher.
+- `b81a9561ca8a0dae36683c20f95b52d6c7247a9b` Log how long the memory report took on the presenting thread.
+- `1fa8b61b874f284a0d2524d6ea0c15739026dfbf` Give back the ASTC decoder's grown scratch 5 s after its last large texture, not at the next upload.
+- `5354aecdc5da7fb2bdadecf00eba1a1d9afe25b1` Name the term that set the released textures' size bound in its log line.
+- `cacb1318fc1c724ba2782497f3d03e190982fea1` Count the NVN recording copies no submission used for 5 minutes, without walking them.
+- `67cef759204849513fe1665358e6931a72436087` Make the memory report's system line name the write-combined views, the recording copies and the handles.
+- `7b3edac14046a119bf4bd5531f970c5d8c6c2f95` Log the GPU's timed parts of a frame whose render thread waited 20 ms or more for fences.
+- `2f640fb8ed33f70270837cf2afdda25c29bab820` Make the stutter map count runs of long frames as one hitch and the texture pool's area loads as loads.
+- `a1153aa079127de0bd1171c61b8df571251985e4` Keep RivaTuner Statistics Server's profile as the exit put it back, so the game's limit no longer returns to it.
+- `b0488796a14139093ed6319a26fea575d38fb07a` Tell in the log and the menu when RivaTuner Statistics Server's own limit holds the game beside another limiter.
+- `07aca0170c0f61f34efdafcce055bdf1ec3dfdcb` Tie RivaTuner Statistics Server's hold to the want it was decided for, so a stale store no longer keeps the pacer aside.
+- `b2b37a3e5daee7bf583da477a030d21df97e28db` Log the limit RivaTuner Statistics Server's profile holds, not the one the game asked for, when RTSS rounded it.
+- `6be25cc978d60e6dbaa903b771ff20466828825a` Look for RivaTuner Statistics Server on its own thread, so the first present no longer reads the registry and files.
+- `ecbd49441b579001c12605d0713b8b01b309885a` Log RivaTuner Statistics Server's own settings for the game while it lists the game.
+- `7613b7ade6cb25ac16989a7260ca534b0ae8bde7` Bring the comments on frame generation, its restarts and RivaTuner Statistics Server's exit up to date.
+- `8e8d6a2f51027c1ee978152840ea606d74b4915a` Move RivaTuner Statistics Server's decisions into a function of their own, and pin them with a check that needs no RTSS.
+- `3b250adffda4745f12db1ccb21ba785b01c9cde6` Describe the frame pacer, the one-limiter rule and RivaTuner Statistics Server as they behave now.
+- `9c32d3bca9f651cc223e7f054cb44234d7e93155` Number RivaTuner Statistics Server's profile created and removed lines, so a play-test can count the churn.
+- `fa229f94f8c78ccc6629e4e5c11554b956563dc5` Say that a later limit loads RivaTuner Statistics Server's hooks library in a run kept out at its start.
+- `4c919882faff3bcc31d25374ac78c5061363615b` Tell of two limiters also where RivaTuner Statistics Server is out of the limit because its profile is read-only or its library did not load.
+- `55e03cf79246a3fd7b0d93f9627858c2a761fe6c` Log RivaTuner Statistics Server's hold only while its want is still the current one.
+- `130fa905902ee8689435f56096305182b530aca3` Drop the closed input that rtss_decide.h had and the worker never set.
+- `2150458a0144895db871f5f8d90ab800e5c4380d` Pass the unlimited frame rate's RivaTuner Statistics Server want as it is.
+- `fb648acef9ca0c06918935f76c1c6189f7f8f733` Say where frame generation's acquire queue comes from when the graphics family has one queue.
+- `c9c61e726f5c631a9d2b751470811076815fa2d2` Wrap the lines the review's fixes left long in the RTSS docs, code and checks.
+- `baf83fda6a2a8adda04313f72379471bf9c64f5a` Make a stutter-map episode end at its last frame that stood out once the frames after it settle into a pace.
+- `26b7cfd658d88cbecc88edbd73f521c1a626cf46` Put the process's OS handle count on the sizes line and add a handle census by kind behind NX2NAVI_HANDLE_CENSUS.
+- `04727340089030cd4ac6da9c51451eabcb82253d` Time the hand-off to the present thread, the present call and other threads' acquire waits, and count the acquire's GPU wait once.
+- `af8e2a323be591e6cc03a01cd13b0c56bd8f3e1e` Charge the frames a memory-census walk overlapped to census, the memory report's time to a report part, and walk once at frame 3600N.
+- `f687ede72470b16d98278253bb3967665ae097ca` Leave waits for value 0 out of the count of game waits that returned with event-ordered work held.
+- `74b9687a8f4ef4d8da23516daa0461d1eb6e5386` Time VMA's device memory allocations in the trace's work marks.
+- `7684734b47cf0a42f965e2b84671f6367e7635a5` Log once per switch when rt_knob reads a value other than 0, 1 or ab as on.
+- `110c1b24f9f0a2b65ebbdb92d4ac300d67b00b1c` Make the stutter map's report copy the map under its lock and sort and log the copy without it.
+- `395f57a2fa78110c8410b8e16b98ebbbdd61b2ef` Count the hitch in the run's last frames in the stutter map's exit report.
+- `48ea624389b27ee879bc7b73b2bdcab7a94f4ad9` Bring the stutter map's ini text, the checks in docs/building.md and the released-textures bound line in step with the code.
+- `9d8f698b46d8d898760845e7d3f5e42dab438197` Read the trace flags once per present in the present thread, so a switched trace cannot mix timed and untimed stamps.
+- `a2255cfc5a02990cf0a7c30aa53b68c1c0b0073e` Drop the false reason from present_main's single read of the trace flags.
+- `b7c678540e2310196a1cce9d7e5dc8ccd6b563ce` Give the frames presented at the start and end of a census walk on the "mem: process" line, not seconds since boot.
+- `28f420bf0331019a70233de9c66691ff6e687e0f` Take a census walk seen running for over 2 s as a torn read and charge nothing to it.
+- `ec967d4daa1acd8698e573e387ddc78448aa6315` Say in perf_census.h that the census charge assumes the walk held the replay up, and say in the ini when the walk line is left out.
+- `2d02ea664fb5be688a627750d3cc3b7227b88de7` Take only the render thread's own pacing out of the perf window's "render busy", and say that the pacing share counts other threads' waits.
+- `93be3e066593f2f53a18c5bbdaf472f2793a65ce` Say in timed_alloc's comment that failed device memory allocations count in the mark.
+- `a473e763b278a986ffc09c1fcb9a49e47e240176` Tie the stutter map's cause count to perf.c's at compile time, and rewrap the comment that lists the causes.
+- `b755cdc5360614b2d6eb25a7119b42f58c7fbce7` Make the ASTC scratch trim only try the upload lock, so it can no longer deadlock with an upload.
+- `688b2506732cfeb229ac5d69160c3fae46d48b7c` Let held_resume ask whether held work can go on from a published copy, not from a continuation another thread frees.
+- `350c8b21119e39f71b9eb3439678e5ab7659ab86` Finish a new VRAM mirror's state under the pool lock hold that puts it on the mirrored list.
+- `b146ee716cbb3def60ef1d069802e641aa5b06c3` Copy untouched lazy-heap pages as zeros in mem_copy_readable instead of faulting on them under frz_lock.
+- `e70cbb6a396b42fb6de0e9893f07d5a576134efa` Destroy finalized pools in vk_mem_collect outside every lock, not in the completion callback or under the upload lock.
+- `4840f574906e15b84ada5a2b9d5ce6e4c881eb58` Let the completion thread's collect give way while an upload holds the upload lock.
+- `28a69d23cc5e56fbb21f3a01e484cb280e0f7a27` Write the GPU-drawn textures of a hard-count batch back in one upload batch before the drops.
+- `c0f8a3224dae67b2f99dedf35e99b65cc8927dd2` Stop the VRAM pressure check from walking every texture and every released entry again when nothing can go.
+- `68bc197393ef5afa9959174ba476e805dd5e02f8` Route present_image's fence-wait results through the lost-device check, cap their lines, and skip a capture whose wait failed.
+- `0ffac80222efd4e3aabe9bbd758f8400a01fa92e` Name the queue lock's long holders under NX2NAVI_LOCK_TIME, and time each swapchain rebuild's hold of it.
+- `f26d091024c007f46634e39564acb28c89b00909` Let the GPU-parts line for long fence waits see upload batches and presents.
+- `dcccf59a6522f6562991818221799c24b78eb649` Correct memory.c's lock comment: frz_lock is not a leaf lock.
+- `7df96ef0b7ee4c5ef546a9008aba7d8f05af575a` Fetch a lazily written piece without holding lz_lock, as a whole segment already is.
+- `5dea57c5e264e26fab54921495395fed2f0284ea` Log where a session stands as the 32-bit page generations near their wrap.
+- `8fc22289960b8276ca7f99e1a605ff53243173a2` Time the hard-count batches of released textures, to measure what one costs.
+- `a8cc1e694ece9519ac6eee124cfb3331b772fdee` Write the released textures' room census only while they may keep more than their bound.
+- `c4140a3f017826bc79973aebcd8008b6b374234f` Time the finalized pools' destroys and say which thread ran them, on the "mem: sizes" line.
+- `301445b3140c276ef80dedb60b4e6a8abdab5a59` Name the four checks this branch added in docs/building.md's "Checks".
+- `46c764a434dabd8ef8420a848a3b18a7dabdcf64` Stop serving carried translations whose texture pool array has the earlier translator's length.
+- `72047d12af765edc01d73e1e7c47dbff85ec4513` Stop sending a request again to a new translator child after the first one gave no answer for the read timeout.
+- `f3d8f086891771e40b526f2c8318409c97b05e4e` Make every packaging script refuse a translator not built from the checkout's sources, early.
+- `2f93d2740f4f311d9ca1711662666e1b41557308` Measure the video memory pressure that gives back unused pipelines without the free space inside the allocator's blocks.
+- `48846dc9cbe461cc9df96f5a636571bd043d8abf` Destroy the pipelines given back under video memory pressure on the autosave thread, not the completion thread.
+- `b04e7c85b2d8865c17ae71d8aededa75781baba3` Log shaders that index the texture pool with the earlier translator's length, and a texture they cannot reach.
+- `339f391cf5bc352d519dac11927b2ddcc1aa13d8` Give the pipeline preparation's prebuild report its start time.
+- `ea5087baf6dc09115a5a89fbf1afd0990e35debf` Let workers_drain drop a queued fast-link job without reading its missing library.
+- `79c41ca76a7ef375ab55874fef804b57d5a636cc` Keep the whole records of a pipeline-binaries.bin that ends inside a record, and cut a failed append back out.
+- `6af16f7c34976ec82933eb98238099a1f5879248` Record a pipeline's key at its fast link also when its optimised build failed first.
+- `ae90aff58a5f2ca5b638d9d443f7a5b3d1431547` Keep every pipeline when tex_vram_pressure is 0, as the textures read it.
+- `077c363f52e7b47a235c52e6d253a40f2940e29a` Give cache_exit_snapshot_check's stand-in pipeline state the held sizes cache_save_one now stores.
+- `fd91f46bfb654557eca3f2f623e61953047619d6` Bring compute_prebuild_queue_check's stand-ins up to lb_next's worker limit beside the game.
+- `e5632aea872407ca5244fafa6cdc1991d9620136` Point movie_timeline_check at the switch the movie timestamp sites have had since 70c99357.
+- `acfc0ac24c8a7722fe0d73a5fa822caa5e220354` Make excl_mt check the exclusive monitor as it is: a compare-and-swap of the value loaded.
+- `6c6e7b397486adbb9a57c7a7242fcc6581fd81ae` Serve a refused carried translation once the current translator has failed the shader.
+- `a47c6d69de7e06e11be225b324ecc60c422dfbff` Say in docs/architecture.md which carried translations are translated again after an update.
+- `d2e23ce9c986caa6730612d85d53f17e681df213` Check in carry_pool_check that gfx_shader.c's earlier pool length equals vk.h's.
+- `ad0e934fbff417d5ee10b633d0ed629b4fc8444b` Rewrap make_appimage.py's docstring paragraph on the bundled files at 120 columns.
+- `75b1e0b5d9b19ec7b9b8da390ef88d32e60d7d4f` Say that pipeline-binaries.bin is cut back also at a malformed record, and check the cut itself.
+- `1e1e3b757f5cb84ba633c483da6b18d726ae11ae` Have the preparation's prebuild report say it counts from the preparation's start.
+- `78bfb83b2b2e340a202d2271c0edca90b72a1bc2` Ask the shipped translator itself for its texture pool length before make_launcher packages it.
+- `465ffe67bbc3d9b02531b8a9cab7cde07ea612a5` Check a system event's kept handle under the kernel lock before signalling it, and keep host-memory events in a full table.
+- `63228e7ca824566404d5d8dfc8df66c388b9ea28` Hold a reference on an IPC session for the length of a request, and copy the transfer memory under the kernel lock.
+- `0672655c9682b424b7cf75345adcfd376f9c1d78` Let a destroyed vsync event give its slot when the vsync list is full, instead of ending the process on the 17th.
+- `0b217575d83c2221ae019c4102c4e1b265a02c57` Keep the movie deband planes per decoder, and drop the frame instead of ending the game when they cannot be allocated.
+- `811024e69bb2e3843c2137b774bdc65da2fba183` Count the recording copies whose control memory the game reused, behind the new NX2NAVI_COPY_RETIRE switch.
+- `d3a5c3c3531b8877803317be81db7f2e5fedc7a5` Make one audio device change event per kind instead of one per request, and close the event of a lost race.
+- `e9becc12f3272008d7db7b27bd78b510b72ce33f` Free closed IPC domain objects and give their ids out again, and keep a domain alive while its objects are.
+- `af06160284c1e5f2902ef8afd2bedc69948c2421` Leave lazily armed memory out of the camera-speed search, so a sensitivity change no longer fetches GPU buffers.
+- `6029321effc6fd2e2277aab74b21ce028f654c92` Check the movie decoder under its lock in DecodeAsync, so a sample after Finalize cannot hold the movie frame rate cap.
+- `88a64573a22c71f60a27f45f88b29b430c0e3dac` Say which mixer calls run without the renderer lock in audren.h.
+- `168a80f2ed0d35d1fc88eabbe514e616a061b672` Run the copy sweep at normal priority, so a preempted sweep cannot hold the recording and submitting threads.
+- `b072b8a2d49368b071b542115b003071461e4682` Keep one copy-sweep record per handle, so a copy recorded again over the same block is not counted twice.
+- `601a9546764bda94a376ad2c8e8284fa0f2c6d0e` Say in nx2navi.ini.example how much game memory the copy sweep reads.
+- `d8c046acc4d3c7489bf723502125944e06c06a9e` Destroy a movie decoder's system events and free their table entries when the decoder goes.
+- `ef2e5e24a63d57ed379a130d1164dcf21e892d07` Skip a change-event slot whose handle is not stored yet when a channel change signals the list.
+- `66d38dc0ac0ade21300501ca54bb9a15eadfa79c` Put the kern_handle_close comment in host.h back in its column.
+- `2c59addd62785d8beb956fff38f2b2b422a1881e` Describe the domain checks in the ipc_session_check docstring.
+- `e39f71df392e964f24cbbc21d75527718cee6a8f` Run every orderly exit through one sequence that puts RivaTuner's profile back before the slow pipeline save.
+- `8f952d284178e693b653507934844a8e37dee834` End fatal errors and a lost device with TerminateProcess instead of _Exit, which ran every library's detach.
+- `1352b14f6402ca3120379018352c57aed791d260` Let the first failure report end the run whole when another thread crashes or hits a fatal error beside it.
+- `790d201a598a7dc90aa9cae1b0cb477c69048667` Keep a save file open until the last call through its handle is out, so a CloseFile beside a read or write cannot redirect it.
+- `722a5dd1b08d47e77e833079074d6408d0c399d8` Keep 32 KiB of every thread's and fiber's stack back for a stack overflow's crash report.
+- `87fd385b7bb0478b3b8d34d9a1705968ea075edf` Stop HD rumble at a fatal error and a crash too, on a thread of its own the end waits for 300 ms at most.
+- `8c1ec424066c89eef62640621d27334b6c6f1929` Log the nx2navi.ini and environment values that are outside their settings' sets, with the line they came from.
+- `bbea3ce2a072e74026f9396748eb56fbb9036c34` Write the end of the run to the log file past its 64 MiB cap, up to a 4 MiB reserve counted on its own.
+- `0fbd2b8f31d8787226abdb0249c8636264a6020e` Add a static check of cfg.c's settings tables to the content guard, and list the 15 names it found missing from known[].
+- `b4556957c2233395f606210142a2e73b6668defa` Add a hang watch that logs a report when no frame is shown with the window in front, or the GPU does not finish, for 20 s.
+- `5b9ed9ed12890654c96d0e49e3c693dc40fa9068` Say so in the log when the settings table is full and a key or a menu change is not kept.
+- `153295b64c8f0636c673f119e189f100f9bf3741` Check cfg_meta's result before reading a row's default in default_number and gfx_cfg_window_size.
+- `c040ca6c5fd7b9bed57a4d92ddb60e6c4e731f6b` Write the frame-time summary and the stutter map at a fatal error too, the map only when its lock is free.
+- `f9033dce64aa6c7950c3560bd211827a0d7e08ca` Put away the boot prebuild's crash marker and journal when the cheats rebuild ends the process.
+- `dc947710516573d5505973b95ba73908e175d770` Run the window's close on a thread of its own and hide the window, so it keeps answering while the game saves.
+- `0efa9a4c78addbc357d9844e05767217c5ed68a2` End the process on a second Ctrl+C after a save Commit in flight finishes, not through the default handler's ExitProcess.
+- `4a36e96411eaba7d5de79a271f6455ab0a80df76` Name Vulkan layers called VkLayer_*, a recorder's Vulkan hook and a driver's capture tool as foreign in the crash report.
+- `dd78132e6da8410518433149e3589eab0ff5af3a` Tell a crash on the RTSS thread as the game's own call of RivaTuner's library, and skip the restore there.
+- `b23acff3015aa9ef9adb6f9c8165dd9177e2ff49` Leave a line in the log when a module ends the process with ExitProcess, and write the gathered lines at a focus loss.
+- `a135c1945039e15f5d00093ead03cb95319b5dd7` Ignore the focus loss that the close's own hide of the window sends, so the exit summary keeps the session's frames.
+- `b8b57cfd53b5321a69748ef100d24f1d7fde4bb0` Take the file lock at the end of a save file call only when a CloseFile is pending, not at the end of every call.
+- `313ef09081a4462ab8cfad86e3e53148484b468e` Open the log's end reserve only when the process is ending, not at a bug capture's log sync in play.
+- `78e9d23211f6723f29fd25140fae470fbba19d43` Write a fatal error's frame-time summary after RivaTuner's restore and the rumble stop, not before them.
+- `e6a6d6a8090227a647b3ad4c375e91b46bf87105` Skip RivaTuner's restore at a fatal error on the RTSS thread too, not only at a crash there.
+- `66c607414ba45c4bbcca76af2b73e77457bb1d7d` End a hung fatal error's report with its own code when a thread waiting beside it gives up, not with the crash code.
+- `cd3f015732b30370a9da8e6266576451708ac41a` Log the guest's ExitProcess line after the exit guard, and bring the comments on gfx_window_closed's return up to date.
+- `e4f10a5a0261c65aa598496c69f745d091a9d5f5` Log the hang watch's list of guest thread waits after the kernel lock is released, not while it is held.
+- `359591c237004e6d4c6069f6526610d30d7d5d3c` Note the module list from each image's header and GetModuleFileNameA, which takes 0.3 ms where it took 25 ms.
+- `8de99df6ebee23f5478309093d4eedb163edde47` Explain a lost device's exit code 72 with the game's FATAL line, and follow the copy the game's own Restart starts for the code it really ends with.
+- `8f42883a74d0afd8f095f0ee05085ff051d1dce6` Tell the end of a game started from the Steam shortcut as Play tells it, with a message box for a fatal one.
+- `010572021745e2dfa3714db7ba263e0c910a0a3f` Take only a sharing violation on ocarina.exe for a running game, not any refusal to write it.
+- `814c10b355d062b2ff07e52e4cfc5ffbb9d4fe23` Keep the Steam shortcut from starting the game while the launcher runs a job in the game folder.
+- `73d6c8ffb8af5c26af34b2d7918eafacff417a56` Refuse the command line's update while the game runs, as the window's Updates row does.
+- `56db0d485c6f0e8797dc5e2fd478a66efd97e274` Make check_platform.py skip the branches that only a Windows build compiles, so that it passes on the runtime and guards it again.
+- `6b051eea582f09e08f4691f5beffb6f553fd0c98` List kern_ap_stub_ymm as dispatched in check_isa.py, so that a --cpu v2 build passes its instruction check again.
+- `5f90486cf04d3b8fcda2b25db1a3e857ad773832` Mark the generated modules.c with GENERATED_MARKER, so that check_content.py refuses it in a commit.
+- `a0fd6edc489ef92987b8169884d2f76973ca6942` Take main's base in cheats.py from recomp/layout.py instead of a copy of its value.
+- `52d996d4aa54468354435394277bdd86fad9a9bc` Count the low-latency driver's sleep as pacing on whichever thread acquires, as the other acquire waits are counted since the pacing timing changed: vk_lowlat.c frame_begin runs on the acquiring thread, which need not be the one that presents, and perf_end dropped a wait made there.
+- `d9940113ef66c7846764a8b683fb0d3cc2df3879` Give a network task's system event back to the event table before its record is freed. The table counts entries in host memory as live, so each task the game destroyed kept a slot for the rest of the run, and enough of them would fill it. Not reproduced before the change; system_event_check passed.
+- `419e173e8ae6cbf403160df0a682fe878a6642a6` Check that a want after the exit's RivaTuner restore changes nothing: the restore marks the run closed before anything else and rtss_limit_want returns on it, which the exit order relies on now that the restore runs before the pipeline save while frames still come.
+- `1f547853e3c4b50d4512fef5d3e0c3bcdbeefb3c` Put back the backslash that had turned into a tab in docs/building.md's tex_compact_check command.
+- `27a034e9464ce81ab25ca188ec3408e9c72df8d1` Keep the 240 ceiling while RivaTuner Statistics Server holds the limit, and take the limit back after 200 ms with no host present.
+- `208a10718d678df322b6bb9b1efe1bfa4c69ea65` Let the game's pacer hold a movie while RivaTuner Statistics Server holds the limit, and keep the play limit in RTSS's profile through it.
+- `04f4d447475217eb0e5d89e957068f939facd4ac` Keep RivaTuner Statistics Server's profile as it was in rtss-profile.txt, so a start after a kill or crash puts it back, and leave it to that start at a crash.
+- `f7899e5443cac353f1747f0ab717a8d6c4fd7eef` Let the game's limiter stand aside only once RivaTuner Statistics Server is seen holding the game, and give up on RTSS at 1.05 times the limit over three fresh periods.
+- `4d4b97b04326195c3e2ac3a085cb05dfd1f7e64a` Let a want reach RivaTuner Statistics Server's profile only once it stayed two polls, and write nothing before the first host present.
+- `60694532a1221246cd5bf9391980532313c2c76b` Round a fractional limit down for a RivaTuner Statistics Server without the denominator field, so "display" never holds the game above the refresh.
+- `80b96a748d47876c7faace2c25d1537dea3a2e86` Describe RivaTuner Statistics Server's hand-off, the pacer's fallbacks and rtss-profile.txt as they behave now.
+- `ad84e0a1c015188e0ded492c36e6218169100935` Say what RivaTuner Statistics Server does with a movie at the default limit of 60, where the profile keeps the limit.
+- `a7b4f0c7cbf6f5828000b51daf8e11b8cd561dce` Put back a profile a run that did not close left in RivaTuner Statistics Server, also at a start that keeps RTSS out.
+- `1744681f1a124430f4d62391e65b6c472c829896` Give up on RivaTuner Statistics Server for the run when it hooks the game with the limit for 30 s and never shows it holds it.
+- `da822abec3d18491f35b815afb3707f9f8bf68de` Keep the state file's line ahead of RivaTuner Statistics Server's profile, and keep what a run owes the profile after a put back that did not land.
+- `9f45d7448f410b4e89facf95c94ae3a38b93c691` Leave rtss-profile.txt alone when it is there but does not read, so the lines of other executables in the folder stay.
+- `c19f75e505f861003db5868774d4687729d72ee2` Check that a crash on RivaTuner Statistics Server's own thread, with no line in the state file, returns at once.
+- `af2ecc3c03a7f4b150f5ecc0f233993644141d16` Correct the comments on RivaTuner Statistics Server's pacing beside the ceiling, the state file's writers and the crash path.
+- `405a75f3b1e17d04d1557f15d4f86089b867a9e6` Say in docs/architecture.md when a crash still calls into RivaTuner Statistics Server, and list the new state-file checks in docs/building.md.
+- `660c42f6d2df192744b924fc9a912a0bb40a5e20` Give nx2navi_dlssg.dll an export that hands Reflex a frame limit along with its mode.
+- `2d6f9f07b285abde2596fcf5350f0ec10ccf9185` Decide who holds the frame limit with DLSS Frame Generation in a header of its own, runtime/dlssg_pace.h, with a check.
+- `2bf32649af4efeed1be7bc60636e72e9c8b8d1c8` Name the game's frame-rate ceiling as a period of its own, frame_step_ceiling_ns, for a pacer that hands the limit over.
+- `dc3f424fde1c50600ceee86a5e03f050b8415d35` Let Reflex hold the frame limit with DLSS Frame Generation, and the game's pacer keep only its ceiling while it does.
+- `e0843439a7346ad62a7fb5add9545c4ebbefff7d` Add the reflex_limit setting (NX2NAVI_REFLEX_LIMIT, default 1, live), which gives the frame limit back to the game's pacer with DLSS Frame Generation.
+- `9f4f51f010b984eb319413ca96e84880b0016208` Fail tools/build_dlssg.py when nx2navi_dlssg.dll lacks an export nx2_sl.h declares, and let it check a DLL built earlier.
+- `0131b1b263ee0d6690ff85f5f6b6d230628e825c` Stop a launcher release and a build kit on an nx2navi_dlssg.dll that lacks an export runtime/dlssg/nx2_sl.h declares, before they download anything.
+- `46bf4823e6548337d835659df6cbb23b09d1968f` Count Reflex's sleep at the frame start as the pacer's wait only while Reflex holds a frame limit.
+- `358713fbf2e3c9bd9b41a61b5731d6d131689638` Trap unsigned wrap-around in tests/dlssg_pace_check.py, as its comment on overflows promised.
+- `bb0317ac087ceac843f4d45c48bd980e1ec826af` Log Reflex's frame limit as each of the first 16 swapchains hands it to Streamline again.
+- `879c76f91ad26e7f848f54996cad8fdeaa6f683d` Name every caller of reflex_state in nx2_sl.cpp's comment on why its calls never overlap.
+- `6b95c867c8daef7147d4831c48ddc13e1ec401c9` Make the page write generations 64-bit, so a long session no longer wraps them and every texture, mirror and shadow check after the wrap answers wrong.
+- `028a6ce128efc7c13d4207546f3484d7e4609a9a` Count the page generation tables in trace=perf's "mem: sizes" line, so a play-test shows what the 64-bit generations cost in host memory.
+- `5ee960f811c393118a5798ee1b2985d083e05825` Add NX2NAVI_GEN_SEED, a test switch that starts the page write generations at a given value, so a play-test can cross 2^32 in seconds instead of 15 to 66 hours.
+- `ef0673fba0bcf7300b09892ef819949879a73d52` Mark a region for the lazy write-back before its pages become inaccessible, so that a read during an arm is not passed to the crash handler.
+- `f586c291fafaeb5c3b4a63d5c7534f1c3771a9f6` Give the longest lazy fetch and the longest wait of a fault for the freeze lock on the "mem: lazy write-back" line.
+- `2e077edc9d5ed894c7f362579f834705520120d8` Fetch the lazy write-back's ranges without the freeze lock, so a touch of GPU-written memory holds up only the threads that touch that range, with wb_lazy_unlocked = 0 to go back.
+- `92121a11e827994caea2f890e5f8ae1cb2153518` Check that an arm keeps its region marked while a range in flight there ends, which the review found untested.
+- `0eee8499480ee18eb3713d78ab31fc1b627e1742` Check that a thaw fetches the armed ranges of its regions without the freeze lock, which the review found untested.
+- `da60e0d327329dc74092e229fd54bd515a57f561` Make wb_lazy_unlocked = 0 bring back 0.10.1's locking in evictions and releases as well, which the review found it did not.
+- `a8d18ef474321d367e22bb1ee0bb0cf65aa4d453` Ask an armed region's page state under the freeze lock when a fault finds its range gone, so that a late write is not taken for a frozen page's and a read is not passed on past an arm.
+- `b5e4243cc4f03b3c838c2b31a07fe8dd23931f83` Name every thaw that fetches under the freeze lock in the lazy write-back's comments, and say what LZ_SLOTS does when it runs short.
+- `47078fa0cda8fe0f074842b6b7e23073c2222c7e` Have an eviction take the next candidate when a victim was finalized while pool_lock was down, as it did before.
+- `61b8a6d62c75365a4cd19181e378156a41087ffb` Wait for room in the flight table in mem_lazy_skip only when there is another buffer's range to give back.
+- `c6b29834eb6fb246de85990ee3f044305a9e0e24` Give the upscalers' device-idle waits and their releases perf marks of their own, so a slow frame's line names them.
+- `c14988150cb92a489bd03c047bc80f7d6ce03f87` Keep the prebloom images' last use when they are made again for another picture size.
+- `86e6d62d35e1c7b72370cce8c48ff3d4b87482c7` Add a list of what an upscaler lets go of, released once the GPU is past it, and its unit check.
+- `22c86f08a038711e6bc304482f8c8fc89c857f0e` Let DLSS free what it lets go of once the GPU is past it, instead of waiting for the device on the replaying thread.
+- `9065d1485f415b457a20c4907c8bf5126ea9bbb9` Let FSR 3.1 and FSR 4 destroy a context they let go of once the GPU is past its last upscale, instead of waiting for the device.
+- `ed87d3062881439f19db0b24747174b4fe572a75` Check from the sources that no upscaler waits for the device where it lets something go.
+- `61f08a177d271785a295bb0ba69539bfe6a044c3` Try an FSR 3.1 context creation once more after the GPU is past the contexts let go of, instead of failing the run.
+- `450698833530ac61384d788029ffceb33b3bcd00` Make upscaler_idle_check fail where a place that lets something go frees it at once.
+- `74bedbee736b28feccadc87a9201b270c7050f16` Name the upscalers' wait mark "upscaler GPU waits", since it also times the timeline wait after a refused creation.
+- `bede842db75c9bbe8771cb93c7448180069220b6` Reword the comment on pb_images' last PB.used, which still described the clear 9071dfc3 removed.
+- `75b06b0a30b543bd881ab7b9fb1935794fcef374` Count only release_kept's own features in its line of those released once the GPU is past them.
+- `cde143c5d9a9d5a59702a2c9f910da42f7ebb70c` Say what upscaler_idle_wait = 1 brings back and what it does not.
+- `7a1c220e0680b5927262a469a7a9fbc5989459fb` Test held work against the event's value now when another thread asks without the submission lock, and read the held count and the submission count as atomics there.
+- `c56a87872e4da2626f25f8c793cbd418c48ff4a6` Work out the frame hold's allowance in vk_frame_hold_left without writing it, so that frame_hold at the present is its only writer.
+- `ddc0247b259336af68394d176ea3091d8fb54e34` Count the draws skipped for a pending pipeline with atomics, as the replay adds to the count on one thread while the present takes it on another.
+- `01cb13dc31f933d6af4b3be47ae11ca86176ba1f` Set, count down and clear vk_dlaa.c's setting_presents with atomics, as vk_dlaa_frame and vk_dlaa_resized_take can run on two threads.
+- `8b5ddd0865999a76e1e086ce2240b2b1c8df8565` Count the queue's submissions, the game's waits that returned with work held and the gate's waits with atomic adds, as several of the game's threads reach them at once.
+- `a789bd8fb00af3e2016077470e55aa80ff6b87f3` Put a held present out under a lock of its own that submitting threads only try, so that it goes out once, whole and before the next present.
+- `51c9261db31a3463e1dad830f7fdf63fe161294b` Close a frame's replay state under the submission lock: at the present when the lock is free, else first thing in the next submission, so another thread's replay never sees it reset halfway.
+- `58fad9128d1336ea6516c3908e62909282237f35` Give a synchronous submission of a recording copy that another thread's submission still replays a clone of its own for its deferred binds, instead of rewriting the copy under that replay.
+- `0e918d48468c127216a2cacf68bab753beb45810` Log at exit, and with trace = perf every 600 presents when they moved, how often the game's threads met at the present: frames whose bookkeeping went to the next submission, held presents another thread put out, and the presenting thread's waits for one.
+- `518185b808dce7b86d5e4cc8c56c73fa1a8e2137` Set vk_sub_in_frame under the submission lock from the place the submitting thread noted, so a thread about to submit no longer changes it under another thread's replay.
+- `effdbd8dc0178c5eebdabcf0eb803c5d04c95a11` Describe in docs/architecture.md how the game's submitting threads take turns, and bring nvn_call_note's comment, which said the front end relied on one thread at a time, up to date.
+- `618cfc01f4c136794ca0330da417fbf02b1bf40d` Run a frame's bookkeeping that is still owed on the present thread before the frame's blit, so the blit never reads the upscaler state of a frame vk_dlaa_frame has not closed.
+- `b0baa981ff26c074a74da10264f4800df1833e1a` Keep a recording copy that one synchronous submit call gives twice in place both times, instead of cloning the second occurrence as if another thread's submission were in flight.
+- `b18fff6439532a4c2367b5a6add942dede6f6429` Count a frame's bookkeeping that a submission runs for an earlier present as that thread's replay time.
+- `93e9434869025fb906f9fe0cdd4f1070b644d31a` Read the frame hold's allowance and its time as one pair in vk_frame_hold_left, under a sequence word the refill at the present writes.
+- `7e7fed639ec890ba861abeb3710b757ebb9f789b` Refuse or leave out the audio values the game sends that the renderer cannot use, instead of ending the game on them.
+- `9770d409d583b53b5f51cd410cac33bc7f8d2c3c` Say what NX2NAVI_AUDIO_STRICT, the audio_bad log lines and the docs really do, as the review of the audio change found them overstated.
+- `a40afdd86dddcbf9841e48f7a647cc3d30a4d557` Log a splitter framing fault met while the update is applied as the rest of the section left out, not as a refused update.
+- `5f9374e1d91b95d9339f86fa3ce0bdb2a9f264ee` Keep the fraction of a frame the ocarina recorder's clock was losing above 60 fps, in a new patch set orecord.
+- `5c9e480f908c4debe867b8fce3684df781f43060` Swing the shake key's stick by the game's updates instead of the clock, two updates a side at any frame rate.
+- `1c26907abebe07e8c0761e8b7b6f58299fcfb9c6` Aim dynamic resolution at the frame limit's frame time by default and hold each step for a time, not a frame count.
+- `b6709da85207876c05d2a95e03cd068dab17467e` Read a comment after a setting's value, and off, false and no for a switch, as players mean them in nx2navi.ini.
+- `8c9011d56f810f445dc117db58c151e70cf755e1` Read low_end_gpu's and shader_carry's off words the same in the low-end mode and in make_game.py as in the game's other readers.
+- `4fe13391895efaa7dca8b456e9fdcd54806239c7` Say in nx2navi.ini.example's header which settings cut a comment after the value and which take the switch words.
+- `1ae00ed80258825e8d3b8917891bd87ab5d17af8` Log dynamic resolution's target against the one the log last named, from the start line on.
+- `3def368774bd2bc06a507bbd035f47872a757e4e` Give RivaTuner's hold the pacer's one ceiling, frame_step_ceiling_ns, which Reflex's hold also keeps, in place of a second copy of its value in frame_step_cap_ns.
+- `5b5fa6e2be6d86e712df9cc7d6c69cbe4fe2cfc0` Store vk_dlaa.c's present count atomically, since presents_now reads it on the hook thread without a lock, and bring three comments up to date with where vk_dlaa_frame now runs: between replays under the submission lock, owed to the next submission when the present could not take it (vk_frame_owed.h).
+- `87777fea340d678580e15ecebd54092a75428f0d` Name Reflex among the limiters that hold the frames while frame generation keeps RivaTuner out, in the two-limiters log line.
+- `4801688828a39eb0ff8fc8e5e3c85d19084a9754` Write the stability pass for 0.10.2 into the audit: a ledger row for each of its findings with the commits that fixed it or why it stays open, the older rows and leads it fixed or changed, the new threads and lock orders, the pacing steps as they now run, what still waits for a play-test or the user's word, and a section on how the pass was done and checked.
+- `86d672ceead66ad31a3ee0ecef9d347f4719c1a5` Make the release 0.10.2, with its notes: the stability and frame-pacing pass, the translator built from the release's own sources (the see-through ground of issues #569 and #824), the AMD device-loss fixes, and the items the user approved.
+- `87b4e2607e6865ff8c402d9c96b4265456add23b` Say in the audit's section 14 that a clean dev build of the final merge compiled every runtime file and linked the exe.
+- `69ab33d1f1d4af12544529c5511ced86fbe4e5be` Turn the Game tab's Testing settings on by default for 0.10.2, as the user asked: CPU helper threads Automatic (replay_workers = auto, which gives none on four cores or fewer and none on AMD's driver for RX 6000 and older), Helpers work ahead 4 (replay_pipe), Helpers take small jobs 16 (replay_small) and Start next frame early On (tail_early). A value a player set in the menu or nx2navi.ini stays; the notes say how to go back to 0.10.1's.
+- `f7a2d94813c21f74edd806662e5e7e46f1f56208` Bring public main's video memory fix and 0.10.1's defaults into the 0.10.2 line.
+- `190cdbb50f763d084a70eae68a59d955f64b569e` Say in the log what keeps the half-full blocks of video memory from going back to the driver.
+- `5f7395c14f6521bc6ced7e88858f03a361e8990d` Keep no spare block of video memory past a budget cap set for a test.
+- `787b7c73de6e028c184946acab28f9f36988709f` Leave a patch of grass out whole while its colour draw waits for a pipeline on the mesh shader fallback.
+- `6ababe8275120a2ec732a1c89397aa86fbb0ac3e` Let the automatic texture detail choose full from 12 GiB cards on, and never on an integrated GPU.
+- `fed7aca7fc2f251d92ac9b648064da4f12a7b940` Leave Helpers work ahead and Helpers take small jobs off by default, as in 0.10.1.
+- `516bfa6fb0844eca77b97f1368e1fb2e0577b525` Start the game when DLSS Frame Generation is on and the chosen graphics card is not an NVIDIA one.
+- `bbeecce88c6ddf00f76e502e68bee566b5212895` Never take the mesh emulation on an NVIDIA card, where it ended the game inside the driver.
+- `6e57ef96190527950e6023eb4444330166a5bac7` Check three of this pass's decisions without a device: the automatic texture detail, the device made with DLSS Frame Generation on, and the mesh fallback's depth hold.
+- `7a8bbad47ec73ae32abbdfe824910a672bd54e39` Remove the low-end GPU mode from the settings.
+- `1d0327acd1d21bf3a08565a2e2979d3adbb7e9f7` Run a parallel group's pass hooks once, at its first chunk's first pass.
+- `7b33512e328e7fb5b4dd6b36a97a80116a1707d9` Add a flight of the free camera to the test script.
+- `87bb179c78e3a38d4bf2a877c7bf3967fa26e65a` Keep released textures for one minute and up to a thirty-second of the video memory budget.
+- `5eef43742db6e798cdef7c8e3f1e9b7949dc871d` Compare textures up to 8 MiB by content before uploading them a second time, by default.
+- `1e8045b36bb36324c00b967cb101fcac756f62e4` Bring the tone mapped HDR picture's settings back to the menu, with defaults that give the look it had while it was fixed.
+- `7432f7375ce2c2c1255c7ad3ad4a2c66f723e290` Ask for the C runtime heap's summary before play only.
+- `712568d4fb52a7aaefc1e08c69cad03871b8d93d` Make the release 0.11.0: the release prepared and previewed as 0.10.2 takes this number, with its notes.
+- `2dd363b86ee5ae61c3604e5a76b5ee1de523326c` Count the texture cache's short waits in seconds below 60 presents a second too.
+- `1c3fa7df2a46a9a7f47be70ace30b3900757a30e` Give Streamline constants and null tags on a frame without inputs while frame generation is on.
+- `62cc3b131264680d5d88957c53640ea31abfaa6a` Add release 0.12.0, the handover of installed launchers to Triforce: the source of its window, its tests and its notes.
