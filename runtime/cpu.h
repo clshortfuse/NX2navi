@@ -33,6 +33,8 @@ typedef void (*GuestFn)(Cpu *);
 
 // ---- runtime services (runtime/*.c)
 void rt_dispatch(Cpu *c);                 // call function at c->pc
+uint16_t rt_load_save_root(uint64_t addr);
+uint32_t rt_load_save_index(uint32_t index);
 void rt_spin_gate(Cpu *c, uint64_t head);  // a pass of a spin wait loop (kernel.c, recomp/patches.py `spin`)
 void rt_svc(Cpu *c, uint32_t imm, uint64_t pc);
 void rt_brk(Cpu *c, uint32_t imm, uint64_t pc) __attribute__((noreturn));

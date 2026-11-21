@@ -58,6 +58,8 @@ const char *romfs_overlay(size_t k, const char **file, uint64_t *size, int *is_a
 void fs_trace(const char *what, const char *path);         // NX2NAVI_TRACE=fs: one line per open
 
 // ---- fs_host.c
+int fs_host_has_progress(int slot);
+int fs_host_latest_progress(void);
 void fs_host_set_profile(const char *dir);                 // profile directory; before the first storage mount only
                                                            // (default rt_config()->profile)
 void fs_host_lock_profile(void);                           // the one-game-per-profile lock; fatal when another copy

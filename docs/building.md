@@ -147,6 +147,9 @@ Run the commands from the repository root in PowerShell. The Ocarina game builde
 
 Settings and saves live in the game folder’s `profile` directory. See [nx2navi.ini.example](../nx2navi.ini.example).
 
+Use `ocarina.exe --load-save 0` to skip the intro and menus and load save slot 0, or use
+`--load-save latest` for the most recent save. The highest slot number wins ties.
+
 ### NVIDIA DLSS on Windows
 
 Windows builds use Streamline for DLSS upscaling, DLAA, and DLSS Frame

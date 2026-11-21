@@ -1030,6 +1030,48 @@ void fs_init(void) {
 }
 
 // ---- the RomFS interface (fs.h)
+static int direct_save = -1;
+static unsigned direct_graphs;
+static uint64_t title_root;
+
+void rt_load_save_start(int slot) { __atomic_store_n(&direct_save, slot, __ATOMIC_RELAXED); }
+
+uint16_t rt_load_save_root(uint64_t addr) {
+    uint16_t root = LD16(addr);
+    if (root != 42 || addr != __atomic_load_n(&title_root, __ATOMIC_ACQUIRE) || frame_step_world_us() < 0) return root;
+    // The command record is live here. Restore the normal entry before running the title again.
+    ST16(addr, 35);
+    __atomic_store_n(&title_root, 0, __ATOMIC_RELEASE);
+    return 35;
+}
+
+uint32_t rt_load_save_index(uint32_t index) {
+    if (__atomic_load_n(&direct_graphs, __ATOMIC_ACQUIRE) != 3) return index;
+    int slot = __atomic_exchange_n(&direct_save, -1, __ATOMIC_RELAXED);
+    if (slot < 0) return index;
+    rt_log("load-save: requesting slot_%02d", slot);
+    return (uint32_t)slot;
+}
+
+static void direct_boot_graph(const char *name, int overlay, uint64_t size, uint64_t off, uint8_t *data, uint64_t n) {
+    if (!strcmp(name, "Sequence/NormalTitle.module.ainb")) {
+        if (off != 0 || n != size || (__atomic_load_n(&direct_graphs, __ATOMIC_ACQUIRE) & 2)) return;
+        if (overlay || size != 23468 || memcmp(data, "AIB ", 4) || data[0x88] != 35 || data[0x89] != 0)
+            rt_fatal("--load-save: unexpected startup graph %s", name);
+        __atomic_store_n(&title_root, (uintptr_t)(data + 0x88), __ATOMIC_RELEASE);
+        data[0x88] = 42;
+        __atomic_fetch_or(&direct_graphs, 2, __ATOMIC_RELEASE);
+    } else if (!strcmp(name, "Sequence/BeforeTitle.110.module.ainb")) {
+        // Keep resident event initialization, but omit the startup event request and its wait.
+        const uint64_t pos = 0xc3c;
+        if (pos < off || pos - off >= n) return;
+        if (overlay || size != 12578 || data[pos - off] != 11)
+            rt_fatal("--load-save: unexpected startup graph %s", name);
+        data[pos - off] = 9;
+        __atomic_fetch_or(&direct_graphs, 1, __ATOMIC_RELEASE);
+    }
+}
+
 void fs_trace(const char *what, const char *path) {
     static double t0;
     if (!(rt_trace & RT_TRACE_FS)) return;
@@ -1266,6 +1308,12 @@ uint32_t romfs_read(uint64_t *out, uint64_t h, int64_t offset, void *buffer, uin
         int64_t r = read_at(f, (uint8_t *)buffer + done, chunk, base + (uint64_t)offset + done);
         if (r <= 0) rt_fatal("RomFS read failure at %#llx", (unsigned long long)(base + offset + done));
         done += (uint64_t)r;
+    }
+    if (__atomic_load_n(&direct_save, __ATOMIC_RELAXED) >= 0) {
+        plat_mutex_lock_shared(&lock);
+        uint64_t i = handles[h - ROMFS_HANDLE_BASE] - 1;
+        if (i < file_count) direct_boot_graph(entry_name(entry(i)), f != image, fsize, (uint64_t)offset, buffer, done);
+        plat_mutex_unlock_shared(&lock);
     }
     perf_mark_end(PERF_M_FILE, t0, done);
     *out = done;

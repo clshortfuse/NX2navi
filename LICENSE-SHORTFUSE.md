@@ -15,6 +15,9 @@ Covered contributions:
 - Contributions to model motion-vector ownership for 1.1.1: work-entry
   lifetime and shape tracking, scoped command metadata, reverse fallback,
   and related debug controls, tests, and documentation.
+- Command-line direct save loading for 1.1.1, including physical slot and
+  latest-save selection, startup sequence changes, and related tests and
+  documentation.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

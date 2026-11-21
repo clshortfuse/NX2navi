@@ -919,6 +919,37 @@ static void ready(void) {
     plat_once(&once, storage_init, NULL);
 }
 
+static int progress_path(char path[PATH_CAP], int slot) {
+    int n = snprintf(path, PATH_CAP, "%s/slot_%02d/progress.sav", save_root, slot);
+    return n >= 0 && n < PATH_CAP;
+}
+
+int fs_host_has_progress(int slot) {
+    ready();
+    char path[PATH_CAP];
+    return progress_path(path, slot) && plat_fs_kind(path) == PLAT_FS_FILE && plat_file_size(path) > 0;
+}
+
+int fs_host_latest_progress(void) {
+    ready();
+    int latest = -1;
+    uint64_t newest = 0;
+    for (int slot = 0; slot <= 99; slot++) {
+        char path[PATH_CAP];
+        if (!progress_path(path, slot) || plat_fs_kind(path) != PLAT_FS_FILE) continue;
+        PlatFile *file = plat_file_open(path);
+        if (!file) continue;
+        PlatFileId id;
+        int ok = plat_file_id(file, &id);
+        plat_file_close(file);
+        if (ok && id.size && (latest < 0 || id.write_time >= newest)) {
+            latest = slot;
+            newest = id.write_time;
+        }
+    }
+    return latest;
+}
+
 void fs_host_set_profile(const char *dir) {
     if (plat_cas32(&storage_ready, 0, 0)) rt_fatal("fs_host_set_profile after the first storage use");
     need(dir && snprintf(profile, sizeof profile, "%s", dir) < (int)sizeof profile, "profile path");

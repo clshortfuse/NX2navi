@@ -449,6 +449,13 @@ class Emitter:
             if a in labels:
                 emit(None, f'L_{a:x}:;')
             k = ins.kind
+            if mod.name == 'main' and len(mod.image) == 0x4ea0000:
+                off = a - mod.base
+                if off == 0x3a9b0:
+                    emit(i, '    c->x[8] = rt_load_save_root(c->x[8] + 0x14);')
+                    continue
+                if off == 0x32c1ed4:
+                    emit(i, '    if (LD8(c->x[10] + 0x138) == 2) c->x[8] = rt_load_save_index((uint32_t)c->x[8]);')
             if a in self.patched:
                 emit(i, patch(i, ins, a))
             elif k == 'op':

@@ -1,6 +1,6 @@
 ﻿// nx2navi.exe entry: reserves the guest address space, parses the command line and runs one mode.
 //
-//   nx2navi.exe [--exefs DIR] [--romfs DIR] [--profile DIR] [--audio-device VALUE] [--monitor VALUE] <mode>
+//   nx2navi.exe [--exefs DIR] [--romfs DIR] [--profile DIR] [--load-save SLOT] [--audio-device VALUE] [--monitor VALUE] <mode>
 //     --audio-device VALUE   play the sound on one output device: sets NX2NAVI_AUDIO_DEVICE before the settings are read, so
 //                       it wins over nx2navi.ini's `audio_device =`. VALUE is default (the system default device),
 //                       a 1-based index as --list-audio-devices prints it (devices sorted by name), or part of a device name, case-insensitive
@@ -46,11 +46,14 @@
 #include <string.h>
 
 #include "cfg.h"
+#include "fs.h"
 #include "host.h"
 #include "logq.h"
 #include "prof.h"
 #include "platform/platform.h"
 #include "sha256.h"
+
+void rt_load_save_start(int slot);
 
 #define MAX_MODULES 16
 
@@ -663,7 +666,7 @@ static int probe_crash_exit(void) {
 }
 
 static int usage(const char *argv0) {
-    fprintf(stderr, "usage: %s [--exefs DIR] [--romfs DIR] [--profile DIR] [--audio-device VALUE] [--monitor VALUE] [--list-audio-devices | --list-monitors | --selftest | --probe-loader | "
+    fprintf(stderr, "usage: %s [--exefs DIR] [--romfs DIR] [--profile DIR] [--load-save SLOT] [--audio-device VALUE] [--monitor VALUE] [--list-audio-devices | --list-monitors | --selftest | --probe-loader | "
                     "--probe-cfg | --probe-dpi | --probe-mods | --probe-kernel | --probe-ipc | --probe-services | --probe-fs | --probe-gfx-abi | "
                     "--probe-nvn | --probe-nvn-tex | --probe-window | --probe-shader | --probe-vkmem | "
                     "--probe-vkexec | --probe-meshfb | --probe-astc | --probe-zstd | --probe-input | --probe-movie | --probe-crash-call | --probe-crash-null | --probe-crash-exit | --probe-discord | "
@@ -755,6 +758,7 @@ static int main_run(int argc, char **argv) {
         return 2;
     }
     const char *mode = NULL;
+    int load_slot = -1, load_latest = 0;
     for (int i = 1; i < argc; i++) {
         const char **path = !strcmp(argv[i], "--exefs") ? &cfg.exefs : !strcmp(argv[i], "--romfs") ? &cfg.romfs
                           : !strcmp(argv[i], "--profile") ? &cfg.profile : NULL;
@@ -774,6 +778,16 @@ static int main_run(int argc, char **argv) {
             // spelling for "no monitor choice" on the command line.
             if (++i == argc || !*argv[i]) return usage(argv[0]);
             cfg_setenv("NX2NAVI_MONITOR", argv[i]);
+        } else if (!strcmp(argv[i], "--load-save")) {
+            if (++i == argc || load_slot >= 0 || load_latest) return usage(argv[0]);
+            const char *s = argv[i];
+            if (!strcmp(s, "latest")) {
+                load_latest = 1;
+            } else {
+                size_t n = strlen(s);
+                if (n < 1 || n > 2 || strspn(s, "0123456789") != n) return usage(argv[0]);
+                load_slot = atoi(s);
+            }
         } else if (!strcmp(argv[i], "--seconds")) {
             char *end;
             if (++i == argc) return usage(argv[0]);
@@ -791,6 +805,22 @@ static int main_run(int argc, char **argv) {
     }
     if (cfg.shot && !cfg.seconds) return usage(argv[0]);
     if (cfg.seconds && mode) return usage(argv[0]);
+    if (load_slot >= 0 || load_latest) {
+        if (mode) return usage(argv[0]);
+        if (!RT_V111) {
+            fprintf(stderr, "--load-save requires game version 1.1.1\n");
+            return 2;
+        }
+        if (load_latest && (load_slot = fs_host_latest_progress()) < 0) {
+            fprintf(stderr, "--load-save latest: no nonempty progress.sav in the selected profile\n");
+            return 2;
+        }
+        if (!load_latest && !fs_host_has_progress(load_slot)) {
+            fprintf(stderr, "--load-save: slot_%02d has no progress.sav in the selected profile\n", load_slot);
+            return 2;
+        }
+        rt_load_save_start(load_slot);
+    }
     log_open(!mode);
     if (!mode) {
         // the console of a game started directly: no QuickEdit to stop the log, and its close saves (console_closed)
